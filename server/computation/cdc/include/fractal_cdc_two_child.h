@@ -6,7 +6,7 @@
 #include "fractal_cdc_region_study.h"
 
 #define FRACTAL_CDC_TWO_CHILD_STUDY_ID "cdc-two-child-study-v1"
-#define FRACTAL_CDC_TWO_CHILD_DECISION "SUPPORTED_BRANCHING_DESCENT"
+#define FRACTAL_CDC_TWO_CHILD_DECISION "SUPPORTED_ONE_LEVEL_BRANCHING_DESCENT"
 
 typedef enum fractal_cdc_split_axis { FRACTAL_CDC_SPLIT_REAL=0 } fractal_cdc_split_axis;
 typedef struct fractal_cdc_two_child_split {

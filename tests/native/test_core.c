@@ -7,6 +7,7 @@
 #include "fractal_cdc_certificate.h"
 #include "fractal_cdc_region_study.h"
 #include "fractal_cdc_two_child.h"
+#include "fractal_cdc_depth_two.h"
 #include "fractal/render_artifact.h"
 #include "fractal/render_failure.h"
 #include "fractal/render_job.h"
@@ -180,7 +181,7 @@ static void test_two_child_study(void) {
  CHECK(c.batch_potential[0]==3u && c.batch_potential[1]==2u && c.batch_potential[2]==0u);
  CHECK(fractal_cdc_two_child_certificate_serialize(&c,a,sizeof(a),&na)==FRACTAL_OK);
  CHECK(fractal_cdc_two_child_certificate_serialize(&c,b,sizeof(b),&nb)==FRACTAL_OK);
- CHECK(na==nb && memcmp(a,b,na)==0 && strstr(a,"SUPPORTED_BRANCHING_DESCENT")!=NULL);
+ CHECK(na==nb && memcmp(a,b,na)==0 && strstr(a,"SUPPORTED_ONE_LEVEL_BRANCHING_DESCENT")!=NULL);
  CHECK(strstr(a,"NEGATIVE_RESULT")!=NULL && strstr(a,"COMPOSITE_OBJECT_REQUIRED")!=NULL);
  bad=c; bad.child_escape_guard[1]=false;
  CHECK(fractal_cdc_two_child_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
@@ -190,6 +191,51 @@ static void test_two_child_study(void) {
  CHECK(fractal_cdc_two_child_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
  bad=c; bad.cdc_descent_step_count=0u;
  CHECK(fractal_cdc_two_child_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
+}
+
+static void test_depth_two_study(void) {
+ fractal_cdc_depth_two_tree tree,bad_tree;
+ fractal_cdc_depth_two_certificate c,bad;
+ uint8_t s0[1]={2u},s1[2]={1u,1u},s2[3]={0u,0u,1u},duplicate[2]={0u,0u},huge[1]={41u};
+ uint64_t potential=0u; char a[2048],b[2048]; size_t na=0u,nb=0u;
+ CHECK(fractal_cdc_depth_two_tree_create(&tree)==FRACTAL_OK);
+ CHECK(fractal_cdc_depth_two_tree_validate(&tree)==FRACTAL_OK);
+ CHECK(tree.split_1==2.125 && tree.split_2==2.0625);
+ CHECK(tree.region[FRACTAL_CDC_NODE_C].real_max==tree.region[FRACTAL_CDC_NODE_D].real_min);
+ CHECK(tree.region[FRACTAL_CDC_NODE_C].real_min==tree.region[FRACTAL_CDC_NODE_A].real_min);
+ CHECK(tree.region[FRACTAL_CDC_NODE_D].real_max==tree.region[FRACTAL_CDC_NODE_A].real_max);
+ CHECK(tree.rank[0]==2u && tree.rank[1]==1u && tree.rank[2]==1u && tree.rank[3]==0u && tree.rank[4]==0u);
+ CHECK(fractal_cdc_depth_two_potential(s0,1u,&potential)==FRACTAL_OK && potential==9u);
+ CHECK(fractal_cdc_depth_two_potential(s1,2u,&potential)==FRACTAL_OK && potential==6u);
+ CHECK(fractal_cdc_depth_two_potential(s2,3u,&potential)==FRACTAL_OK && potential==5u);
+ CHECK(fractal_cdc_depth_two_potential(duplicate,2u,&potential)==FRACTAL_OK && potential==2u);
+ CHECK(fractal_cdc_depth_two_potential(NULL,0u,&potential)==FRACTAL_OK && potential==0u);
+ CHECK(fractal_cdc_depth_two_potential(huge,1u,&potential)==FRACTAL_ERROR_INVALID_SPEC);
+ bad_tree=tree; bad_tree.split_2=2.0;
+ CHECK(fractal_cdc_depth_two_tree_validate(&bad_tree)==FRACTAL_ERROR_INVALID_SPEC);
+ bad_tree=tree; bad_tree.rank[FRACTAL_CDC_NODE_C]=1u;
+ CHECK(fractal_cdc_depth_two_tree_validate(&bad_tree)==FRACTAL_ERROR_INVALID_SPEC);
+ bad_tree=tree; bad_tree.rank[FRACTAL_CDC_NODE_A]=0u; /* no retrospective rewrite */
+ CHECK(fractal_cdc_depth_two_tree_validate(&bad_tree)==FRACTAL_ERROR_INVALID_SPEC);
+ bad_tree=tree; bad_tree.region[FRACTAL_CDC_NODE_B].real_max=2.0; /* unchanged sibling */
+ CHECK(fractal_cdc_depth_two_tree_validate(&bad_tree)==FRACTAL_ERROR_INVALID_SPEC);
+ CHECK(fractal_cdc_depth_two_certificate_create(&c)==FRACTAL_OK);
+ CHECK(fractal_cdc_depth_two_certificate_validate(&c)==FRACTAL_OK);
+ CHECK(c.split_potential[0]>c.split_potential[1] && c.split_potential[1]>c.split_potential[2]);
+ CHECK(c.sequential_potential[2]==5u && c.sequential_potential[3]==4u &&
+  c.sequential_potential[4]==3u && c.sequential_potential[5]==0u);
+ CHECK(c.batch_potential[2]==5u && c.batch_potential[3]==0u);
+ CHECK(c.ranks_immutable && c.future_independent);
+ CHECK(fractal_cdc_depth_two_certificate_serialize(&c,a,sizeof(a),&na)==FRACTAL_OK);
+ CHECK(fractal_cdc_depth_two_certificate_serialize(&c,b,sizeof(b),&nb)==FRACTAL_OK);
+ CHECK(na==nb && memcmp(a,b,na)==0 && strstr(a,"SUPPORTED_DEPTH_TWO_COMPOSITION")!=NULL);
+ CHECK(strstr(a,"SUPPORTED_ONE_LEVEL_BRANCHING_DESCENT")!=NULL && strstr(a,"NEGATIVE_RESULT")!=NULL);
+ bad=c; bad.future_independent=false;
+ CHECK(fractal_cdc_depth_two_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
+ bad=c; bad.conventional_guards[0]=false; /* stalled is unresolved, never a false transition */
+ CHECK(fractal_cdc_depth_two_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
+ bad=c; bad.tree.region[FRACTAL_CDC_NODE_D].real_min=2.0;
+ CHECK(fractal_cdc_depth_two_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
 }
 
 static void test_renderer_backends_and_manifest(void) {
@@ -233,7 +279,7 @@ static void test_foreign_binaries_are_data_only(void) {
  }
 }
 int main(void) {
- test_spec(); test_memory(); test_adapter(); test_computation_backends(); test_experiment_0_certificate(); test_region_study(); test_two_child_study(); test_renderer_backends_and_manifest(); test_milestone_files_preserved(); test_foreign_binaries_are_data_only();
+ test_spec(); test_memory(); test_adapter(); test_computation_backends(); test_experiment_0_certificate(); test_region_study(); test_two_child_study(); test_depth_two_study(); test_renderer_backends_and_manifest(); test_milestone_files_preserved(); test_foreign_binaries_are_data_only();
  if(failures) fprintf(stderr,"%d native checks failed\n",failures);
  return failures ? EXIT_FAILURE : EXIT_SUCCESS;
 }

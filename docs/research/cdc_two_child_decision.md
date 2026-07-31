@@ -4,7 +4,7 @@
 
 The source supplies an abstract nonnegative potential and guarded token/factor steps (Definitions 5.1–5.2, printed p.12), finite token and factor bounds (Lemmas 5.3–5.4, p.12), and composition only after component certificates (Theorem 5.5, p.12). Guarded choice chooses enabled rules but supplies no descent (Definition 20.1, p.65). Parallel batches require disjoint writes or commuting updates (Definition 20.2, p.65). Amortization requires a nonnegative bank and a proved combined drop (Definition 22.4, p.69). The proof sheet requires state, potential, guards, updates, certificates, halt, invariants, parallel safety, schedule, and bound (§23.1, p.71). Bisection halves width only with continuity and sign-change premises (Example 16.13, p.49). The PDF gives no fractal subdivision rule, finite-branching theorem, or multiset semantics; the explicit multiset definition and ternary encoding here are external mathematics and a narrow engineering interpretation.
 
-## Conclusion: `SUPPORTED_BRANCHING_DESCENT`
+## Conclusion: `SUPPORTED_ONE_LEVEL_BRANCHING_DESCENT`
 
 | Element | Candidate | Evidence | Status |
 |---|---|---|---|
