@@ -92,3 +92,23 @@ render must preserve pixel-checksum parity with the system backend.
 Current limitations and open provenance questions are recorded in
 `docs/repository_discovery.md`; model semantics are in
 `docs/fractal_studio_model.md`.
+
+## Current product direction
+
+The future target is a dedicated Android application, not Termux. Existing Android/Termux
+executables are preserved as historical, inert reference artifacts. The portable core has
+explicit, independent renderer and memory backend identities: the inherited C++ behavior
+remains the renderer reference, CDC is registered but unavailable, system memory remains
+the default, and Ouro remains optional and unavailable. See `docs/android_architecture.md`
+and the CDC traceability documents. Native configure/build/test does not invoke Python or
+checked-in foreign executables.
+
+
+## Computation substrate
+
+Fractal mathematics now has a portable point-computation boundary independent of
+rasterization and memory selection. `conventional-c` is the narrow binary64 oracle for
+Experiment 0; `cdc-experimental` returns a traceable unresolved result and requests
+fallback without asserting a CDC Mandelbrot method. Manifests identify computation,
+renderer, and memory separately. The former CDC renderer identity remains only as an
+unavailable transitional compatibility name. See `docs/computation_architecture.md`.

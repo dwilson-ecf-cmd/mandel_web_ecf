@@ -9,15 +9,18 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(FRACTAL_WARNINGS -Wall -Wextra -Wpedantic -Werror)
 add_library(fractal_core STATIC
- shared/src/result.c shared/src/render_spec.c shared/src/render_progress.c
+ shared/src/result.c shared/src/render_spec.c shared/src/render_manifest.c shared/src/render_progress.c
  shared/src/render_job.c shared/src/worker_status.c shared/src/render_artifact.c
  shared/src/render_failure.c runtime/src/memory_backend.c
- server/renderer/src/fractal_renderer.c)
-target_include_directories(fractal_core PUBLIC shared/include runtime/include server/renderer/include)
+ server/computation/src/fractal_computation.c server/computation/cdc/src/fractal_cdc_computation.c
+ server/renderer/src/fractal_renderer.c
+ server/renderer/cdc/src/fractal_cdc_renderer.c server/renderer/cdc/src/fractal_cdc_model.c
+ server/renderer/cdc/src/fractal_cdc_metrics.c server/renderer/cdc/src/fractal_cdc_trace.c)
+target_include_directories(fractal_core PUBLIC shared/include runtime/include server/computation/include server/computation/cdc/include server/renderer/include server/renderer/cdc/include)
 target_compile_options(fractal_core PRIVATE ${FRACTAL_WARNINGS})
 
 add_library(fractal_renderer_adapter STATIC server/renderer/src/fractal_cpp_adapter.cpp)
-target_include_directories(fractal_renderer_adapter PUBLIC server/renderer/include)
+target_include_directories(fractal_renderer_adapter PUBLIC server/renderer/include server/renderer/cdc/include)
 target_link_libraries(fractal_renderer_adapter PUBLIC fractal_core)
 target_compile_options(fractal_renderer_adapter PRIVATE ${FRACTAL_WARNINGS})
 
@@ -27,5 +30,6 @@ if(BUILD_TESTING)
  target_link_libraries(fractal_core_tests PRIVATE fractal_core fractal_renderer_adapter)
  target_compile_options(fractal_core_tests PRIVATE ${FRACTAL_WARNINGS})
  add_test(NAME fractal_core_tests COMMAND fractal_core_tests)
+ add_test(NAME milestone_boundaries COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/tests/cmake/validate_milestone.cmake)
  set_tests_properties(fractal_core_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()

@@ -6,6 +6,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef enum fractal_renderer_backend_kind {
+ FRACTAL_RENDERER_BACKEND_LEGACY_CPP = 0,
+ FRACTAL_RENDERER_BACKEND_CDC_EXPERIMENTAL = 1
+} fractal_renderer_backend_kind;
+
 typedef struct fractal_renderer fractal_renderer;
 typedef struct fractal_renderer_vtable {
  fractal_result (*initialize)(void *state);
@@ -19,8 +25,14 @@ typedef struct fractal_renderer_vtable {
  fractal_result (*cancel_job)(void *state);
  void (*shutdown)(void *state);
 } fractal_renderer_vtable;
-struct fractal_renderer { void *state; const fractal_renderer_vtable *vtable; };
+struct fractal_renderer {
+ void *state;
+ const fractal_renderer_vtable *vtable;
+ fractal_renderer_backend_kind backend_kind;
+};
 fractal_result fractal_renderer_validate(const fractal_renderer *renderer);
+fractal_result fractal_renderer_create(fractal_renderer_backend_kind kind, fractal_renderer *renderer);
+const char *fractal_renderer_backend_string(fractal_renderer_backend_kind kind);
 #ifdef __cplusplus
 }
 #endif
