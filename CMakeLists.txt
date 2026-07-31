@@ -13,6 +13,7 @@ add_library(fractal_core STATIC
  shared/src/render_job.c shared/src/worker_status.c shared/src/render_artifact.c
  shared/src/render_failure.c runtime/src/memory_backend.c
  server/computation/src/fractal_computation.c server/computation/cdc/src/fractal_cdc_computation.c
+ server/computation/cdc/src/fractal_cdc_certificate.c
  server/renderer/src/fractal_renderer.c
  server/renderer/cdc/src/fractal_cdc_renderer.c server/renderer/cdc/src/fractal_cdc_model.c
  server/renderer/cdc/src/fractal_cdc_metrics.c server/renderer/cdc/src/fractal_cdc_trace.c)
