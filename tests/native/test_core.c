@@ -5,6 +5,7 @@
 #include "fractal/memory_backend.h"
 #include "fractal_computation.h"
 #include "fractal_cdc_certificate.h"
+#include "fractal_cdc_region_study.h"
 #include "fractal/render_artifact.h"
 #include "fractal/render_failure.h"
 #include "fractal/render_job.h"
@@ -122,6 +123,25 @@ static void test_experiment_0_certificate(void) {
  CHECK(fractal_cdc_experiment_0_certificate_serialize(&bad,a,sizeof(a),&na)==FRACTAL_ERROR_INVALID_SPEC);
 }
 
+static void test_region_study(void) {
+ fractal_cdc_region_certificate c,bad; fractal_cdc_region invalid={1.0,1.0,0.0,1.0};
+ fractal_cdc_region unsupported={1.0,1.5,0.0,0.25}; char a[1024],b[1024]; size_t na=0,nb=0;
+ CHECK(fractal_cdc_region_study_0_create(&c)==FRACTAL_OK);
+ CHECK(fractal_cdc_region_validate(&c.region)==FRACTAL_OK);
+ CHECK(fractal_cdc_region_validate(&invalid)==FRACTAL_ERROR_INVALID_SPEC);
+ CHECK(fractal_region_conventional_oracle(&c.region)==FRACTAL_REGION_CERTIFIED_ESCAPED);
+ CHECK(fractal_region_conventional_oracle(&unsupported)==FRACTAL_REGION_UNRESOLVED);
+ CHECK(fractal_cdc_region_certificate_validate(&c)==FRACTAL_OK);
+ CHECK(c.potential_before==1u && c.potential_after==0u && c.cdc_descent_step_count==1u);
+ CHECK(fractal_cdc_region_certificate_serialize(&c,a,sizeof(a),&na)==FRACTAL_OK);
+ CHECK(fractal_cdc_region_certificate_serialize(&c,b,sizeof(b),&nb)==FRACTAL_OK);
+ CHECK(na==nb && memcmp(a,b,na)==0 && strstr(a,"NEGATIVE_RESULT")!=NULL);
+ bad=c; bad.z2_real_lower=2.01; CHECK(fractal_cdc_region_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
+ bad=c; bad.guard_sound=false; CHECK(fractal_cdc_region_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
+ bad=c; bad.potential_after=1u; CHECK(fractal_cdc_region_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
+ bad=c; bad.cdc_descent_step_count=0u; CHECK(fractal_cdc_region_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
+}
+
 static void test_renderer_backends_and_manifest(void) {
  fractal_renderer legacy,cdc_renderer,invalid={0}; fractal_render_spec spec;
  fractal_render_manifest conventional,transitional_renderer,cdc,ouro; char ja[768],jb[768]; size_t na=0,nb=0;
@@ -163,7 +183,7 @@ static void test_foreign_binaries_are_data_only(void) {
  }
 }
 int main(void) {
- test_spec(); test_memory(); test_adapter(); test_computation_backends(); test_experiment_0_certificate(); test_renderer_backends_and_manifest(); test_milestone_files_preserved(); test_foreign_binaries_are_data_only();
+ test_spec(); test_memory(); test_adapter(); test_computation_backends(); test_experiment_0_certificate(); test_region_study(); test_renderer_backends_and_manifest(); test_milestone_files_preserved(); test_foreign_binaries_are_data_only();
  if(failures) fprintf(stderr,"%d native checks failed\n",failures);
  return failures ? EXIT_FAILURE : EXIT_SUCCESS;
 }
