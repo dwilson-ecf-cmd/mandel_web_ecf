@@ -6,6 +6,7 @@
 #include "fractal_computation.h"
 #include "fractal_cdc_certificate.h"
 #include "fractal_cdc_region_study.h"
+#include "fractal_cdc_two_child.h"
 #include "fractal/render_artifact.h"
 #include "fractal/render_failure.h"
 #include "fractal/render_job.h"
@@ -142,6 +143,55 @@ static void test_region_study(void) {
  bad=c; bad.cdc_descent_step_count=0u; CHECK(fractal_cdc_region_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
 }
 
+static void test_two_child_study(void) {
+ fractal_cdc_two_child_split split,bad_split;
+ fractal_cdc_two_child_certificate c,bad; char a[2048],b[2048]; size_t na=0,nb=0;
+ uint32_t obligations=0u; uint64_t potential=0u;
+ CHECK(fractal_cdc_two_child_split_create(&split)==FRACTAL_OK);
+ CHECK(fractal_cdc_two_child_split_validate(&split)==FRACTAL_OK);
+ CHECK(split.parent.real_min==2.0 && split.parent.real_max==2.25 && split.split_value==2.125);
+ CHECK(split.left.real_max==split.right.real_min);
+ CHECK(split.left.real_max-split.left.real_min < split.parent.real_max-split.parent.real_min);
+ CHECK(split.right.real_max-split.right.real_min < split.parent.real_max-split.parent.real_min);
+ CHECK(fractal_region_conventional_oracle(&split.left)==FRACTAL_REGION_CERTIFIED_ESCAPED);
+ CHECK(fractal_region_conventional_oracle(&split.right)==FRACTAL_REGION_CERTIFIED_ESCAPED);
+ CHECK(fractal_cdc_two_child_multiset_descends(2u,1u,1u));
+ CHECK(!fractal_cdc_two_child_multiset_descends(2u,2u,1u));
+ CHECK(!fractal_cdc_two_child_multiset_descends(2u,1u,2u));
+ CHECK(fractal_cdc_two_child_discharge(3u,1u,&obligations,&potential)==FRACTAL_OK);
+ CHECK(obligations==2u && potential==1u); /* one child discharged */
+ CHECK(fractal_cdc_two_child_discharge(3u,0u,&obligations,&potential)==FRACTAL_OK);
+ CHECK(obligations==3u && potential==2u); /* unresolved guards make no progress */
+ CHECK(fractal_cdc_two_child_discharge(3u,3u,&obligations,&potential)==FRACTAL_OK);
+ CHECK(obligations==0u && potential==0u); /* commuting batch discharge */
+ CHECK(fractal_cdc_two_child_discharge(4u,0u,&obligations,&potential)==FRACTAL_ERROR_INVALID_SPEC);
+ bad_split=split; bad_split.split_value=2.0;
+ CHECK(fractal_cdc_two_child_split_validate(&bad_split)==FRACTAL_ERROR_INVALID_SPEC);
+ bad_split=split; bad_split.left.real_max=bad_split.left.real_min;
+ CHECK(fractal_cdc_two_child_split_validate(&bad_split)==FRACTAL_ERROR_INVALID_SPEC);
+ bad_split=split; bad_split.right.real_min=2.0;
+ CHECK(fractal_cdc_two_child_split_validate(&bad_split)==FRACTAL_ERROR_INVALID_SPEC);
+ bad_split=split; bad_split.right_area_units=2u;
+ CHECK(fractal_cdc_two_child_split_validate(&bad_split)==FRACTAL_ERROR_INVALID_SPEC);
+ CHECK(fractal_cdc_two_child_certificate_create(&c)==FRACTAL_OK);
+ CHECK(fractal_cdc_two_child_certificate_validate(&c)==FRACTAL_OK);
+ CHECK(c.sequential_potential[0]==3u && c.sequential_potential[1]==2u &&
+  c.sequential_potential[2]==1u && c.sequential_potential[3]==0u);
+ CHECK(c.batch_potential[0]==3u && c.batch_potential[1]==2u && c.batch_potential[2]==0u);
+ CHECK(fractal_cdc_two_child_certificate_serialize(&c,a,sizeof(a),&na)==FRACTAL_OK);
+ CHECK(fractal_cdc_two_child_certificate_serialize(&c,b,sizeof(b),&nb)==FRACTAL_OK);
+ CHECK(na==nb && memcmp(a,b,na)==0 && strstr(a,"SUPPORTED_BRANCHING_DESCENT")!=NULL);
+ CHECK(strstr(a,"NEGATIVE_RESULT")!=NULL && strstr(a,"COMPOSITE_OBJECT_REQUIRED")!=NULL);
+ bad=c; bad.child_escape_guard[1]=false;
+ CHECK(fractal_cdc_two_child_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
+ bad=c; bad.child_discharged[1]=false;
+ CHECK(fractal_cdc_two_child_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
+ bad=c; bad.sequential_potential[1]=3u;
+ CHECK(fractal_cdc_two_child_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
+ bad=c; bad.cdc_descent_step_count=0u;
+ CHECK(fractal_cdc_two_child_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
+}
+
 static void test_renderer_backends_and_manifest(void) {
  fractal_renderer legacy,cdc_renderer,invalid={0}; fractal_render_spec spec;
  fractal_render_manifest conventional,transitional_renderer,cdc,ouro; char ja[768],jb[768]; size_t na=0,nb=0;
@@ -183,7 +233,7 @@ static void test_foreign_binaries_are_data_only(void) {
  }
 }
 int main(void) {
- test_spec(); test_memory(); test_adapter(); test_computation_backends(); test_experiment_0_certificate(); test_region_study(); test_renderer_backends_and_manifest(); test_milestone_files_preserved(); test_foreign_binaries_are_data_only();
+ test_spec(); test_memory(); test_adapter(); test_computation_backends(); test_experiment_0_certificate(); test_region_study(); test_two_child_study(); test_renderer_backends_and_manifest(); test_milestone_files_preserved(); test_foreign_binaries_are_data_only();
  if(failures) fprintf(stderr,"%d native checks failed\n",failures);
  return failures ? EXIT_FAILURE : EXIT_SUCCESS;
 }
