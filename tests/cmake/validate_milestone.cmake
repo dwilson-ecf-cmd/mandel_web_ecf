@@ -15,6 +15,12 @@ list(APPEND required
  "docs/research/cdc_two_child_multiset_progress.md" "docs/research/cdc_two_child_trace.md"
  "docs/research/cdc_two_child_failure_cases.md" "docs/research/cdc_two_child_certificate.md"
  "docs/research/cdc_two_child_decision.md")
+list(APPEND required
+ "docs/research/cdc_depth_two_regions.md" "docs/research/cdc_depth_two_local_ranks.md"
+ "docs/research/cdc_depth_two_prior_rank_analysis.md" "docs/research/cdc_depth_two_states.md"
+ "docs/research/cdc_depth_two_composition_rules.md" "docs/research/cdc_depth_two_multiset_composition.md"
+ "docs/research/cdc_depth_two_future_independence.md" "docs/research/cdc_depth_two_counterfactuals.md"
+ "docs/research/cdc_depth_two_certificate.md" "docs/research/cdc_depth_two_decision.md")
 foreach(path IN LISTS required)
  if(NOT EXISTS "${SOURCE_DIR}/${path}")
   message(FATAL_ERROR "required preserved/traceability file missing: ${path}")
