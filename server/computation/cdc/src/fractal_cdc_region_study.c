@@ -8,6 +8,12 @@ static bool selected(const fractal_cdc_region *r) {
   r->imaginary_min==0.0 && r->imaginary_max==0.25;
 }
 
+static bool selected_child(const fractal_cdc_region *r) {
+ return r && r->imaginary_min==0.0 && r->imaginary_max==0.25 &&
+  ((r->real_min==2.0 && r->real_max==2.125) ||
+   (r->real_min==2.125 && r->real_max==2.25));
+}
+
 fractal_result fractal_cdc_region_validate(const fractal_cdc_region *r) {
  if(!r)return FRACTAL_ERROR_INVALID_ARGUMENT;
  if(!isfinite(r->real_min)||!isfinite(r->real_max)||!isfinite(r->imaginary_min)||
@@ -20,7 +26,7 @@ fractal_region_classification fractal_region_conventional_oracle(const fractal_c
  double lower;
  if(fractal_cdc_region_validate(r)!=FRACTAL_OK)return FRACTAL_REGION_NUMERICALLY_UNCERTAIN;
  /* This deliberately narrow oracle recognizes only the exact dyadic study box. */
- if(!selected(r))return FRACTAL_REGION_UNRESOLVED;
+ if(!selected(r) && !selected_child(r))return FRACTAL_REGION_UNRESOLVED;
  lower=r->real_min*r->real_min-r->imaginary_max*r->imaginary_max+r->real_min;
  return lower>2.0 ? FRACTAL_REGION_CERTIFIED_ESCAPED : FRACTAL_REGION_UNRESOLVED;
 }

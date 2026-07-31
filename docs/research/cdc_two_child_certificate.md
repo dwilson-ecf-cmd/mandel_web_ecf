@@ -1,0 +1,5 @@
+# Two-child certificate
+
+Canonical certificate `cdc-two-child-study-v1` records parent/child endpoint bits and roles; real split and exact bit identity; half-open boundary ownership; coverage and disjoint-interior evidence; area units and rank identities; potential `3 -> 2`; both conventional lower bounds and guard identities; split-rule identity; sequential child discharge identities; proof-sheet updates; sequential `[3,2,1,0]` and batch `[3,2,0]` traces; terminal parent status; direct-orbit `NEGATIVE_RESULT`; and `COMPOSITE_OBJECT_REQUIRED`.
+
+Validation keeps these propositions separate: valid geometry; exact cover; strict rank decrease; multiset/token descent; each escape guard; each CDC discharge; and full parent resolution. A mismatch in any field rejects the certificate. Serialization is deterministic and does not hash passive notes into evidence. The split certificate never converts the inherited parent escape result into child discharge; the two conventional inequalities are separately checked.
