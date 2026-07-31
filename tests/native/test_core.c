@@ -3,9 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include "fractal/memory_backend.h"
+#include "fractal_computation.h"
 #include "fractal/render_artifact.h"
 #include "fractal/render_failure.h"
 #include "fractal/render_job.h"
+#include "fractal/render_manifest.h"
+#include "fractal_cdc_renderer.h"
 #include "fractal/worker_status.h"
 #include "fractal_cpp_adapter.h"
 
@@ -67,6 +70,68 @@ static void test_adapter(void) {
  renderer.vtable->shutdown(renderer.state);
 }
 
+
+static void test_computation_backends(void) {
+ fractal_computation_backend legacy,conventional,cdc,invalid={0};
+ fractal_computation_problem problem; fractal_point_input point={2.0,0.0},inside={0.0,0.0};
+ fractal_computation_cancellation cancellation={false}; fractal_point_result result;
+ CHECK(fractal_computation_backend_create(FRACTAL_COMPUTATION_BACKEND_LEGACY_REFERENCE,&legacy)==FRACTAL_OK);
+ CHECK(fractal_computation_backend_validate(&legacy)==FRACTAL_OK);
+ CHECK(legacy.metadata.kind==FRACTAL_COMPUTATION_BACKEND_LEGACY_REFERENCE);
+ CHECK(fractal_computation_backend_create(FRACTAL_COMPUTATION_BACKEND_CONVENTIONAL_C,&conventional)==FRACTAL_OK);
+ CHECK(strcmp(conventional.metadata.stable_identifier,"conventional-c")==0);
+ CHECK(fractal_computation_backend_create(FRACTAL_COMPUTATION_BACKEND_CDC_EXPERIMENTAL,&cdc)==FRACTAL_OK);
+ CHECK(fractal_computation_backend_create((fractal_computation_backend_kind)99,&invalid)==FRACTAL_ERROR_INVALID_ARGUMENT);
+ CHECK(fractal_computation_backend_string((fractal_computation_backend_kind)99)==NULL);
+ CHECK(fractal_computation_problem_init_experiment_0(&problem)==FRACTAL_OK);
+ CHECK(conventional.vtable->compute_point(&problem,&point,&cancellation,&result)==FRACTAL_OK);
+ CHECK(result.classification==FRACTAL_POINT_ESCAPED);
+ CHECK(result.conventional_iteration_count==2u && result.cdc_descent_step_count==0u);
+ CHECK(result.trace_count==3u && result.trace[0].z_real==0.0 && result.trace[1].z_real==2.0 && result.trace[2].z_real==6.0);
+ CHECK(result.final_z_real==6.0 && result.final_z_imaginary==0.0);
+ CHECK(conventional.vtable->compute_point(&problem,&inside,&cancellation,&result)==FRACTAL_OK);
+ CHECK(result.classification==FRACTAL_POINT_UNRESOLVED);
+ CHECK(result.classification!=FRACTAL_POINT_PROVEN_BOUNDED);
+ CHECK(cdc.vtable->compute_point(&problem,&point,&cancellation,&result)==FRACTAL_OK);
+ CHECK(result.classification==FRACTAL_POINT_UNRESOLVED && result.fallback_required);
+ CHECK(result.cdc_descent_step_count==0u && strstr(result.failure_reason,"no source-grounded")!=NULL);
+ cancellation.requested=true;
+ CHECK(conventional.vtable->compute_point(&problem,&point,&cancellation,&result)==FRACTAL_OK);
+ CHECK(result.classification==FRACTAL_POINT_CANCELLED);
+}
+
+static void test_renderer_backends_and_manifest(void) {
+ fractal_renderer legacy,cdc_renderer,invalid={0}; fractal_render_spec spec;
+ fractal_render_manifest conventional,transitional_renderer,cdc,ouro; char ja[768],jb[768]; size_t na=0,nb=0;
+ CHECK(fractal_renderer_create(FRACTAL_RENDERER_BACKEND_LEGACY_CPP,&legacy)==FRACTAL_OK);
+ CHECK(legacy.backend_kind==FRACTAL_RENDERER_BACKEND_LEGACY_CPP);
+ CHECK(fractal_renderer_create(FRACTAL_RENDERER_BACKEND_CDC_EXPERIMENTAL,&cdc_renderer)==FRACTAL_OK);
+ CHECK(fractal_renderer_validate(&cdc_renderer)==FRACTAL_OK);
+ CHECK(cdc_renderer.vtable->render_tile(cdc_renderer.state,0,0,0,1,1,NULL,0)==FRACTAL_ERROR_NOT_IMPLEMENTED);
+ CHECK(fractal_renderer_create((fractal_renderer_backend_kind)99,&invalid)==FRACTAL_ERROR_INVALID_ARGUMENT);
+ CHECK(fractal_render_spec_init_default(&spec)==FRACTAL_OK);
+ CHECK(fractal_render_manifest_init(&conventional,&spec,FRACTAL_COMPUTATION_BACKEND_CONVENTIONAL_C,FRACTAL_RENDERER_BACKEND_LEGACY_CPP,FRACTAL_MEMORY_BACKEND_SYSTEM)==FRACTAL_OK);
+ CHECK(conventional.cdc_reference_sha256[0]=='\0');
+ CHECK(fractal_render_manifest_init(&transitional_renderer,&spec,FRACTAL_COMPUTATION_BACKEND_CONVENTIONAL_C,FRACTAL_RENDERER_BACKEND_CDC_EXPERIMENTAL,FRACTAL_MEMORY_BACKEND_SYSTEM)==FRACTAL_OK);
+ CHECK(transitional_renderer.cdc_reference_sha256[0]=='\0');
+ CHECK(conventional.metrics.computation_backend==FRACTAL_COMPUTATION_BACKEND_CONVENTIONAL_C);
+ CHECK(fractal_render_manifest_init(&cdc,&spec,FRACTAL_COMPUTATION_BACKEND_CDC_EXPERIMENTAL,FRACTAL_RENDERER_BACKEND_LEGACY_CPP,FRACTAL_MEMORY_BACKEND_SYSTEM)==FRACTAL_OK);
+ CHECK(strcmp(cdc.cdc_reference_sha256,FRACTAL_CDC_PDF_SHA256)==0);
+ CHECK(cdc.metrics.renderer_backend==conventional.metrics.renderer_backend && cdc.metrics.memory_backend==conventional.metrics.memory_backend && cdc.metrics.computation_backend!=conventional.metrics.computation_backend);
+ CHECK(fractal_render_manifest_init(&ouro,&spec,FRACTAL_COMPUTATION_BACKEND_CDC_EXPERIMENTAL,FRACTAL_RENDERER_BACKEND_LEGACY_CPP,FRACTAL_MEMORY_BACKEND_OURO)==FRACTAL_OK);
+ CHECK(ouro.metrics.computation_backend==cdc.metrics.computation_backend && ouro.metrics.renderer_backend==cdc.metrics.renderer_backend && ouro.metrics.memory_backend!=cdc.metrics.memory_backend);
+ CHECK(fractal_render_manifest_serialize_identity_json(&cdc,ja,sizeof(ja),&na)==FRACTAL_OK);
+ CHECK(fractal_render_manifest_serialize_identity_json(&cdc,jb,sizeof(jb),&nb)==FRACTAL_OK);
+ CHECK(na==nb && memcmp(ja,jb,na)==0 && strstr(ja,"\"computation_backend\":\"cdc-experimental\"")!=NULL);
+}
+
+static void test_milestone_files_preserved(void) {
+ const char *paths[]={"CDC.pdf","server.py","server.cpp","render.cpp","render_engine.cpp","index.html",
+  "app_server","render","render_engine","frames/frame_0000.bmp","render.mp4",
+  "docs/cdc_reference_index.md","docs/cdc_interpretation_ledger.md"}; size_t i;
+ for(i=0;i<sizeof(paths)/sizeof(paths[0]);++i) { FILE *f=fopen(paths[i],"rb"); long size=-1; CHECK(f!=NULL); if(f){ CHECK(fseek(f,0,SEEK_END)==0); size=ftell(f); fclose(f); CHECK(size>0); } }
+}
+
 static void test_foreign_binaries_are_data_only(void) {
  const char *names[]={"app_server","render","render_engine"}; size_t i;
  for(i=0;i<sizeof(names)/sizeof(names[0]);++i) {
@@ -76,7 +141,7 @@ static void test_foreign_binaries_are_data_only(void) {
  }
 }
 int main(void) {
- test_spec(); test_memory(); test_adapter(); test_foreign_binaries_are_data_only();
+ test_spec(); test_memory(); test_adapter(); test_computation_backends(); test_renderer_backends_and_manifest(); test_milestone_files_preserved(); test_foreign_binaries_are_data_only();
  if(failures) fprintf(stderr,"%d native checks failed\n",failures);
  return failures ? EXIT_FAILURE : EXIT_SUCCESS;
 }

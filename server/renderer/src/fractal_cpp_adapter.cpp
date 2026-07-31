@@ -10,5 +10,5 @@ const fractal_renderer_vtable table = {unavailable0, validate, begin_job, frame,
 }
 extern "C" fractal_result fractal_cpp_adapter_create(fractal_renderer *renderer) {
  if (renderer == nullptr) return FRACTAL_ERROR_INVALID_ARGUMENT;
- renderer->state=nullptr; renderer->vtable=&table; return FRACTAL_OK;
+ renderer->state=nullptr; renderer->vtable=&table; renderer->backend_kind=FRACTAL_RENDERER_BACKEND_LEGACY_CPP; return FRACTAL_OK;
 }
