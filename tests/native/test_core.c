@@ -4,6 +4,7 @@
 #include <string.h>
 #include "fractal/memory_backend.h"
 #include "fractal_computation.h"
+#include "fractal_cdc_certificate.h"
 #include "fractal/render_artifact.h"
 #include "fractal/render_failure.h"
 #include "fractal/render_job.h"
@@ -94,10 +95,31 @@ static void test_computation_backends(void) {
  CHECK(result.classification!=FRACTAL_POINT_PROVEN_BOUNDED);
  CHECK(cdc.vtable->compute_point(&problem,&point,&cancellation,&result)==FRACTAL_OK);
  CHECK(result.classification==FRACTAL_POINT_UNRESOLVED && result.fallback_required);
- CHECK(result.cdc_descent_step_count==0u && strstr(result.failure_reason,"no source-grounded")!=NULL);
+ CHECK(result.cdc_descent_step_count==0u && strcmp(result.evidence_identity,"CDC-EXPERIMENT-0-NEGATIVE-RESULT")==0);
  cancellation.requested=true;
  CHECK(conventional.vtable->compute_point(&problem,&point,&cancellation,&result)==FRACTAL_OK);
  CHECK(result.classification==FRACTAL_POINT_CANCELLED);
+}
+
+static void test_experiment_0_certificate(void) {
+ fractal_cdc_experiment_0_certificate c,bad; char a[768],b[768]; size_t na=0,nb=0; uint64_t raw;
+ CHECK(fractal_cdc_experiment_0_certificate_create(&c)==FRACTAL_OK);
+ CHECK(fractal_cdc_experiment_0_certificate_validate(&c)==FRACTAL_OK);
+ memcpy(&raw,&c.trace_real[0],sizeof(raw)); CHECK(raw==UINT64_C(0));
+ memcpy(&raw,&c.trace_real[1],sizeof(raw)); CHECK(raw==UINT64_C(0x4000000000000000));
+ memcpy(&raw,&c.trace_real[2],sizeof(raw)); CHECK(raw==UINT64_C(0x4018000000000000));
+ CHECK(c.trace_real[2]*c.trace_real[2] > c.escape_radius*c.escape_radius);
+ CHECK(c.cdc_descent_step_count==0u && c.mapping_decision==FRACTAL_CDC_MAPPING_NEGATIVE_RESULT);
+ CHECK(fractal_cdc_experiment_0_certificate_serialize(&c,a,sizeof(a),&na)==FRACTAL_OK);
+ CHECK(fractal_cdc_experiment_0_certificate_serialize(&c,b,sizeof(b),&nb)==FRACTAL_OK);
+ CHECK(na==nb && memcmp(a,b,na)==0 && strstr(a,"NEGATIVE_RESULT")!=NULL);
+ bad=c; bad.present_fields=0u; CHECK(fractal_cdc_experiment_0_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
+ bad=c; bad.c_real=3.0; CHECK(fractal_cdc_experiment_0_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
+ bad=c; bad.formula=(fractal_formula_kind)99; CHECK(fractal_cdc_experiment_0_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
+ bad=c; bad.escape_radius=3.0; CHECK(fractal_cdc_experiment_0_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
+ bad=c; bad.trace_real[2]=7.0; CHECK(fractal_cdc_experiment_0_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
+ bad=c; bad.cdc_descent_step_count=1u; CHECK(fractal_cdc_experiment_0_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
+ CHECK(fractal_cdc_experiment_0_certificate_serialize(&bad,a,sizeof(a),&na)==FRACTAL_ERROR_INVALID_SPEC);
 }
 
 static void test_renderer_backends_and_manifest(void) {
@@ -141,7 +163,7 @@ static void test_foreign_binaries_are_data_only(void) {
  }
 }
 int main(void) {
- test_spec(); test_memory(); test_adapter(); test_computation_backends(); test_renderer_backends_and_manifest(); test_milestone_files_preserved(); test_foreign_binaries_are_data_only();
+ test_spec(); test_memory(); test_adapter(); test_computation_backends(); test_experiment_0_certificate(); test_renderer_backends_and_manifest(); test_milestone_files_preserved(); test_foreign_binaries_are_data_only();
  if(failures) fprintf(stderr,"%d native checks failed\n",failures);
  return failures ? EXIT_FAILURE : EXIT_SUCCESS;
 }

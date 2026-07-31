@@ -25,4 +25,4 @@ The study conclusion must be exactly one of:
 - `UNRESOLVED_MAPPING`: required obligations cannot yet be stated or justified.
 - `NEGATIVE_RESULT`: review establishes that the proposed mapping is invalid or mere relabeling.
 
-The current result is `UNRESOLVED_MAPPING`. A negative result remains acceptable. Moving to a point corpus requires the gates in `computation_architecture.md`; performance is outside this experiment.
+The completed focused study records `NEGATIVE_RESULT`: the conventional trace and its finite-precision evidence are justified, but all studied progress structures are cosmetic, circular, or unsupported as CDC progress. The CDC backend therefore still returns conventional classification `UNRESOLVED`, requires fallback, and reports zero CDC descent steps, now with an explicit negative-result identity. Moving to a point corpus requires the gates in `computation_architecture.md`; performance is outside this experiment.
