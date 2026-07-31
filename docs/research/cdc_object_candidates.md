@@ -1,0 +1,16 @@
+# CDC object candidates
+
+Grounding labels are `SOURCE_DEFINED`, `ENGINEERING_INTERPRETATION`, and `UNSUPPORTED`. CDC supplies an abstract state space, not any of these fractal objects (Definition 5.1, printed p.12).
+
+| Candidate | Object definition | Input domain | Transition | Evidence | Potential | Invariant | Terminal state | Fractal meaning | Source status | Principal risk |
+|---|---|---|---|---|---|---|---|---|---|---|
+| A: complex-plane region | Bounded represented `R subset C` | Valid nonempty finite boxes | classify or replace by cells | Analytic/enclosure theorem | none intrinsic | children cover parent | region claim | subject of quantified claim | engineering interpretation | geometry does not descend merely by subdivision |
+| B: interval orbit enclosure | `(R,n,Z_n)` with `Z_n` enclosing all values | sound enclosure operations | propagate `Z_n` | outward rounding/exact inequalities | none established | enclosure inclusion | escape guard or unresolved | conventional region witness | engineering interpretation | wrapping growth; interval arithmetic mislabeled CDC |
+| C: proof obligation | `prove ESCAPED(R)`, `prove BOUNDED(R)`, or return unresolved | finite typed claims/rules | verified discharge/decompose | rule premises and verifier | missing required claims | discharged claims are sound | all obligations discharged | classification proof | proof-sheet inspired, engineering mapping | deficit can encode a known script |
+| D: guarded partition | finite unresolved cells plus evidence | finite valid partitions | guard/classify/subdivide | coverage and guard evidence | multiset diameter candidate | coverage and sound labels | no unresolved cells | adaptive region classification | choice is source-defined; cells are not | branching defeats count; nontermination |
+| E: certificate state | typed claims, verified/missing evidence, children | fixed finite certificate schema | validate and install evidence | independent deterministic checks | schema deficit | only verified evidence supports claims | valid proof sheet | audit/proof construction | proof sheet source-defined; representation inferred | storage masquerading as construction |
+| F: finite rule-work collection | finite multiset of typed proof obligations | rules with independently checkable premises | guarded rewrite | per-rule certificate | multiset of rule ranks only if supplied | semantic equivalence | empty collection | generic proof search | guarded choice/composition analogy | no fractal ranks supplied by source |
+
+## Applicability of source concepts
+
+Values can be CDC states but receive no Mandelbrot potential. Sets, partitions, obligations, intervals, and finite collections are admissible only because `X` is abstract, not because the PDF names them. Guarded choice applies once sound guards exist; composition applies only after component certificates. Invariants naturally express enclosure/coverage and proof soundness. Parallel batches and scheduling concern established commuting rules and add nothing to this study. Proof sheets directly organize evidence. Bisection supports interval-width descent only with its sign-change/continuity premises, absent here. The fixed-point pattern requires a known fixed point and contraction and does not apply to the Mandelbrot recurrence.
