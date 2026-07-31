@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mandelbrot Studio</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h2>🌀 Mandelbrot Studio</h2>
+
+    <!-- Контейнер просмотра с перетаскиваемым прицелом -->
+    <div class="viewer-container">
+        <div class="viewer" id="viewer">
+            <img id="fractal" src="render.bmp" alt="Рендеринг...">
+            <div class="crosshair" id="crosshair"></div>
+        </div>
+    </div>
+
+    <!-- Навигация -->
+    <div class="dpad-container">
+        <div class="dpad-row">
+            <button class="dpad-btn" onclick="moveCenter(0, -1)">⬆️</button>
+        </div>
+        <div class="dpad-row">
+            <button class="dpad-btn" onclick="moveCenter(-1, 0)">⬅️</button>
+            <button class="dpad-btn dpad-center" onclick="resetView()">🎯</button>
+            <button class="dpad-btn" onclick="moveCenter(1, 0)">➡️</button>
+        </div>
+        <div class="dpad-row">
+            <button class="dpad-btn" onclick="moveCenter(0, 1)">⬇️</button>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <div class="param-group">
+            <label for="step">Шаг сдвига:</label>
+            <select id="step">
+                <option value="0.5">50% (Быстрый)</option>
+                <option value="0.25">25% (Средний)</option>
+                <option value="0.10" selected>10% (Плавный)</option>
+                <option value="0.05">5% (Точный)</option>
+                <option value="0.01">1% (Микро)</option>
+            </select>
+        </div>
+
+        <div class="param-group">
+            <label for="formula">Формула:</label>
+            <select id="formula">
+                <option value="mandelbrot">Мандельброт</option>
+                <option value="julia">Жюлиа (Julia)</option>
+                <option value="burning_ship">Горящий корабль</option>
+                <option value="tricorn">Трайкорн (Tricorn)</option>
+                <option value="phoenix">Феникс (Phoenix)</option>
+            </select>
+        </div>
+
+        <div class="param-group">
+            <label for="palette">Палитра:</label>
+            <select id="palette">
+                <option value="dstep">✨ DSTEP</option>
+                <option value="rainbow">Радуга</option>
+                <option value="fire">Огонь</option>
+                <option value="ocean">Океан</option>
+                <option value="neon">Неон</option>
+                <option value="magma">Магма</option>
+                <option value="grayscale">Ч/Б</option>
+            </select>
+        </div>
+
+        <div class="param-group">
+            <label for="zoom">Zoom:</label>
+            <input type="number" id="zoom" value="1" step="0.5">
+        </div>
+        
+        <div class="param-group">
+            <label for="cx">Центр X:</label>
+            <input type="number" id="cx" value="-0.75" step="0.0001">
+        </div>
+        
+        <div class="param-group">
+            <label for="cy">Центр Y:</label>
+            <input type="number" id="cy" value="0.0" step="0.0001">
+        </div>
+
+        <div class="param-group">
+            <label for="iter">Детализация:</label>
+            <input type="number" id="iter" value="150" step="50">
+        </div>
+
+        <div class="param-group">
+            <label for="sec">MP4 (сек):</label>
+            <input type="number" id="sec" value="3" min="1" max="10">
+        </div>
+
+        <button class="btn" onclick="updateRender('image')">🚀 Перерисовать</button>
+        <button class="btn btn-secondary" onclick="updateRender('hd')">📸 Скачать HD 1080p</button>
+        <button class="btn btn-video" onclick="updateRender('video')">🎬 Сгенерировать MP4</button>
+    </div>
+
+    <script>
+        function updateRender(mode = 'image') {
+            let z = document.getElementById('zoom').value;
+            let x = document.getElementById('cx').value;
+            let y = document.getElementById('cy').value;
+            let f = document.getElementById('formula').value;
+            let p = document.getElementById('palette').value;
+            let it = document.getElementById('iter').value;
+            let sec = document.getElementById('sec').value;
+
+            let imgEl = document.getElementById('fractal');
+            imgEl.style.opacity = '0.5';
+
+            fetch(`/api/render?mode=${mode}&zoom=${z}&x=${x}&y=${y}&formula=${f}&palette=${p}&iter=${it}&sec=${sec}`)
+                .then(res => res.text())
+                .then(status => {
+                    imgEl.style.opacity = '1';
+                    resetCrosshairPosition();
+                    if (mode === 'image') {
+                        imgEl.src = 'render.bmp?t=' + Date.now();
+                    } else if (mode === 'hd') {
+                        window.open('/render_hd.bmp', '_blank');
+                    } else if (mode === 'video') {
+                        window.open('/render.mp4', '_blank');
+                    }
+                });
+        }
+
+        function moveCenter(dirX, dirY) {
+            let zoom = parseFloat(document.getElementById('zoom').value);
+            let cx = parseFloat(document.getElementById('cx').value);
+            let cy = parseFloat(document.getElementById('cy').value);
+            let stepFactor = parseFloat(document.getElementById('step').value);
+
+            let scale = 4.0 / zoom;
+            let aspect = 800.0 / 600.0;
+
+            let shiftX = dirX * (scale * aspect) * stepFactor;
+            let shiftY = dirY * scale * stepFactor;
+
+            document.getElementById('cx').value = (cx + shiftX).toFixed(6);
+            document.getElementById('cy').value = (cy + shiftY).toFixed(6);
+
+            updateRender('image');
+        }
+
+        function resetView() {
+            document.getElementById('cx').value = "-0.75";
+            document.getElementById('cy').value = "0.0";
+            document.getElementById('zoom').value = "1";
+            updateRender('image');
+        }
+
+        // Логика перемещения крестика пальцем по экрану
+        const viewer = document.getElementById('viewer');
+        const crosshair = document.getElementById('crosshair');
+
+        function resetCrosshairPosition() {
+            crosshair.style.left = '50%';
+            crosshair.style.top = '50%';
+        }
+
+        function handlePointerMove(e) {
+            let rect = viewer.getBoundingClientRect();
+            let x = e.clientX - rect.left;
+            let y = e.clientY - rect.top;
+
+            // Ограничение движения внутри картинки
+            x = Math.max(0, Math.min(x, rect.width));
+            y = Math.max(0, Math.min(y, rect.height));
+
+            crosshair.style.left = `${x}px`;
+            crosshair.style.top = `${y}px`;
+
+            // Расчёт новых математических координат по положению крестика
+            let normX = (x / rect.width) - 0.5;
+            let normY = (y / rect.height) - 0.5;
+
+            let zoom = parseFloat(document.getElementById('zoom').value);
+            let cx = parseFloat(document.getElementById('cx').value);
+            let cy = parseFloat(document.getElementById('cy').value);
+
+            let scale = 4.0 / zoom;
+            let aspect = 800.0 / 600.0;
+
+            let targetX = cx + (normX * scale * aspect);
+            let targetY = cy + (normY * scale);
+
+            document.getElementById('cx').value = targetX.toFixed(6);
+            document.getElementById('cy').value = targetY.toFixed(6);
+        }
+
+        viewer.addEventListener('pointerdown', (e) => {
+            viewer.setPointerCapture(e.pointerId);
+            handlePointerMove(e);
+            viewer.addEventListener('pointermove', handlePointerMove);
+        });
+
+        viewer.addEventListener('pointerup', (e) => {
+            viewer.releasePointerCapture(e.pointerId);
+            viewer.removeEventListener('pointermove', handlePointerMove);
+        });
+    </script>
+</body>
+</html>

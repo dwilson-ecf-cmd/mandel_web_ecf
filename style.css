@@ -1,0 +1,153 @@
+body {
+    background-color: #0d0e12;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 10px;
+    box-sizing: border-box;
+    touch-action: manipulation;
+}
+h2 {
+    color: #00d2ff;
+    margin: 5px 0 10px 0;
+    font-size: 20px;
+    text-shadow: 0 0 10px rgba(0,210,255,0.3);
+}
+.viewer-container {
+    position: relative;
+    max-width: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+.viewer {
+    position: relative;
+    border: 2px solid #00d2ff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+    background: #000;
+    touch-action: none; /* Запрещаем скролл при перетаскивании крестика */
+    width: 100%;
+    max-width: 500px;
+}
+img {
+    display: block;
+    width: 100%;
+    height: auto;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* Настраиваемый интерактивный прицел */
+.crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 26px;
+    height: 26px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+.crosshair::before, .crosshair::after {
+    content: '';
+    position: absolute;
+    background: #00d2ff;
+    box-shadow: 0 0 4px #000;
+}
+.crosshair::before {
+    top: 12px; left: 0; width: 26px; height: 2px;
+}
+.crosshair::after {
+    left: 12px; top: 0; width: 2px; height: 26px;
+}
+
+/* Кнопочный джойстик */
+.dpad-container {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+.dpad-row {
+    display: flex;
+    gap: 6px;
+}
+.dpad-btn {
+    background: #181922;
+    border: 1px solid #00d2ff;
+    color: #fff;
+    width: 44px;
+    height: 40px;
+    border-radius: 8px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.dpad-btn:active {
+    background: #00d2ff;
+    transform: scale(0.95);
+}
+.dpad-center {
+    border-color: #ff416c;
+}
+
+.controls-panel {
+    background: #15161e;
+    border: 1px solid #252736;
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 12px;
+    width: 100%;
+    max-width: 500px;
+    box-sizing: border-box;
+}
+.param-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+label {
+    font-size: 13px;
+    color: #9a9eb0;
+}
+input[type="number"], select {
+    background: #0b0c10;
+    border: 1px solid #00d2ff;
+    color: #fff;
+    padding: 6px 8px;
+    border-radius: 6px;
+    width: 150px;
+    font-size: 13px;
+    box-sizing: border-box;
+    text-align: right;
+}
+.btn {
+    width: 100%;
+    margin-top: 6px;
+    background: linear-gradient(135deg, #00d2ff, #0072ff);
+    color: #fff;
+    border: none;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.btn-secondary {
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+}
+.btn-video {
+    background: linear-gradient(135deg, #ff416c, #ff4b2b);
+}
+.btn:active {
+    transform: scale(0.98);
+}
