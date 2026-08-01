@@ -1,0 +1,80 @@
+#ifndef FRACTAL_SOCKETABLE_RUNTIME_H
+#define FRACTAL_SOCKETABLE_RUNTIME_H
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include "fractal/module.h"
+#include "fractal/memory_backend.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+typedef enum fractal_point_class { FRACTAL_CLASS_ESCAPED=0,FRACTAL_CLASS_BOUNDED,FRACTAL_CLASS_UNRESOLVED,FRACTAL_CLASS_CANCELLED,FRACTAL_CLASS_FAILED } fractal_point_class;
+typedef enum fractal_pixel_format { FRACTAL_PIXEL_BGR8=0 } fractal_pixel_format;
+typedef struct fractal_scalar { unsigned char storage[8]; } fractal_scalar;
+typedef struct fractal_complex_state { fractal_scalar zr,zi,cr,ci,radius_squared; } fractal_complex_state;
+typedef struct fractal_formula_parameters { const char *type_id; const void *data; size_t size; } fractal_formula_parameters;
+typedef struct fractal_mandelbrot_parameters { double escape_radius; } fractal_mandelbrot_parameters;
+typedef struct fractal_julia_parameters { double constant_real,constant_imaginary,escape_radius; } fractal_julia_parameters;
+typedef struct fractal_point_result_compact { uint32_t steps; uint8_t classification; uint8_t reserved[3]; } fractal_point_result_compact;
+typedef struct fractal_field { uint32_t width,height; size_t stride; fractal_point_result_compact *samples; uint32_t completed_rows; bool complete; } fractal_field;
+typedef struct fractal_pixel_buffer { uint32_t width,height; size_t stride; fractal_pixel_format format; unsigned char *pixels; } fractal_pixel_buffer;
+typedef struct fractal_cancellation { bool requested; } fractal_cancellation;
+struct fractal_runtime_modules;
+
+typedef struct fractal_numeric_vtable { const fractal_module_descriptor *descriptor; uint32_t precision_bits; size_t scalar_size,scalar_alignment;
+ fractal_result (*from_double)(double,fractal_scalar*); fractal_result (*to_double)(const fractal_scalar*,double*);
+ fractal_result (*add)(const fractal_scalar*,const fractal_scalar*,fractal_scalar*); fractal_result (*subtract)(const fractal_scalar*,const fractal_scalar*,fractal_scalar*);
+ fractal_result (*multiply)(const fractal_scalar*,const fractal_scalar*,fractal_scalar*); bool (*finite)(const fractal_scalar*);
+ fractal_result (*serialize)(const fractal_scalar*,char*,size_t,size_t*); } fractal_numeric_vtable;
+typedef struct fractal_formula_vtable { const fractal_module_descriptor *descriptor; uint64_t required_numeric_capabilities;
+ fractal_result (*validate_parameters)(const fractal_formula_parameters*); size_t (*state_size)(void); size_t (*state_alignment)(void);
+ fractal_result (*initialize_state)(const fractal_numeric_vtable*,const fractal_formula_parameters*,double,double,void*);
+ fractal_result (*step)(const fractal_numeric_vtable*,void*); fractal_result (*classify)(const fractal_numeric_vtable*,const void*,fractal_point_class*);
+ fractal_result (*serialize_parameters)(const fractal_formula_parameters*,char*,size_t,size_t*); } fractal_formula_vtable;
+typedef struct fractal_compute_vtable { const fractal_module_descriptor *descriptor; uint64_t required_formula_capabilities,required_numeric_capabilities;
+ fractal_result (*point)(const fractal_formula_vtable*,const fractal_numeric_vtable*,const fractal_formula_parameters*,double,double,uint32_t,const fractal_cancellation*,fractal_point_result_compact*); } fractal_compute_vtable;
+typedef struct fractal_refinement_vtable { const fractal_module_descriptor *descriptor; bool available; } fractal_refinement_vtable;
+typedef void (*fractal_progress_fn)(uint32_t completed,uint32_t total,void *context);
+struct fractal_job_spec;
+typedef struct fractal_scheduler_vtable { const fractal_module_descriptor *descriptor; uint64_t required_compute_capabilities,produced_capabilities;
+ fractal_result (*execute)(const struct fractal_runtime_modules*,const struct fractal_job_spec*,fractal_field*,const fractal_cancellation*,fractal_progress_fn,void*); } fractal_scheduler_vtable;
+typedef struct fractal_raster_vtable { const fractal_module_descriptor *descriptor; uint64_t accepted_field_capabilities,produced_capabilities;
+ fractal_result (*rasterize)(const fractal_field*,uint32_t,fractal_pixel_buffer*); } fractal_raster_vtable;
+typedef struct fractal_write_sink { void *context; fractal_result (*write)(void*,const void*,size_t); } fractal_write_sink;
+typedef struct fractal_encoder_vtable { const fractal_module_descriptor *descriptor; uint64_t accepted_pixel_capabilities;
+ fractal_result (*encode)(const fractal_pixel_buffer*,fractal_write_sink*); } fractal_encoder_vtable;
+typedef enum fractal_telemetry_event_kind { FRACTAL_EVENT_JOB_START=0,FRACTAL_EVENT_PROGRESS,FRACTAL_EVENT_JOB_END,FRACTAL_EVENT_COMPATIBILITY_REJECTION,FRACTAL_EVENT_ARTIFACT_COMPLETE } fractal_telemetry_event_kind;
+typedef struct fractal_telemetry_event { fractal_telemetry_event_kind kind; uint64_t value; fractal_result result; } fractal_telemetry_event;
+typedef struct fractal_telemetry_vtable { const fractal_module_descriptor *descriptor; void (*emit)(void*,const fractal_telemetry_event*); } fractal_telemetry_vtable;
+typedef struct fractal_platform_vtable { const fractal_module_descriptor *descriptor; } fractal_platform_vtable;
+typedef struct fractal_memory_vtable { const fractal_module_descriptor *descriptor; } fractal_memory_vtable;
+
+typedef struct fractal_problem_spec { const char *formula_id; fractal_formula_parameters parameters; uint32_t maximum_steps; } fractal_problem_spec;
+typedef struct fractal_view_spec { double center_real,center_imaginary,scale; uint32_t width,height; } fractal_view_spec;
+typedef struct fractal_raster_spec { const char *palette_id; fractal_pixel_format pixel_format; } fractal_raster_spec;
+typedef struct fractal_artifact_spec { const char *encoder_id,*output_name; } fractal_artifact_spec;
+typedef struct fractal_job_spec { fractal_problem_spec problem; fractal_view_spec view; fractal_raster_spec raster; fractal_artifact_spec artifact; } fractal_job_spec;
+typedef struct fractal_runtime_modules { const fractal_formula_vtable *formula; const fractal_numeric_vtable *numeric; const fractal_compute_vtable *compute;
+ const fractal_refinement_vtable *refinement; const fractal_scheduler_vtable *scheduler; const fractal_raster_vtable *raster; const fractal_encoder_vtable *encoder;
+ const fractal_memory_vtable *memory_module; fractal_memory_backend *memory; const fractal_telemetry_vtable *telemetry; void *telemetry_state; const fractal_platform_vtable *platform; } fractal_runtime_modules;
+typedef struct fractal_runtime_output { fractal_field field; fractal_pixel_buffer pixels; uint64_t field_checksum,pixel_checksum,artifact_checksum; size_t artifact_bytes; } fractal_runtime_output;
+
+extern const fractal_formula_vtable fractal_formula_mandelbrot,fractal_formula_julia;
+extern const fractal_numeric_vtable fractal_numeric_binary64;
+extern const fractal_compute_vtable fractal_compute_conventional;
+extern const fractal_refinement_vtable fractal_refinement_none,fractal_refinement_cdc_unavailable;
+extern const fractal_scheduler_vtable fractal_scheduler_serial;
+extern const fractal_raster_vtable fractal_raster_native;
+extern const fractal_encoder_vtable fractal_encoder_bmp;
+extern const fractal_memory_vtable fractal_memory_system_module,fractal_memory_ouro_unavailable_module;
+extern const fractal_telemetry_vtable fractal_telemetry_noop;
+extern const fractal_platform_vtable fractal_platform_host;
+fractal_result fractal_runtime_validate(const fractal_runtime_modules*);
+fractal_result fractal_job_spec_validate(const fractal_runtime_modules*,const fractal_job_spec*);
+fractal_result fractal_runtime_render(const fractal_runtime_modules*,const fractal_job_spec*,fractal_write_sink*,const fractal_cancellation*,fractal_runtime_output*);
+uint64_t fractal_checksum64(const void*,size_t);
+fractal_result fractal_runtime_manifest(const fractal_runtime_modules*,const fractal_job_spec*,const fractal_runtime_output*,char*,size_t,size_t*);
+#ifdef __cplusplus
+}
+#endif
+#endif
