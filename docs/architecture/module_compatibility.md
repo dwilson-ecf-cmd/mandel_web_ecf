@@ -19,3 +19,9 @@ encoder emits a bottom-up BMP v3 stream and adds deterministic zero row padding.
 ## Registry and artifact output
 
 Registry initialization rejects malformed IDs, null descriptors or implementations, unsupported ABI, invalid kinds, and duplicate IDs within a kind. Registry-driven assembly resolves every required typed selection and rejects unavailable entries before runtime validation. Stream BMP advertises `ENCODER_STREAM_OUTPUT`; sinks advertise binary bytes, commit/abort, and exactly the destination classes they implement. Artifact-sink compatibility is checked at the socket boundary rather than overloading encoder or platform identity.
+
+## Analyzer compatibility
+
+`ANALYZER` is resolved independently by kind plus stable ID. The installed pass-through module advertises only compatible-field production, exact value preservation, and cancellation. Assembly rejects missing, wrong-kind, unavailable, ABI-invalid, or descriptor/implementation-mismatched analyzers. The concrete iteration/classification descriptor is validated before analysis and raster consumes only the final compatible view.
+
+The escape-summary module additionally requires whole-field processing and one record slot, and advertises record production without claiming streaming rows. Its request rejects copy mode, missing preservation/record requirements, or zero capacity. Unknown field formats/versions and unknown classification tags are invalid.
