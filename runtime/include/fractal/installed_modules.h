@@ -1,0 +1,8 @@
+#ifndef FRACTAL_INSTALLED_MODULES_H
+#define FRACTAL_INSTALLED_MODULES_H
+#include "fractal/module_registry.h"
+#include "fractal/socketable_runtime.h"
+typedef struct fractal_runtime_selection { const char *formula,*numeric,*compute,*refinement,*scheduler,*raster,*encoder,*memory,*telemetry,*platform; } fractal_runtime_selection;
+fractal_result fractal_installed_modules_registry(fractal_module_registry *);
+fractal_result fractal_runtime_assemble(const fractal_module_registry *,const fractal_runtime_selection *,fractal_memory_backend *,fractal_runtime_modules *);
+#endif

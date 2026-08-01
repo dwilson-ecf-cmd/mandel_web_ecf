@@ -15,3 +15,7 @@ does not perform dynamic discovery or negotiate versions.
 BGR8 means three consecutive bytes in blue, green, red order and has no machine-word
 endianness dependency. The raster buffer is top-down and tightly packed. The BMP
 encoder emits a bottom-up BMP v3 stream and adds deterministic zero row padding.
+
+## Registry and artifact output
+
+Registry initialization rejects malformed IDs, null descriptors or implementations, unsupported ABI, invalid kinds, and duplicate IDs within a kind. Registry-driven assembly resolves every required typed selection and rejects unavailable entries before runtime validation. Stream BMP advertises `ENCODER_STREAM_OUTPUT`; sinks advertise binary bytes, commit/abort, and exactly the destination classes they implement. Artifact-sink compatibility is checked at the socket boundary rather than overloading encoder or platform identity.
