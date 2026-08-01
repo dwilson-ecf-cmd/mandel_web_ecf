@@ -93,6 +93,15 @@ Current limitations and open provenance questions are recorded in
 `docs/repository_discovery.md`; model semantics are in
 `docs/fractal_studio_model.md`.
 
+## Socketable native runtime
+
+The native vertical slice now assembles formula, numeric, compute, refinement,
+scheduler, raster, encoder, memory, telemetry, and platform sockets before work
+begins. Mandelbrot and Julia share the same binary64 scalar compute, row-major
+scheduler, formula-independent rasterizer, and deterministic BMP encoder. The
+legacy APIs remain compatibility boundaries. Architecture, module identities, and
+golden checksums are recorded in `docs/architecture/socketable_runtime.md`.
+
 ## Current product direction
 
 The future target is a dedicated Android application, not Termux. Existing Android/Termux

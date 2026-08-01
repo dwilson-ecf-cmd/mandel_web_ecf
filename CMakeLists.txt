@@ -12,6 +12,7 @@ add_library(fractal_core STATIC
  shared/src/result.c shared/src/render_spec.c shared/src/render_manifest.c shared/src/render_progress.c
  shared/src/render_job.c shared/src/worker_status.c shared/src/render_artifact.c
  shared/src/render_failure.c runtime/src/memory_backend.c
+ shared/src/module.c runtime/src/socketable_runtime.c
  server/computation/src/fractal_computation.c server/computation/cdc/src/fractal_cdc_computation.c
  server/computation/cdc/src/fractal_cdc_certificate.c
  server/computation/cdc/src/fractal_cdc_region_study.c
@@ -35,6 +36,10 @@ if(BUILD_TESTING)
  target_link_libraries(fractal_core_tests PRIVATE fractal_core fractal_renderer_adapter)
  target_compile_options(fractal_core_tests PRIVATE ${FRACTAL_WARNINGS})
  add_test(NAME fractal_core_tests COMMAND fractal_core_tests)
+ add_executable(socketable_runtime_tests tests/native/test_socketable_runtime.c)
+ target_link_libraries(socketable_runtime_tests PRIVATE fractal_core)
+ target_compile_options(socketable_runtime_tests PRIVATE ${FRACTAL_WARNINGS})
+ add_test(NAME socketable_runtime_tests COMMAND socketable_runtime_tests)
  add_test(NAME milestone_boundaries COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/tests/cmake/validate_milestone.cmake)
  set_tests_properties(fractal_core_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
