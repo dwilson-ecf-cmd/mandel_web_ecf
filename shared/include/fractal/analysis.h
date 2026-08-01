@@ -11,10 +11,14 @@ extern "C" {
 
 #define FRACTAL_ANALYSIS_MAX_ANALYZERS 1u
 #define FRACTAL_ANALYSIS_MAX_RECORDS 1u
-#define FRACTAL_ANALYSIS_MAX_RECORD_PAYLOAD 112u
+#define FRACTAL_ANALYSIS_MAX_RECORD_PAYLOAD 584u
 #define FRACTAL_ANALYSIS_RECORD_ESCAPE_SUMMARY 1u
+#define FRACTAL_ANALYSIS_RECORD_ITERATION_HISTOGRAM 2u
 #define FRACTAL_ESCAPE_SUMMARY_SCHEMA_VERSION 1u
 #define FRACTAL_ESCAPE_SUMMARY_SCHEMA_ID "fractal.analysis.escape-classification-summary.v1"
+#define FRACTAL_ITERATION_HISTOGRAM_SCHEMA_VERSION 1u
+#define FRACTAL_ITERATION_HISTOGRAM_SCHEMA_ID "fractal.analysis.iteration-histogram.v1"
+#define FRACTAL_ITERATION_HISTOGRAM_BIN_COUNT 64u
 
 typedef enum fractal_field_format {
  FRACTAL_FIELD_ITERATION_CLASSIFICATION_V1=1
@@ -43,6 +47,13 @@ typedef struct fractal_escape_classification_summary_v1 {
  uint64_t iterations_min,iterations_max,iterations_sum;
  bool iteration_statistics_valid;
 } fractal_escape_classification_summary_v1;
+typedef struct fractal_iteration_histogram_v1 {
+ uint64_t bins[FRACTAL_ITERATION_HISTOGRAM_BIN_COUNT];
+ uint64_t eligible_samples,excluded_samples,total_samples;
+ uint64_t minimum_iteration,maximum_iteration,summed_iterations;
+ uint64_t overflow_bin_count;
+ bool histogram_valid;
+} fractal_iteration_histogram_v1;
 typedef struct fractal_analysis_record {
  uint32_t type_id,schema_version,payload_size;
  unsigned char payload[FRACTAL_ANALYSIS_MAX_RECORD_PAYLOAD];
@@ -81,8 +92,14 @@ fractal_result fractal_analysis_result_serialize(const fractal_analysis_result*,
 fractal_result fractal_analysis_record_serialize(const fractal_analysis_record*,char*,size_t,size_t*);
 fractal_result fractal_analysis_records_serialize(const fractal_analysis_record*,size_t,char*,size_t,size_t*);
 fractal_result fractal_escape_summary_record_decode(const fractal_analysis_record*,fractal_escape_classification_summary_v1*);
+/* v1: 0, 1, and 2 have dedicated bins.  For 3 <= b <= 62, bin b is
+ * [2^(b-2)+1, 2^(b-1)] (inclusive).  Bin 63 is the overflow bin for values
+ * greater than 2^61. */
+size_t fractal_iteration_histogram_bucket_v1(uint64_t iteration);
+fractal_result fractal_iteration_histogram_record_decode(const fractal_analysis_record*,fractal_iteration_histogram_v1*);
 extern const fractal_analyzer_vtable fractal_analyzer_passthrough;
 extern const fractal_analyzer_vtable fractal_analyzer_escape_classification_summary;
+extern const fractal_analyzer_vtable fractal_analyzer_iteration_histogram;
 #ifdef __cplusplus
 }
 #endif
