@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include "fractal/module.h"
 #include "fractal/memory_backend.h"
+#include "fractal/artifact_sink.h"
+#include "fractal/module_registry.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -72,8 +74,10 @@ extern const fractal_platform_vtable fractal_platform_host;
 fractal_result fractal_runtime_validate(const fractal_runtime_modules*);
 fractal_result fractal_job_spec_validate(const fractal_runtime_modules*,const fractal_job_spec*);
 fractal_result fractal_runtime_render(const fractal_runtime_modules*,const fractal_job_spec*,fractal_write_sink*,const fractal_cancellation*,fractal_runtime_output*);
+fractal_result fractal_runtime_render_artifact(const fractal_runtime_modules*,const fractal_job_spec*,fractal_artifact_sink*,const fractal_cancellation*,fractal_runtime_output*,fractal_artifact_result*);
 uint64_t fractal_checksum64(const void*,size_t);
 fractal_result fractal_runtime_manifest(const fractal_runtime_modules*,const fractal_job_spec*,const fractal_runtime_output*,char*,size_t,size_t*);
+fractal_result fractal_runtime_artifact_manifest(const fractal_module_registry*,const fractal_runtime_modules*,const fractal_job_spec*,const fractal_runtime_output*,const fractal_artifact_result*,char*,size_t,size_t*);
 #ifdef __cplusplus
 }
 #endif

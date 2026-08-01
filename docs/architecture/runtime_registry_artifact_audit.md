@@ -1,0 +1,7 @@
+# Runtime registry and artifact audit
+
+The pre-change runtime kept every descriptor as a file-local constant in `runtime/src/socketable_runtime.c`. Tests assembled vtable pointers directly, and validation inferred kinds from the fixed `fractal_runtime_modules` field order. There was no catalog, lookup, enumeration, duplicate-ID check, or way to query metadata without already knowing a vtable symbol. IDs were therefore only conventionally unique. Manifests read selected descriptors consistently but knew nothing about the resolution environment.
+
+The BMP encoder already emitted a header and individual rows through a minimal write callback, but the caller owned the complete test buffer. The callback had no begin, commit, or abort semantics. Production file output did not exist; the host platform vtable had no file operations. A counting wrapper computed FNV-1a while encoding, so no reread was needed, but failures could leave caller-owned partial bytes and no committed-artifact distinction. The encoder translated every callback failure to generic I/O failure.
+
+Direct module references existed in test assembly and in the exported module declarations. Unavailable CDC and Ouro selections were represented by vtables, not by generally queryable availability metadata. Runtime artifact directories contain documentation only. This audit motivated a registry with explicit descriptor/implementation registration and a transactional sink lifecycle; direct-pointer assembly remains a low-level compatibility API.
