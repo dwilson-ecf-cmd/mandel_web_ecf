@@ -17,6 +17,7 @@ add_library(fractal_core STATIC
  server/computation/cdc/src/fractal_cdc_region_study.c
  server/computation/cdc/src/fractal_cdc_two_child.c
  server/computation/cdc/src/fractal_cdc_depth_two.c
+ server/computation/cdc/src/fractal_cdc_refinement_contract.c
  server/renderer/src/fractal_renderer.c
  server/renderer/cdc/src/fractal_cdc_renderer.c server/renderer/cdc/src/fractal_cdc_model.c
  server/renderer/cdc/src/fractal_cdc_metrics.c server/renderer/cdc/src/fractal_cdc_trace.c)

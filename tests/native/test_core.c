@@ -8,6 +8,7 @@
 #include "fractal_cdc_region_study.h"
 #include "fractal_cdc_two_child.h"
 #include "fractal_cdc_depth_two.h"
+#include "fractal_cdc_refinement_contract.h"
 #include "fractal/render_artifact.h"
 #include "fractal/render_failure.h"
 #include "fractal/render_job.h"
@@ -238,6 +239,55 @@ static void test_depth_two_study(void) {
  CHECK(fractal_cdc_depth_two_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
 }
 
+static void test_refinement_contracts(void) {
+ fractal_cdc_depth_two_tree tree; fractal_cdc_refinement_contract depth,width,tokens,none,new_contract,bad;
+ fractal_cdc_refinement_obligation root,leaf,mismatch; char a[768],b[768]; size_t na=0u,nb=0u;
+ uint8_t rank=99u; bool allowed=true; uint64_t old_identity;
+ CHECK(fractal_cdc_depth_two_tree_create(&tree)==FRACTAL_OK);
+ CHECK(fractal_cdc_contract_create_max_depth(&depth,&tree.region[0],2u,FRACTAL_CDC_EXHAUST_CONTRACT_EXHAUSTED)==FRACTAL_OK);
+ CHECK(fractal_cdc_contract_validate(&depth)==FRACTAL_OK);
+ CHECK(fractal_cdc_contract_serialize(&depth,a,sizeof(a),&na)==FRACTAL_OK);
+ CHECK(fractal_cdc_contract_serialize(&depth,b,sizeof(b),&nb)==FRACTAL_OK);
+ CHECK(na==nb && memcmp(a,b,na)==0); /* replay determinism */
+ old_identity=depth.identity; bad=depth; bad.maximum_refinement_depth=1u;
+ CHECK(fractal_cdc_contract_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC); /* immutable canonical field */
+ CHECK(fractal_cdc_contract_derive_rank(&depth,&tree.region[0],0u,&rank)==FRACTAL_OK && rank==2u);
+ CHECK(fractal_cdc_contract_derive_rank(&depth,&tree.region[1],1u,&rank)==FRACTAL_OK && rank==1u);
+ CHECK(fractal_cdc_contract_derive_rank(&depth,&tree.region[2],1u,&rank)==FRACTAL_OK && rank==1u);
+ CHECK(fractal_cdc_contract_derive_rank(&depth,&tree.region[3],2u,&rank)==FRACTAL_OK && rank==0u);
+ CHECK(fractal_cdc_contract_derive_rank(&depth,&tree.region[4],2u,&rank)==FRACTAL_OK && rank==0u);
+ CHECK(fractal_cdc_contract_derive_rank(&depth,&tree.region[0],3u,&rank)==FRACTAL_ERROR_INVALID_SPEC);
+ CHECK(fractal_cdc_contract_create_min_real_width(&width,&tree.region[0],0.0625,FRACTAL_CDC_EXHAUST_FALLBACK_REQUIRED)==FRACTAL_OK);
+ CHECK(width.identity!=depth.identity); /* same target under independent contracts */
+ CHECK(fractal_cdc_contract_derive_rank(&width,&tree.region[0],0u,&rank)==FRACTAL_OK && rank==2u);
+ CHECK(fractal_cdc_contract_derive_rank(&width,&tree.region[1],1u,&rank)==FRACTAL_OK && rank==1u);
+ CHECK(fractal_cdc_contract_derive_rank(&width,&tree.region[3],2u,&rank)==FRACTAL_OK && rank==0u);
+ bad=width; bad.minimum_real_width=0.07; bad.identity=old_identity;
+ CHECK(fractal_cdc_contract_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC); /* inexact/unregistered scale */
+ CHECK(fractal_cdc_contract_create_fixed_tokens(&tokens,&tree.region[0],2u,FRACTAL_CDC_EXHAUST_UNRESOLVED)==FRACTAL_OK);
+ CHECK(tokens.identity!=depth.identity && tokens.identity!=width.identity);
+ memset(&none,0,sizeof(none)); CHECK(fractal_cdc_contract_validate(&none)==FRACTAL_ERROR_INVALID_SPEC); /* no contract */
+ CHECK(fractal_cdc_obligation_create(&depth,&tree.region[0],0u,&root)==FRACTAL_OK);
+ CHECK(root.creation_rank==2u && root.contract_identity==depth.identity);
+ CHECK(fractal_cdc_obligation_can_split(&depth,&root,&allowed)==FRACTAL_OK && allowed);
+ CHECK(fractal_cdc_obligation_create(&depth,&tree.region[3],2u,&leaf)==FRACTAL_OK);
+ CHECK(fractal_cdc_obligation_can_split(&depth,&leaf,&allowed)==FRACTAL_OK && !allowed); /* zero rejects split */
+ CHECK(fractal_cdc_obligation_finish(&depth,&leaf,true)==FRACTAL_OK && leaf.status==FRACTAL_CDC_OBLIGATION_DISCHARGED); /* zero can discharge */
+ CHECK(fractal_cdc_obligation_create(&depth,&tree.region[4],2u,&leaf)==FRACTAL_OK);
+ CHECK(fractal_cdc_obligation_finish(&depth,&leaf,false)==FRACTAL_OK && leaf.status==FRACTAL_CDC_OBLIGATION_CONTRACT_EXHAUSTED);
+ CHECK(fractal_cdc_obligation_create(&width,&tree.region[4],2u,&leaf)==FRACTAL_OK);
+ CHECK(fractal_cdc_obligation_finish(&width,&leaf,false)==FRACTAL_OK && leaf.status==FRACTAL_CDC_OBLIGATION_FALLBACK_REQUIRED);
+ CHECK(fractal_cdc_obligation_create(&tokens,&tree.region[4],2u,&leaf)==FRACTAL_OK);
+ CHECK(fractal_cdc_obligation_finish(&tokens,&leaf,false)==FRACTAL_OK && leaf.status==FRACTAL_CDC_OBLIGATION_UNRESOLVED);
+ mismatch=root; CHECK(fractal_cdc_obligation_can_split(&width,&mismatch,&allowed)==FRACTAL_ERROR_INVALID_SPEC); /* contract mismatch */
+ mismatch=root; mismatch.creation_rank=1u; CHECK(fractal_cdc_obligation_can_split(&depth,&mismatch,&allowed)==FRACTAL_ERROR_INVALID_SPEC); /* no rank rewrite */
+ CHECK(fractal_cdc_contract_extend(&depth,1u,&new_contract)==FRACTAL_ERROR_INVALID_SPEC);
+ CHECK(fractal_cdc_contract_create_max_depth(&bad,&tree.region[0],1u,FRACTAL_CDC_EXHAUST_CONTRACT_EXHAUSTED)==FRACTAL_OK);
+ CHECK(fractal_cdc_contract_extend(&bad,2u,&new_contract)==FRACTAL_OK && new_contract.identity==depth.identity && bad.identity!=new_contract.identity);
+ CHECK(fractal_cdc_contract_extend(&depth,4u,&new_contract)==FRACTAL_ERROR_INVALID_SPEC); /* unregistered extension */
+ CHECK(depth.identity==old_identity); /* extension never mutates old contract */
+}
+
 static void test_renderer_backends_and_manifest(void) {
  fractal_renderer legacy,cdc_renderer,invalid={0}; fractal_render_spec spec;
  fractal_render_manifest conventional,transitional_renderer,cdc,ouro; char ja[768],jb[768]; size_t na=0,nb=0;
@@ -279,7 +329,7 @@ static void test_foreign_binaries_are_data_only(void) {
  }
 }
 int main(void) {
- test_spec(); test_memory(); test_adapter(); test_computation_backends(); test_experiment_0_certificate(); test_region_study(); test_two_child_study(); test_depth_two_study(); test_renderer_backends_and_manifest(); test_milestone_files_preserved(); test_foreign_binaries_are_data_only();
+ test_spec(); test_memory(); test_adapter(); test_computation_backends(); test_experiment_0_certificate(); test_region_study(); test_two_child_study(); test_depth_two_study(); test_refinement_contracts(); test_renderer_backends_and_manifest(); test_milestone_files_preserved(); test_foreign_binaries_are_data_only();
  if(failures) fprintf(stderr,"%d native checks failed\n",failures);
  return failures ? EXIT_FAILURE : EXIT_SUCCESS;
 }
