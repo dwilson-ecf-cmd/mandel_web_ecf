@@ -1,7 +1,5 @@
 # Next attack plan
 
-## Recommended next milestone: analysis socket and pass-through analyzer
+The next analyzer should be a **fixed-schema iteration histogram**. The compact field already contains exact completed iteration counts, and the new summary establishes eligibility, checked arithmetic, record versioning, canonical serialization, and independent-oracle practice. A separately reviewed bounded-bin schema can therefore add useful distribution detail without richer computation output or field mutation.
 
-The registry can now describe another typed seam and sinks remove artifact-storage coupling, so a narrow analyzer contract can be added without changing formulas or encoders. Begin with a pass-through analyzer to prove lifecycle, compatibility, registry identity, and manifest recording before adding algorithms.
-
-Then pursue structured in-memory telemetry, a thread-pool scheduler, Android JNI/application shell, an Ouro memory adapter, and CDC under real workloads. Telemetry follows analysis so it can observe the complete pipeline; threading waits until deterministic socket composition is exercised; Android can consume registry inspection and artifact sinks after those contracts settle. Ouro and CDC remain last because neither should drive host integration or mathematical claims prematurely.
+Spatial classification, connected regions, orbit statistics, periodicity, and CDC evidence remain later possibilities. Orbit and periodicity work require evidence absent from the compact field. No histogram or other candidate is implemented in this milestone.

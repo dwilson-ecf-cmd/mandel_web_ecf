@@ -7,6 +7,7 @@
 #include "fractal/memory_backend.h"
 #include "fractal/artifact_sink.h"
 #include "fractal/module_registry.h"
+#include "fractal/analysis.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -41,11 +42,11 @@ struct fractal_job_spec;
 typedef struct fractal_scheduler_vtable { const fractal_module_descriptor *descriptor; uint64_t required_compute_capabilities,produced_capabilities;
  fractal_result (*execute)(const struct fractal_runtime_modules*,const struct fractal_job_spec*,fractal_field*,const fractal_cancellation*,fractal_progress_fn,void*); } fractal_scheduler_vtable;
 typedef struct fractal_raster_vtable { const fractal_module_descriptor *descriptor; uint64_t accepted_field_capabilities,produced_capabilities;
- fractal_result (*rasterize)(const fractal_field*,uint32_t,fractal_pixel_buffer*); } fractal_raster_vtable;
+ fractal_result (*rasterize)(const fractal_field_view*,uint32_t,fractal_pixel_buffer*); } fractal_raster_vtable;
 typedef struct fractal_write_sink { void *context; fractal_result (*write)(void*,const void*,size_t); } fractal_write_sink;
 typedef struct fractal_encoder_vtable { const fractal_module_descriptor *descriptor; uint64_t accepted_pixel_capabilities;
  fractal_result (*encode)(const fractal_pixel_buffer*,fractal_write_sink*); } fractal_encoder_vtable;
-typedef enum fractal_telemetry_event_kind { FRACTAL_EVENT_JOB_START=0,FRACTAL_EVENT_PROGRESS,FRACTAL_EVENT_JOB_END,FRACTAL_EVENT_COMPATIBILITY_REJECTION,FRACTAL_EVENT_ARTIFACT_COMPLETE } fractal_telemetry_event_kind;
+typedef enum fractal_telemetry_event_kind { FRACTAL_EVENT_JOB_START=0,FRACTAL_EVENT_PROGRESS,FRACTAL_EVENT_JOB_END,FRACTAL_EVENT_COMPATIBILITY_REJECTION,FRACTAL_EVENT_ARTIFACT_COMPLETE,FRACTAL_EVENT_ANALYSIS_BEGIN,FRACTAL_EVENT_ANALYSIS_PROGRESS,FRACTAL_EVENT_ANALYSIS_COMPLETE,FRACTAL_EVENT_ANALYSIS_CANCELLED,FRACTAL_EVENT_ANALYSIS_FAILED } fractal_telemetry_event_kind;
 typedef struct fractal_telemetry_event { fractal_telemetry_event_kind kind; uint64_t value; fractal_result result; } fractal_telemetry_event;
 typedef struct fractal_telemetry_vtable { const fractal_module_descriptor *descriptor; void (*emit)(void*,const fractal_telemetry_event*); } fractal_telemetry_vtable;
 typedef struct fractal_platform_vtable { const fractal_module_descriptor *descriptor; } fractal_platform_vtable;
@@ -58,8 +59,8 @@ typedef struct fractal_artifact_spec { const char *encoder_id,*output_name; } fr
 typedef struct fractal_job_spec { fractal_problem_spec problem; fractal_view_spec view; fractal_raster_spec raster; fractal_artifact_spec artifact; } fractal_job_spec;
 typedef struct fractal_runtime_modules { const fractal_formula_vtable *formula; const fractal_numeric_vtable *numeric; const fractal_compute_vtable *compute;
  const fractal_refinement_vtable *refinement; const fractal_scheduler_vtable *scheduler; const fractal_raster_vtable *raster; const fractal_encoder_vtable *encoder;
- const fractal_memory_vtable *memory_module; fractal_memory_backend *memory; const fractal_telemetry_vtable *telemetry; void *telemetry_state; const fractal_platform_vtable *platform; } fractal_runtime_modules;
-typedef struct fractal_runtime_output { fractal_field field; fractal_pixel_buffer pixels; uint64_t field_checksum,pixel_checksum,artifact_checksum; size_t artifact_bytes; } fractal_runtime_output;
+ const fractal_memory_vtable *memory_module; fractal_memory_backend *memory; const fractal_telemetry_vtable *telemetry; void *telemetry_state; const fractal_platform_vtable *platform; fractal_analysis_pipeline analysis; } fractal_runtime_modules;
+typedef struct fractal_runtime_output { fractal_field field; fractal_pixel_buffer pixels; uint64_t field_checksum,source_field_checksum,analyzed_field_checksum,pixel_checksum,artifact_checksum; size_t artifact_bytes; fractal_analysis_result analysis_result; uint64_t analysis_pipeline_identity; size_t analyzer_count; } fractal_runtime_output;
 
 extern const fractal_formula_vtable fractal_formula_mandelbrot,fractal_formula_julia;
 extern const fractal_numeric_vtable fractal_numeric_binary64;

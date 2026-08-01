@@ -12,7 +12,7 @@ add_library(fractal_core STATIC
  shared/src/result.c shared/src/render_spec.c shared/src/render_manifest.c shared/src/render_progress.c
  shared/src/render_job.c shared/src/worker_status.c shared/src/render_artifact.c
  shared/src/render_failure.c runtime/src/memory_backend.c
- shared/src/module.c shared/src/module_registry.c runtime/src/socketable_runtime.c
+ shared/src/module.c shared/src/module_registry.c shared/src/analysis.c runtime/src/socketable_runtime.c
  runtime/src/installed_modules.c runtime/src/artifact_sink.c
  server/computation/src/fractal_computation.c server/computation/cdc/src/fractal_cdc_computation.c
  server/computation/cdc/src/fractal_cdc_certificate.c
