@@ -46,8 +46,50 @@ typedef struct fractal_formula_vtable { const fractal_module_descriptor *descrip
  fractal_result (*initialize_state)(const fractal_numeric_vtable*,const fractal_formula_parameters*,double,double,void*);
  fractal_result (*step)(const fractal_numeric_vtable*,void*); fractal_result (*classify)(const fractal_numeric_vtable*,const void*,fractal_point_class*);
  fractal_result (*serialize_parameters)(const fractal_formula_parameters*,char*,size_t,size_t*); } fractal_formula_vtable;
+
+#define FRACTAL_COMPUTATION_SCALAR_V1_ID "fractal.compute.scalar.v1"
+#define FRACTAL_COMPUTE_CONVENTIONAL_COMPATIBILITY_ID "compute.conventional.scalar-c"
+#define FRACTAL_COMPUTATION_ABI_VERSION 1u
+#define FRACTAL_COMPUTATION_CONTRACT_VERSION 1u
+
+typedef enum fractal_computation_execution_status {
+ FRACTAL_COMPUTATION_NOT_STARTED=0,FRACTAL_COMPUTATION_SUCCEEDED,
+ FRACTAL_COMPUTATION_CANCELLED,FRACTAL_COMPUTATION_FAILED
+} fractal_computation_execution_status;
+
+/* All pointers are borrowed for one synchronous invocation.  The destination
+ * remains caller-owned and only the assignment's half-open row range is writable. */
+typedef struct fractal_computation_problem_v1 {
+ uint32_t abi_version,contract_version;
+ const fractal_formula_vtable *formula;
+ const fractal_numeric_vtable *numeric;
+ fractal_formula_parameters parameters;
+ uint32_t maximum_steps;
+ double center_real,center_imaginary,scale;
+ fractal_field_descriptor field;
+ uint64_t identity;
+} fractal_computation_problem_v1;
+
+typedef struct fractal_computation_request_v1 {
+ uint32_t abi_version,contract_version;
+ const fractal_computation_problem_v1 *problem;
+ const fractal_sealed_work_unit_v1 *assignment;
+ fractal_mutable_field_view destination;
+ const fractal_cancellation *cancellation;
+} fractal_computation_request_v1;
+
+typedef struct fractal_computation_result_v1 {
+ uint64_t assignment_identity;
+ uint32_t sequence,rows_completed;
+ uint64_t samples_completed;
+ fractal_computation_execution_status status;
+ fractal_result result;
+} fractal_computation_result_v1;
+
 typedef struct fractal_compute_vtable { const fractal_module_descriptor *descriptor; uint64_t required_formula_capabilities,required_numeric_capabilities;
- fractal_result (*point)(const fractal_formula_vtable*,const fractal_numeric_vtable*,const fractal_formula_parameters*,double,double,uint32_t,const fractal_cancellation*,fractal_point_result_compact*); } fractal_compute_vtable;
+ uint64_t required_field_capabilities; uint32_t contract_version;
+ fractal_result (*point)(const fractal_formula_vtable*,const fractal_numeric_vtable*,const fractal_formula_parameters*,double,double,uint32_t,const fractal_cancellation*,fractal_point_result_compact*);
+ fractal_result (*execute)(const fractal_computation_request_v1*,fractal_computation_result_v1*); } fractal_compute_vtable;
 typedef struct fractal_refinement_vtable { const fractal_module_descriptor *descriptor; bool available; } fractal_refinement_vtable;
 typedef void (*fractal_progress_fn)(uint32_t completed,uint32_t total,void *context);
 struct fractal_job_spec;
@@ -76,7 +118,7 @@ typedef struct fractal_runtime_output { uint64_t work_unit_identity; uint32_t sc
 
 extern const fractal_formula_vtable fractal_formula_mandelbrot,fractal_formula_julia;
 extern const fractal_numeric_vtable fractal_numeric_binary64;
-extern const fractal_compute_vtable fractal_compute_conventional;
+extern const fractal_compute_vtable fractal_compute_scalar_v1,fractal_compute_conventional;
 extern const fractal_refinement_vtable fractal_refinement_none,fractal_refinement_cdc_unavailable;
 extern const fractal_scheduler_vtable fractal_scheduler_serial,fractal_scheduler_serial_v1,fractal_scheduler_thread_pool_v1;
 extern const fractal_raster_vtable fractal_raster_native;
@@ -89,6 +131,12 @@ fractal_result fractal_job_spec_validate(const fractal_runtime_modules*,const fr
 fractal_result fractal_runtime_render(const fractal_runtime_modules*,const fractal_job_spec*,fractal_write_sink*,const fractal_cancellation*,fractal_runtime_output*);
 fractal_result fractal_runtime_render_artifact(const fractal_runtime_modules*,const fractal_job_spec*,fractal_artifact_sink*,const fractal_cancellation*,fractal_runtime_output*,fractal_artifact_result*);
 uint64_t fractal_checksum64(const void*,size_t);
+uint64_t fractal_module_identity_v1(const fractal_module_descriptor*);
+fractal_result fractal_computation_problem_init_v1(const fractal_runtime_modules*,const fractal_job_spec*,const fractal_field_descriptor*,fractal_computation_problem_v1*);
+fractal_result fractal_computation_problem_validate_v1(const fractal_compute_vtable*,const fractal_computation_problem_v1*);
+fractal_result fractal_scheduler_decompose_computation_v1(const fractal_compute_vtable*,const fractal_computation_problem_v1*,uint32_t,fractal_computation_cancellation_mode,fractal_sealed_work_unit_v1*,size_t,size_t*);
+fractal_result fractal_scheduler_validate_computation_v1(const fractal_compute_vtable*,const fractal_computation_problem_v1*,const fractal_sealed_work_unit_v1*,size_t,uint32_t);
+const char *fractal_computation_execution_status_string(fractal_computation_execution_status);
 fractal_result fractal_runtime_manifest(const fractal_runtime_modules*,const fractal_job_spec*,const fractal_runtime_output*,char*,size_t,size_t*);
 fractal_result fractal_runtime_artifact_manifest(const fractal_module_registry*,const fractal_runtime_modules*,const fractal_job_spec*,const fractal_runtime_output*,const fractal_artifact_result*,char*,size_t,size_t*);
 #ifdef __cplusplus

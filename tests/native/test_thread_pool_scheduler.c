@@ -25,7 +25,7 @@ static fractal_runtime_modules direct_runtime(fractal_memory_backend *memory,
  fractal_runtime_modules runtime={0};
  runtime.formula=formula;
  runtime.numeric=&fractal_numeric_binary64;
- runtime.compute=&fractal_compute_conventional;
+ runtime.compute=&fractal_compute_scalar_v1;
  runtime.refinement=&fractal_refinement_none;
  runtime.scheduler=scheduler;
  runtime.raster=&fractal_raster_native;
@@ -123,7 +123,7 @@ static fractal_runtime_selection selection(const char *scheduler,uint32_t worker
  fractal_runtime_selection selected={0};
  selected.formula="formula.mandelbrot.quadratic";
  selected.numeric="numeric.binary64";
- selected.compute="compute.conventional.scalar-c";
+ selected.compute=FRACTAL_COMPUTATION_SCALAR_V1_ID;
  selected.refinement="refinement.none";
  selected.scheduler=scheduler;
  selected.raster="raster.native.iteration-bgr8";
@@ -143,7 +143,10 @@ static void registry_and_worker_validation(void){
  fractal_runtime_selection selected;
  CHECK(fractal_installed_modules_registry(&first)==FRACTAL_OK);
  CHECK(fractal_installed_modules_registry(&second)==FRACTAL_OK);
- CHECK(first.identity==second.identity&&first.count==21);
+ CHECK(first.identity==second.identity&&first.count==22);
+ CHECK(fractal_module_registry_count(&first,FRACTAL_MODULE_COMPUTE)==2);
+ CHECK(fractal_module_registry_implementation(&first,FRACTAL_MODULE_COMPUTE,
+  FRACTAL_COMPUTATION_SCALAR_V1_ID)==&fractal_compute_scalar_v1);
  CHECK(fractal_module_registry_count(&first,FRACTAL_MODULE_SCHEDULER)==3);
  CHECK(fractal_module_registry_implementation(&first,FRACTAL_MODULE_SCHEDULER,
   FRACTAL_SCHEDULER_SERIAL_V1_ID)==&fractal_scheduler_serial_v1);
@@ -200,16 +203,27 @@ static void cross_scheduler_equivalence(void){
  CHECK(serial.output.pixel_checksum==UINT64_C(0x4866aacc38290b5f));
  CHECK(serial.output.artifact_checksum==UINT64_C(0xfb1a83bd5ca28e5f));
  CHECK(serial.artifact.byte_count==2358);
+ CHECK(serial.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0x4258a35a8206a3d8));
+ CHECK(many.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0xafec0821f63abdbb));
+ CHECK(many.output.scheduler_execution.computation_identity==UINT64_C(0x5e64dd353daa28be));
+ printf("SCHEDULER mandelbrot serial=%016llx thread-pool=%016llx computation=%016llx\n",
+  (unsigned long long)serial.output.scheduler_execution.sealed_work_unit_identity,
+  (unsigned long long)many.output.scheduler_execution.sealed_work_unit_identity,
+  (unsigned long long)many.output.scheduler_execution.computation_identity);
  CHECK(many.output.scheduler_execution.requested_worker_count==5&&
   many.output.scheduler_execution.effective_worker_count==5&&
   many.output.scheduler_execution.assignment_count==5&&
   many.output.scheduler_execution.status==FRACTAL_SCHEDULER_EXECUTION_SUCCEEDED&&
   many.output.publication_status==FRACTAL_PUBLICATION_COMMITTED);
  CHECK(strstr(many.runtime_manifest,FRACTAL_SCHEDULER_THREAD_POOL_V1_ID)!=NULL);
+ CHECK(strstr(many.runtime_manifest,"\"computation\":\"fractal.compute.scalar.v1\"")!=NULL);
+ CHECK(strstr(many.runtime_manifest,"\"computation_version\":1")!=NULL);
+ CHECK(strstr(many.runtime_manifest,"\"computation_status\":\"succeeded\"")!=NULL);
  CHECK(strstr(many.runtime_manifest,FRACTAL_SCHEDULER_WORK_UNIT_V1_ID)!=NULL);
  CHECK(strstr(many.runtime_manifest,"\"requested_worker_count\":5")!=NULL);
  CHECK(strstr(many.runtime_manifest,"\"execution_status\":\"succeeded\"")!=NULL);
  CHECK(strstr(many.artifact_manifest,"\"publication_status\":\"committed\"")!=NULL);
+ CHECK(strstr(many.artifact_manifest,"\"computation\":\"fractal.compute.scalar.v1\"")!=NULL);
  CHECK(many.output.analysis_result.records_produced==3&&
   many.output.analysis_result.records[0].chain_ordinal==0&&
   many.output.analysis_result.records[1].chain_ordinal==1&&
@@ -221,6 +235,13 @@ static void cross_scheduler_equivalence(void){
  CHECK(julia_serial.output.field_checksum==UINT64_C(0x0fb4458e08bad6e1));
  CHECK(julia_serial.output.pixel_checksum==UINT64_C(0xb272f08b0bbdca2b));
  CHECK(julia_serial.output.artifact_checksum==UINT64_C(0x4d4aa95bd137ec87));
+ CHECK(julia_serial.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0x53b154689c9ca381));
+ CHECK(julia_many.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0x30dd9c1c387d9962));
+ CHECK(julia_many.output.scheduler_execution.computation_identity==UINT64_C(0x917e7c5c82198c29));
+ printf("SCHEDULER julia serial=%016llx thread-pool=%016llx computation=%016llx\n",
+  (unsigned long long)julia_serial.output.scheduler_execution.sealed_work_unit_identity,
+  (unsigned long long)julia_many.output.scheduler_execution.sealed_work_unit_identity,
+  (unsigned long long)julia_many.output.scheduler_execution.computation_identity);
 
  CHECK(render_capture(&fractal_formula_mandelbrot,&mp,&fractal_scheduler_serial_v1,1,5,2,false,&small_serial)==FRACTAL_OK);
  CHECK(render_capture(&fractal_formula_mandelbrot,&mp,&fractal_scheduler_thread_pool_v1,4,5,2,false,&small_many)==FRACTAL_OK);
@@ -254,25 +275,47 @@ static fractal_result failure_point(const fractal_formula_vtable *formula,
  const fractal_numeric_vtable *numeric,const fractal_formula_parameters *parameters,
  double real,double imaginary,uint32_t budget,const fractal_cancellation *cancel,
  fractal_point_result_compact *output){
- (void)formula;(void)numeric;(void)parameters;(void)real;(void)budget;(void)cancel;(void)output;
- return imaginary>0.0?FRACTAL_ERROR_IO:FRACTAL_ERROR_INVALID_SPEC;
+ return fractal_compute_scalar_v1.point(formula,numeric,parameters,real,imaginary,
+  budget,cancel,output);
 }
 
 static const fractal_module_descriptor cancellation_compute_descriptor={
  1,1,"compute.test.cancellation-boundary","Cancellation boundary test compute",
- FRACTAL_MODULE_COMPUTE,FRACTAL_CAP_POINT_SCALAR,true
+ FRACTAL_MODULE_COMPUTE,FRACTAL_CAP_POINT_SCALAR|FRACTAL_CAP_ITERATION_FIELD|
+ FRACTAL_CAP_COMPUTE_CONTIGUOUS_ROWS|FRACTAL_CAP_COMPUTE_CALLER_FIELD|
+ FRACTAL_CAP_COMPUTE_CANCELLATION,true
 };
 static const fractal_module_descriptor failure_compute_descriptor={
  1,1,"compute.test.failure-selection","Failure selection test compute",
- FRACTAL_MODULE_COMPUTE,FRACTAL_CAP_POINT_SCALAR,true
+ FRACTAL_MODULE_COMPUTE,FRACTAL_CAP_POINT_SCALAR|FRACTAL_CAP_ITERATION_FIELD|
+ FRACTAL_CAP_COMPUTE_CONTIGUOUS_ROWS|FRACTAL_CAP_COMPUTE_CALLER_FIELD|
+ FRACTAL_CAP_COMPUTE_CANCELLATION,true
 };
+static fractal_result cancellation_execute(const fractal_computation_request_v1 *request,
+ fractal_computation_result_v1 *result){
+ if(!request||!request->assignment||!result)return FRACTAL_ERROR_INVALID_ARGUMENT;
+ memset(result,0,sizeof(*result));result->assignment_identity=request->assignment->identity;
+ result->sequence=request->assignment->sequence;fractal_cancellation_request(cancellation_to_request);
+ result->status=FRACTAL_COMPUTATION_CANCELLED;result->result=FRACTAL_ERROR_CANCELLED;
+ return result->result;
+}
+static fractal_result failure_execute(const fractal_computation_request_v1 *request,
+ fractal_computation_result_v1 *result){
+ if(!request||!request->assignment||!result)return FRACTAL_ERROR_INVALID_ARGUMENT;
+ memset(result,0,sizeof(*result));result->assignment_identity=request->assignment->identity;
+ result->sequence=request->assignment->sequence;result->status=FRACTAL_COMPUTATION_FAILED;
+ result->result=request->assignment->sequence==0?FRACTAL_ERROR_IO:FRACTAL_ERROR_INVALID_SPEC;
+ return result->result;
+}
 static const fractal_compute_vtable cancellation_compute={
  &cancellation_compute_descriptor,FRACTAL_CAP_POINT_SCALAR,FRACTAL_CAP_SCALAR_ARITHMETIC,
- cancellation_point
+ FRACTAL_CAP_ITERATION_FIELD,FRACTAL_COMPUTATION_CONTRACT_VERSION,cancellation_point,
+ cancellation_execute
 };
 static const fractal_compute_vtable failure_compute={
  &failure_compute_descriptor,FRACTAL_CAP_POINT_SCALAR,FRACTAL_CAP_SCALAR_ARITHMETIC,
- failure_point
+ FRACTAL_CAP_ITERATION_FIELD,FRACTAL_COMPUTATION_CONTRACT_VERSION,failure_point,
+ failure_execute
 };
 
 typedef struct observing_sink_state {
@@ -343,14 +386,20 @@ static void cancellation_failure_and_publication(void){
 
  runtime.scheduler_options.requested_worker_count=2;
  runtime.compute=&failure_compute;
+ install_three_analyzers(&runtime);
  fractal_cancellation_reset(&cancel);
  memset(samples,0,sizeof(samples));field.completed_rows=0;field.complete=false;
+ runtime.scheduler=&fractal_scheduler_serial_v1;
+ CHECK(runtime.scheduler->execute(&runtime,&job,&field,&cancel,NULL,NULL)==FRACTAL_ERROR_IO);
+ CHECK(field.completed_rows==0&&!field.complete);
+ runtime.scheduler=&fractal_scheduler_thread_pool_v1;
  CHECK(runtime.scheduler->execute(&runtime,&job,&field,&cancel,NULL,NULL)==FRACTAL_ERROR_IO);
  CHECK(field.completed_rows==0&&!field.complete);
  CHECK(fractal_runtime_render_artifact(&runtime,&job,&sink,NULL,&output,&artifact)==FRACTAL_ERROR_IO);
  CHECK(observed.begins==1&&observed.writes==0&&observed.commits==0&&observed.aborts==1);
  CHECK(!artifact.committed&&output.publication_status==FRACTAL_PUBLICATION_ABORTED&&
   output.scheduler_execution.status==FRACTAL_SCHEDULER_EXECUTION_FAILED&&
+  output.analysis_result.records_produced==0&&output.analysis_result.samples_examined==0&&
   output.field_checksum==0&&output.pixel_checksum==0&&output.artifact_bytes==0);
  fractal_memory_backend_shutdown(&memory);
 }

@@ -299,6 +299,11 @@ static void test_renderer_backends_and_manifest(void) {
  CHECK(fractal_renderer_create((fractal_renderer_backend_kind)99,&invalid)==FRACTAL_ERROR_INVALID_ARGUMENT);
  CHECK(fractal_render_spec_init_default(&spec)==FRACTAL_OK);
  CHECK(fractal_render_manifest_init(&conventional,&spec,FRACTAL_COMPUTATION_BACKEND_CONVENTIONAL_C,FRACTAL_RENDERER_BACKEND_LEGACY_CPP,FRACTAL_MEMORY_BACKEND_SYSTEM)==FRACTAL_OK);
+ CHECK(fractal_render_manifest_set_computation(&conventional,"fractal.compute.scalar.v1",
+  1,1,"succeeded",UINT64_C(0x1234))==FRACTAL_OK);
+ CHECK(fractal_render_manifest_serialize_identity_json(&conventional,ja,sizeof(ja),&na)==FRACTAL_OK&&
+  strstr(ja,"\"computation_module\":\"fractal.compute.scalar.v1\"")!=NULL&&
+  strstr(ja,"\"computation_assignment_count\":1")!=NULL);
  CHECK(conventional.cdc_reference_sha256[0]=='\0');
  CHECK(fractal_render_manifest_init(&transitional_renderer,&spec,FRACTAL_COMPUTATION_BACKEND_CONVENTIONAL_C,FRACTAL_RENDERER_BACKEND_CDC_EXPERIMENTAL,FRACTAL_MEMORY_BACKEND_SYSTEM)==FRACTAL_OK);
  CHECK(transitional_renderer.cdc_reference_sha256[0]=='\0');
