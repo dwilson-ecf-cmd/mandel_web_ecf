@@ -3,11 +3,15 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#ifndef __cplusplus
+#include <stdatomic.h>
+#endif
 #include "fractal/module.h"
 #include "fractal/memory_backend.h"
 #include "fractal/artifact_sink.h"
 #include "fractal/module_registry.h"
 #include "fractal/analysis.h"
+#include "fractal/scheduler.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,7 +25,15 @@ typedef struct fractal_julia_parameters { double constant_real,constant_imaginar
 typedef struct fractal_point_result_compact { uint32_t steps; uint8_t classification; uint8_t reserved[3]; } fractal_point_result_compact;
 typedef struct fractal_field { uint32_t width,height; size_t stride; fractal_point_result_compact *samples; uint32_t completed_rows; bool complete; } fractal_field;
 typedef struct fractal_pixel_buffer { uint32_t width,height; size_t stride; fractal_pixel_format format; unsigned char *pixels; } fractal_pixel_buffer;
-typedef struct fractal_cancellation { bool requested; } fractal_cancellation;
+#ifdef __cplusplus
+typedef bool fractal_cancellation_flag;
+#else
+typedef atomic_bool fractal_cancellation_flag;
+#endif
+typedef struct fractal_cancellation { fractal_cancellation_flag requested; } fractal_cancellation;
+bool fractal_cancellation_is_requested(const fractal_cancellation*);
+void fractal_cancellation_request(fractal_cancellation*);
+void fractal_cancellation_reset(fractal_cancellation*);
 struct fractal_runtime_modules;
 
 typedef struct fractal_numeric_vtable { const fractal_module_descriptor *descriptor; uint32_t precision_bits; size_t scalar_size,scalar_alignment;
@@ -66,7 +78,7 @@ extern const fractal_formula_vtable fractal_formula_mandelbrot,fractal_formula_j
 extern const fractal_numeric_vtable fractal_numeric_binary64;
 extern const fractal_compute_vtable fractal_compute_conventional;
 extern const fractal_refinement_vtable fractal_refinement_none,fractal_refinement_cdc_unavailable;
-extern const fractal_scheduler_vtable fractal_scheduler_serial;
+extern const fractal_scheduler_vtable fractal_scheduler_serial,fractal_scheduler_serial_v1,fractal_scheduler_thread_pool_v1;
 extern const fractal_raster_vtable fractal_raster_native;
 extern const fractal_encoder_vtable fractal_encoder_bmp;
 extern const fractal_memory_vtable fractal_memory_system_module,fractal_memory_ouro_unavailable_module;
