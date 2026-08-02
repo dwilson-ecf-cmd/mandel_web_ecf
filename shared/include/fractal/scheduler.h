@@ -1,4 +1,10 @@
 #ifndef FRACTAL_SCHEDULER_H
 #define FRACTAL_SCHEDULER_H
-#include "fractal/socketable_runtime.h"
+#include "fractal/work_unit.h"
+#define FRACTAL_SERIAL_SCHEDULER_ID "fractal.scheduler.serial.v1"
+typedef enum fractal_scheduler_status { FRACTAL_SCHEDULER_NOT_STARTED=0,FRACTAL_SCHEDULER_REJECTED,FRACTAL_SCHEDULER_CANCELLED,FRACTAL_SCHEDULER_COMPUTE_FAILED,FRACTAL_SCHEDULER_ANALYSIS_FAILED,FRACTAL_SCHEDULER_RENDERER_FAILED,FRACTAL_SCHEDULER_SINK_FAILED,FRACTAL_SCHEDULER_PUBLISHED } fractal_scheduler_status;
+typedef enum fractal_scheduler_phase { FRACTAL_SCHEDULER_PHASE_PREPARE=0,FRACTAL_SCHEDULER_PHASE_VALIDATE,FRACTAL_SCHEDULER_PHASE_COMPUTE,FRACTAL_SCHEDULER_PHASE_ANALYSIS,FRACTAL_SCHEDULER_PHASE_RENDERER,FRACTAL_SCHEDULER_PHASE_SINK,FRACTAL_SCHEDULER_PHASE_PUBLISH } fractal_scheduler_phase;
+typedef struct fractal_scheduler_execution { uint64_t work_unit_identity; fractal_scheduler_status status; fractal_scheduler_phase last_phase; fractal_result result; uint64_t sequence_begin,sequence_end; bool published; } fractal_scheduler_execution;
+const char *fractal_scheduler_status_string(fractal_scheduler_status);
+fractal_result fractal_scheduler_execute_artifact(const fractal_runtime_modules*,const fractal_work_unit*,fractal_artifact_sink*,fractal_runtime_output*,fractal_artifact_result*,fractal_scheduler_execution*);
 #endif

@@ -60,7 +60,7 @@ typedef struct fractal_job_spec { fractal_problem_spec problem; fractal_view_spe
 typedef struct fractal_runtime_modules { const fractal_formula_vtable *formula; const fractal_numeric_vtable *numeric; const fractal_compute_vtable *compute;
  const fractal_refinement_vtable *refinement; const fractal_scheduler_vtable *scheduler; const fractal_raster_vtable *raster; const fractal_encoder_vtable *encoder;
  const fractal_memory_vtable *memory_module; fractal_memory_backend *memory; const fractal_telemetry_vtable *telemetry; void *telemetry_state; const fractal_platform_vtable *platform; fractal_analysis_pipeline analysis; } fractal_runtime_modules;
-typedef struct fractal_runtime_output { fractal_field field; fractal_pixel_buffer pixels; uint64_t field_checksum,source_field_checksum,analyzed_field_checksum,pixel_checksum,artifact_checksum; size_t artifact_bytes; fractal_analysis_result analysis_result; uint64_t analysis_pipeline_identity; size_t analyzer_count; } fractal_runtime_output;
+typedef struct fractal_runtime_output { uint64_t work_unit_identity; uint32_t scheduler_status; fractal_field field; fractal_pixel_buffer pixels; uint64_t field_checksum,source_field_checksum,analyzed_field_checksum,pixel_checksum,artifact_checksum; size_t artifact_bytes; fractal_analysis_result analysis_result; uint64_t analysis_pipeline_identity; size_t analyzer_count; } fractal_runtime_output;
 
 extern const fractal_formula_vtable fractal_formula_mandelbrot,fractal_formula_julia;
 extern const fractal_numeric_vtable fractal_numeric_binary64;
