@@ -17,7 +17,7 @@ DESC(d_compute_v1,FRACTAL_COMPUTATION_SCALAR_V1_ID,"Scalar computation v1",FRACT
 DESC(d_compute_compat,FRACTAL_COMPUTE_CONVENTIONAL_COMPATIBILITY_ID,"Conventional scalar C compatibility",FRACTAL_MODULE_COMPUTE,FRACTAL_CAP_POINT_SCALAR|FRACTAL_CAP_ITERATION_FIELD|FRACTAL_CAP_COMPUTE_CONTIGUOUS_ROWS|FRACTAL_CAP_COMPUTE_CALLER_FIELD|FRACTAL_CAP_COMPUTE_CANCELLATION);
 DESC(d_none,"refinement.none","No refinement",FRACTAL_MODULE_REFINEMENT,0);
 static const fractal_module_descriptor d_cdc={1u,1u,"refinement.cdc.unavailable","CDC refinement (unavailable)",FRACTAL_MODULE_REFINEMENT,0,false};
-DESC(d_sched,"scheduler.serial.row-major","Serial row-major",FRACTAL_MODULE_SCHEDULER,FRACTAL_CAP_SERIAL_FIELD|FRACTAL_CAP_ITERATION_FIELD);
+DESC(d_sched,"fractal.scheduler.serial.v1","Serial row-major",FRACTAL_MODULE_SCHEDULER,FRACTAL_CAP_SERIAL_FIELD|FRACTAL_CAP_ITERATION_FIELD);
 DESC(d_raster,"raster.native.iteration-bgr8","Native iteration rasterizer",FRACTAL_MODULE_RASTER,FRACTAL_CAP_ITERATION_FIELD|FRACTAL_CAP_BGR8);
 DESC(d_bmp,"encoder.bmp.v3","BMP v3 encoder",FRACTAL_MODULE_ENCODER,FRACTAL_CAP_BGR8|FRACTAL_CAP_ENCODER_STREAM_OUTPUT);
 DESC(d_mem,"memory.system.scoped","System scoped memory",FRACTAL_MODULE_MEMORY,FRACTAL_CAP_MEMORY_SCOPES);
