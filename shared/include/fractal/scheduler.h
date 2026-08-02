@@ -1,75 +1,10 @@
 #ifndef FRACTAL_SCHEDULER_H
 #define FRACTAL_SCHEDULER_H
-
-#include <stddef.h>
-#include <stdint.h>
-#include "fractal/result.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define FRACTAL_SCHEDULER_SERIAL_V1_ID "fractal.scheduler.serial.v1"
-#define FRACTAL_SCHEDULER_THREAD_POOL_V1_ID "fractal.scheduler.thread-pool.v1"
-#define FRACTAL_SCHEDULER_SERIAL_COMPATIBILITY_ID "scheduler.serial.row-major"
-#define FRACTAL_SCHEDULER_WORK_UNIT_V1_ID "fractal.scheduler.work-unit.contiguous-rows.v1"
-#define FRACTAL_SCHEDULER_SERIAL_DECOMPOSITION_V1_ID "fractal.scheduler.decomposition.serial-row-major.v1"
-#define FRACTAL_SCHEDULER_THREAD_POOL_DECOMPOSITION_V1_ID "fractal.scheduler.decomposition.contiguous-row-ranges.v1"
-#define FRACTAL_SCHEDULER_DECOMPOSITION_VERSION 1u
-#define FRACTAL_THREAD_POOL_MAX_WORKERS 16u
-
-typedef struct fractal_scheduler_options {
- uint32_t requested_worker_count;
-} fractal_scheduler_options;
-
-/* Immutable after construction.  The identity is a seal over every other
- * field and validation rejects any changed, overlapping, or out-of-range
- * assignment before workers are launched. */
-typedef struct fractal_sealed_work_unit_v1 {
- uint64_t identity;
- uint64_t sample_begin, sample_end;
- uint32_t abi_version, sequence, worker_count;
- uint32_t width, height, row_begin, row_end;
-} fractal_sealed_work_unit_v1;
-
-typedef enum fractal_scheduler_execution_status {
- FRACTAL_SCHEDULER_EXECUTION_NOT_STARTED=0,
- FRACTAL_SCHEDULER_EXECUTION_SUCCEEDED,
- FRACTAL_SCHEDULER_EXECUTION_CANCELLED,
- FRACTAL_SCHEDULER_EXECUTION_FAILED
-} fractal_scheduler_execution_status;
-
-typedef enum fractal_publication_status {
- FRACTAL_PUBLICATION_NOT_APPLICABLE=0,
- FRACTAL_PUBLICATION_ACTIVE,
- FRACTAL_PUBLICATION_COMMITTED,
- FRACTAL_PUBLICATION_ABORTED,
- FRACTAL_PUBLICATION_FAILED
-} fractal_publication_status;
-
-typedef struct fractal_scheduler_execution {
- uint64_t sealed_work_unit_identity;
- uint32_t requested_worker_count, effective_worker_count, assignment_count;
- uint32_t decomposition_version;
- fractal_scheduler_execution_status status;
- fractal_result result;
-} fractal_scheduler_execution;
-
-fractal_result fractal_scheduler_decompose_contiguous_rows_v1(
- uint32_t width, uint32_t height, uint32_t worker_count,
- fractal_sealed_work_unit_v1 *units, size_t capacity, size_t *unit_count);
-fractal_result fractal_scheduler_validate_contiguous_rows_v1(
- const fractal_sealed_work_unit_v1 *units, size_t unit_count,
- uint32_t width, uint32_t height, uint32_t worker_count);
-uint64_t fractal_scheduler_work_unit_identity_v1(
- const fractal_sealed_work_unit_v1 *unit);
-uint64_t fractal_scheduler_work_unit_set_identity_v1(
- const fractal_sealed_work_unit_v1 *units, size_t unit_count);
-const char *fractal_scheduler_execution_status_string(
- fractal_scheduler_execution_status status);
-const char *fractal_publication_status_string(fractal_publication_status status);
-
-#ifdef __cplusplus
-}
-#endif
+#include "fractal/work_unit.h"
+#define FRACTAL_SERIAL_SCHEDULER_ID "fractal.scheduler.serial.v1"
+typedef enum fractal_scheduler_status { FRACTAL_SCHEDULER_NOT_STARTED=0,FRACTAL_SCHEDULER_REJECTED,FRACTAL_SCHEDULER_CANCELLED,FRACTAL_SCHEDULER_COMPUTE_FAILED,FRACTAL_SCHEDULER_ANALYSIS_FAILED,FRACTAL_SCHEDULER_RENDERER_FAILED,FRACTAL_SCHEDULER_SINK_FAILED,FRACTAL_SCHEDULER_PUBLISHED } fractal_scheduler_status;
+typedef enum fractal_scheduler_phase { FRACTAL_SCHEDULER_PHASE_PREPARE=0,FRACTAL_SCHEDULER_PHASE_VALIDATE,FRACTAL_SCHEDULER_PHASE_COMPUTE,FRACTAL_SCHEDULER_PHASE_ANALYSIS,FRACTAL_SCHEDULER_PHASE_RENDERER,FRACTAL_SCHEDULER_PHASE_SINK,FRACTAL_SCHEDULER_PHASE_PUBLISH } fractal_scheduler_phase;
+typedef struct fractal_scheduler_execution { uint64_t work_unit_identity; fractal_scheduler_status status; fractal_scheduler_phase last_phase; fractal_result result; uint64_t sequence_begin,sequence_end; bool published; } fractal_scheduler_execution;
+const char *fractal_scheduler_status_string(fractal_scheduler_status);
+fractal_result fractal_scheduler_execute_artifact(const fractal_runtime_modules*,const fractal_work_unit*,fractal_artifact_sink*,fractal_runtime_output*,fractal_artifact_result*,fractal_scheduler_execution*);
 #endif
