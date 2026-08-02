@@ -96,8 +96,8 @@ These are reproducibility identities, not cryptographic hashes.
 
 ## Determinism, cancellation, and failure
 
-Workers write the same per-point representation and use the same coordinate
-mapping and compute vtable as the serial reference. Field layout, whole-field
+Workers invoke the same region-level scalar computation module as the serial
+reference. Field layout, whole-field
 analysis, typed-record order, raster traversal, BMP serialization, checksums,
 artifact bytes, and committed identity therefore depend on stable row-major
 locations, never thread completion order. Progress callbacks are replayed in
@@ -116,8 +116,9 @@ atomic token at four defined boundaries:
   publication.
 
 Once a row starts, it finishes without another thread-pool cancellation check.
-The conventional point function receives no cancellation token on this path,
-which keeps the documented row boundary exact. On cancellation or failure, the
+The sealed assignment selects row-boundary cancellation, so the shared scalar
+computation module does not pass the token into point iteration on this path.
+This keeps the documented row boundary exact. On cancellation or failure, the
 field is incomplete, analysis and encoding do not run, and an active artifact
 sink is aborted exactly once. No partial artifact is committed.
 
@@ -139,6 +140,5 @@ ID and the exact v1 reference ID.
 
 ## Recommended next milestone
 
-Define and extract the computation socket and immutable compute-kernel contract,
-using the serial and thread-pool schedulers as independent consumers of the same
-computation interface.
+Extract the numeric socket from the scalar computation implementation while
+preserving the computation contract and every frozen output.

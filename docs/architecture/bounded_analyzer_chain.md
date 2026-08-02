@@ -30,7 +30,6 @@ Each aggregate record carries module ID/version, schema ID/version, chain ordina
 
 Execution is sequential and observational. There is no analyzer parallelism, dynamic loading/allocation, field transformation, scheduling feedback, refinement influence, or formula/raster/palette change. Cancellation uses the shared atomic request token, but a deterministic test hook between analyzers is not exposed publicly.
 
-The scheduler contract and immutable work-unit model now exist. The recommended
-next milestone is to define and extract the computation socket and immutable
-compute-kernel contract, using the serial and thread-pool schedulers as independent
-consumers of the same computation interface.
+The scheduler and computation contracts now exist. The recommended next
+milestone is extraction of the numeric socket from the scalar computation
+implementation while preserving the computation contract and all frozen outputs.

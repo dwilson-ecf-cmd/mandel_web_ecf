@@ -1,7 +1,7 @@
 # Socketable native runtime v1
 
 The serial reference assembly is `formula.mandelbrot.quadratic`,
-`numeric.binary64`, `compute.conventional.scalar-c`, `refinement.none`,
+`numeric.binary64`, `fractal.compute.scalar.v1`, `refinement.none`,
 `scheduler.serial.row-major`, `raster.native.iteration-bgr8`, `encoder.bmp.v3`,
 `memory.system.scoped`, `telemetry.noop`, and `platform.host.c11`. Julia substitutes
 only `formula.julia.quadratic`.
@@ -20,6 +20,6 @@ Only binary64, scalar compute, no refinement, serial or bounded contiguous-row
 thread-pool traversal, one fixed palette, BGR8, BMP, system memory, no-op telemetry,
 and bounded memory/host-file sinks are implemented. Budget exhaustion remains
 unresolved and never claims boundedness. Module loading is static. CDC and Ouro
-remain inactive. The recommended next milestone is to define and extract the
-computation socket and immutable compute-kernel contract, using both schedulers as
-independent consumers.
+remain inactive. The recommended next milestone is extraction of the numeric
+socket from the scalar computation implementation while preserving the
+computation contract and all frozen outputs.

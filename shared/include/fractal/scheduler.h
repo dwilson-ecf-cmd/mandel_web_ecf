@@ -17,6 +17,10 @@ extern "C" {
 #define FRACTAL_SCHEDULER_THREAD_POOL_DECOMPOSITION_V1_ID "fractal.scheduler.decomposition.contiguous-row-ranges.v1"
 #define FRACTAL_SCHEDULER_DECOMPOSITION_VERSION 1u
 #define FRACTAL_THREAD_POOL_MAX_WORKERS 16u
+typedef enum fractal_computation_cancellation_mode {
+ FRACTAL_COMPUTATION_CANCEL_POINT_ITERATION=1,
+ FRACTAL_COMPUTATION_CANCEL_ROW_BOUNDARY=2
+} fractal_computation_cancellation_mode;
 
 typedef struct fractal_scheduler_options {
  uint32_t requested_worker_count;
@@ -27,8 +31,11 @@ typedef struct fractal_scheduler_options {
  * assignment before workers are launched. */
 typedef struct fractal_sealed_work_unit_v1 {
  uint64_t identity;
+ uint64_t work_unit_identity,computation_identity,numeric_identity,formula_identity;
  uint64_t sample_begin, sample_end;
- uint32_t abi_version, sequence, worker_count;
+ uint32_t abi_version, contract_version, sequence, worker_count;
+ uint32_t computation_version,numeric_version,formula_version,field_format;
+ uint32_t cancellation_mode;
  uint32_t width, height, row_begin, row_end;
 } fractal_sealed_work_unit_v1;
 
@@ -48,7 +55,7 @@ typedef enum fractal_publication_status {
 } fractal_publication_status;
 
 typedef struct fractal_scheduler_execution {
- uint64_t sealed_work_unit_identity;
+ uint64_t sealed_work_unit_identity,computation_identity;
  uint32_t requested_worker_count, effective_worker_count, assignment_count;
  uint32_t decomposition_version;
  fractal_scheduler_execution_status status;
