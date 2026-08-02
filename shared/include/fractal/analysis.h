@@ -11,14 +11,20 @@ extern "C" {
 
 #define FRACTAL_ANALYSIS_MAX_ANALYZERS 1u
 #define FRACTAL_ANALYSIS_MAX_RECORDS 1u
-#define FRACTAL_ANALYSIS_MAX_RECORD_PAYLOAD 584u
+#define FRACTAL_ANALYSIS_MAX_RECORD_PAYLOAD 5262u
 #define FRACTAL_ANALYSIS_RECORD_ESCAPE_SUMMARY 1u
 #define FRACTAL_ANALYSIS_RECORD_ITERATION_HISTOGRAM 2u
+#define FRACTAL_ANALYSIS_RECORD_SPATIAL_WORKLOAD_GRID 3u
 #define FRACTAL_ESCAPE_SUMMARY_SCHEMA_VERSION 1u
 #define FRACTAL_ESCAPE_SUMMARY_SCHEMA_ID "fractal.analysis.escape-classification-summary.v1"
 #define FRACTAL_ITERATION_HISTOGRAM_SCHEMA_VERSION 1u
 #define FRACTAL_ITERATION_HISTOGRAM_SCHEMA_ID "fractal.analysis.iteration-histogram.v1"
 #define FRACTAL_ITERATION_HISTOGRAM_BIN_COUNT 64u
+#define FRACTAL_SPATIAL_WORKLOAD_SCHEMA_VERSION 1u
+#define FRACTAL_SPATIAL_WORKLOAD_SCHEMA_ID "fractal.analysis.spatial-workload-grid.v1"
+#define FRACTAL_SPATIAL_WORKLOAD_GRID_WIDTH 8u
+#define FRACTAL_SPATIAL_WORKLOAD_GRID_HEIGHT 8u
+#define FRACTAL_SPATIAL_WORKLOAD_CELL_COUNT 64u
 
 typedef enum fractal_field_format {
  FRACTAL_FIELD_ITERATION_CLASSIFICATION_V1=1
@@ -54,6 +60,21 @@ typedef struct fractal_iteration_histogram_v1 {
  uint64_t overflow_bin_count;
  bool histogram_valid;
 } fractal_iteration_histogram_v1;
+typedef struct fractal_spatial_workload_cell_v1 {
+ uint64_t samples,escaped,bounded,unresolved,cancelled,failed;
+ uint64_t eligible_samples,minimum_iteration,maximum_iteration,summed_iterations;
+ bool iteration_statistics_valid;
+} fractal_spatial_workload_cell_v1;
+/* Cells are row-major.  A source coordinate maps inclusively with
+ * floor(x * 8 / source_width), floor(y * 8 / source_height). */
+typedef struct fractal_spatial_workload_grid_v1 {
+ uint32_t grid_width,grid_height,source_width,source_height;
+ fractal_spatial_workload_cell_v1 cells[FRACTAL_SPATIAL_WORKLOAD_CELL_COUNT];
+ uint64_t total_samples,total_eligible_samples,minimum_iteration;
+ uint64_t maximum_iteration,summed_iterations;
+ bool iteration_statistics_valid,classification_conserved;
+ fractal_result result_status;
+} fractal_spatial_workload_grid_v1;
 typedef struct fractal_analysis_record {
  uint32_t type_id,schema_version,payload_size;
  unsigned char payload[FRACTAL_ANALYSIS_MAX_RECORD_PAYLOAD];
@@ -97,9 +118,12 @@ fractal_result fractal_escape_summary_record_decode(const fractal_analysis_recor
  * greater than 2^61. */
 size_t fractal_iteration_histogram_bucket_v1(uint64_t iteration);
 fractal_result fractal_iteration_histogram_record_decode(const fractal_analysis_record*,fractal_iteration_histogram_v1*);
+fractal_result fractal_spatial_workload_cell_index_v1(uint32_t,uint32_t,uint32_t,uint32_t,size_t*);
+fractal_result fractal_spatial_workload_record_decode(const fractal_analysis_record*,fractal_spatial_workload_grid_v1*);
 extern const fractal_analyzer_vtable fractal_analyzer_passthrough;
 extern const fractal_analyzer_vtable fractal_analyzer_escape_classification_summary;
 extern const fractal_analyzer_vtable fractal_analyzer_iteration_histogram;
+extern const fractal_analyzer_vtable fractal_analyzer_spatial_workload_grid;
 #ifdef __cplusplus
 }
 #endif
