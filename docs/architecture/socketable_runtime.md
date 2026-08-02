@@ -1,6 +1,6 @@
 # Socketable native runtime v1
 
-The first installed assembly is `formula.mandelbrot.quadratic`,
+The serial reference assembly is `formula.mandelbrot.quadratic`,
 `numeric.binary64`, `compute.conventional.scalar-c`, `refinement.none`,
 `scheduler.serial.row-major`, `raster.native.iteration-bgr8`, `encoder.bmp.v3`,
 `memory.system.scoped`, `telemetry.noop`, and `platform.host.c11`. Julia substitutes
@@ -16,10 +16,10 @@ mapping, positive imaginary upward, palette `palette.socket-v1`, and BMP v3:
 
 ## Limitations and next milestone
 
-Only binary64, scalar compute, no refinement, serial traversal, one fixed palette,
-BGR8, BMP, system memory, no-op telemetry, and a bounded in-memory write sink are
-implemented. Budget exhaustion remains unresolved and never claims boundedness.
-Module loading is static. A natural next milestone is a host platform file sink and
-streaming manifest/artifact API, followed by a deterministic thread-pool scheduler;
-CDC and Ouro should remain inactive until their own contracts are implemented and
-validated.
+Only binary64, scalar compute, no refinement, serial or bounded contiguous-row
+thread-pool traversal, one fixed palette, BGR8, BMP, system memory, no-op telemetry,
+and bounded memory/host-file sinks are implemented. Budget exhaustion remains
+unresolved and never claims boundedness. Module loading is static. CDC and Ouro
+remain inactive. The recommended next milestone is to define and extract the
+computation socket and immutable compute-kernel contract, using both schedulers as
+independent consumers.

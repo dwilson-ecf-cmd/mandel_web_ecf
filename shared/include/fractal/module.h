@@ -28,7 +28,8 @@ enum { FRACTAL_CAP_SCALAR_ARITHMETIC=UINT64_C(1)<<0, FRACTAL_CAP_POINT_SCALAR=UI
  FRACTAL_CAP_ANALYZER_PRESERVES_FIELD_VALUES=UINT64_C(1)<<12,
  FRACTAL_CAP_ANALYZER_CANCELLATION=UINT64_C(1)<<13,
  FRACTAL_CAP_ANALYZER_PRODUCES_RECORDS=UINT64_C(1)<<14,
- FRACTAL_CAP_ANALYZER_WHOLE_FIELD=UINT64_C(1)<<15 };
+ FRACTAL_CAP_ANALYZER_WHOLE_FIELD=UINT64_C(1)<<15,
+ FRACTAL_CAP_BOUNDED_THREAD_POOL=UINT64_C(1)<<16 };
 fractal_result fractal_module_descriptor_validate(const fractal_module_descriptor *descriptor,
  fractal_module_kind expected_kind);
 const char *fractal_module_kind_string(fractal_module_kind kind);
