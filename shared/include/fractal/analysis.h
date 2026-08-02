@@ -9,8 +9,10 @@
 extern "C" {
 #endif
 
-#define FRACTAL_ANALYSIS_MAX_ANALYZERS 1u
-#define FRACTAL_ANALYSIS_MAX_RECORDS 1u
+#define FRACTAL_ANALYZER_CHAIN_MAX 8u
+#define FRACTAL_ANALYSIS_MAX_ANALYZERS FRACTAL_ANALYZER_CHAIN_MAX
+#define FRACTAL_ANALYSIS_MAX_RECORDS FRACTAL_ANALYZER_CHAIN_MAX
+#define FRACTAL_ANALYZER_CHAIN_ABI_VERSION 1u
 #define FRACTAL_ANALYSIS_MAX_RECORD_PAYLOAD 5262u
 #define FRACTAL_ANALYSIS_RECORD_ESCAPE_SUMMARY 1u
 #define FRACTAL_ANALYSIS_RECORD_ITERATION_HISTOGRAM 2u
@@ -79,11 +81,14 @@ typedef struct fractal_analysis_record {
  uint32_t type_id,schema_version,payload_size;
  unsigned char payload[FRACTAL_ANALYSIS_MAX_RECORD_PAYLOAD];
  uint64_t identity;
+ const char *analyzer_id,*schema_id; uint32_t analyzer_version,chain_ordinal;
+ fractal_result status;
 } fractal_analysis_record;
 typedef struct fractal_analysis_result {
  const char *analyzer_id; uint32_t analyzer_version;
  uint64_t source_field_checksum,output_field_checksum,samples_examined,identity;
- size_t records_produced; bool field_preserved,cancelled; fractal_result result;
+ size_t records_required,records_produced,analyzer_count; bool field_preserved,cancelled; fractal_result result;
+ uint32_t chain_version;
  fractal_analysis_record records[FRACTAL_ANALYSIS_MAX_RECORDS];
 } fractal_analysis_result;
 struct fractal_cancellation;
@@ -108,6 +113,9 @@ fractal_result fractal_field_view_validate(const fractal_field_view*,size_t);
 fractal_result fractal_mutable_field_view_validate(const fractal_mutable_field_view*,size_t);
 fractal_result fractal_analysis_request_serialize(const fractal_analysis_request*,char*,size_t,size_t*);
 fractal_result fractal_analysis_pipeline_init(fractal_analysis_pipeline*,const fractal_analyzer_vtable*,const fractal_analysis_request*);
+fractal_result fractal_analysis_pipeline_init_many(fractal_analysis_pipeline*,const fractal_analyzer_vtable*const*,const fractal_analysis_request*,size_t);
+fractal_result fractal_analysis_pipeline_validate(const fractal_analysis_pipeline*,const fractal_field_descriptor*,size_t);
+fractal_result fractal_analysis_pipeline_run(const fractal_analysis_pipeline*,const fractal_field_view*,const struct fractal_cancellation*,fractal_analysis_result*,size_t);
 fractal_result fractal_analysis_pipeline_serialize(const fractal_analysis_pipeline*,char*,size_t,size_t*);
 fractal_result fractal_analysis_result_serialize(const fractal_analysis_result*,char*,size_t,size_t*);
 fractal_result fractal_analysis_record_serialize(const fractal_analysis_record*,char*,size_t,size_t*);
