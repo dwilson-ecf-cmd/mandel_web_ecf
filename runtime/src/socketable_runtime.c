@@ -1,5 +1,4 @@
 #include "fractal/socketable_runtime.h"
-#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -10,11 +9,6 @@ void fractal_cancellation_request(fractal_cancellation*c){if(c)atomic_store(&c->
 void fractal_cancellation_reset(fractal_cancellation*c){if(c)atomic_store(&c->requested,false);}
 
 #define DESC(name,id,title,kind,caps) static const fractal_module_descriptor name={1u,1u,id,title,kind,caps,true}
-DESC(d_num,"numeric.binary64","IEEE-754 binary64",FRACTAL_MODULE_NUMERIC,FRACTAL_CAP_SCALAR_ARITHMETIC);
-DESC(d_man,"formula.mandelbrot.quadratic","Mandelbrot quadratic",FRACTAL_MODULE_FORMULA,FRACTAL_CAP_POINT_SCALAR);
-DESC(d_jul,"formula.julia.quadratic","Julia quadratic",FRACTAL_MODULE_FORMULA,FRACTAL_CAP_POINT_SCALAR);
-DESC(d_compute_v1,FRACTAL_COMPUTATION_SCALAR_V1_ID,"Scalar computation v1",FRACTAL_MODULE_COMPUTE,FRACTAL_CAP_POINT_SCALAR|FRACTAL_CAP_ITERATION_FIELD|FRACTAL_CAP_COMPUTE_CONTIGUOUS_ROWS|FRACTAL_CAP_COMPUTE_CALLER_FIELD|FRACTAL_CAP_COMPUTE_CANCELLATION);
-DESC(d_compute_compat,FRACTAL_COMPUTE_CONVENTIONAL_COMPATIBILITY_ID,"Conventional scalar C compatibility",FRACTAL_MODULE_COMPUTE,FRACTAL_CAP_POINT_SCALAR|FRACTAL_CAP_ITERATION_FIELD|FRACTAL_CAP_COMPUTE_CONTIGUOUS_ROWS|FRACTAL_CAP_COMPUTE_CALLER_FIELD|FRACTAL_CAP_COMPUTE_CANCELLATION);
 DESC(d_none,"refinement.none","No refinement",FRACTAL_MODULE_REFINEMENT,0);
 static const fractal_module_descriptor d_cdc={1u,1u,"refinement.cdc.unavailable","CDC refinement (unavailable)",FRACTAL_MODULE_REFINEMENT,0,false};
 DESC(d_sched,"fractal.scheduler.serial.v1","Serial row-major",FRACTAL_MODULE_SCHEDULER,FRACTAL_CAP_SERIAL_FIELD|FRACTAL_CAP_ITERATION_FIELD);
@@ -24,31 +18,6 @@ DESC(d_mem,"memory.system.scoped","System scoped memory",FRACTAL_MODULE_MEMORY,F
 static const fractal_module_descriptor d_ouro={1u,1u,"memory.ouro.unavailable","Ouro memory (unavailable)",FRACTAL_MODULE_MEMORY,0,false};
 DESC(d_tel,"telemetry.noop","No-op telemetry",FRACTAL_MODULE_TELEMETRY,0);
 DESC(d_host,"platform.host.c11","Host C11 platform",FRACTAL_MODULE_PLATFORM,0);
-
-static double get(const fractal_scalar *s){double v;memcpy(&v,s->storage,8);return v;} static void put(fractal_scalar*s,double v){memcpy(s->storage,&v,8);}
-static fractal_result from(double v,fractal_scalar*s){if(!s||!isfinite(v))return FRACTAL_ERROR_INVALID_ARGUMENT;put(s,v);return FRACTAL_OK;}
-static fractal_result to(const fractal_scalar*s,double*v){if(!s||!v)return FRACTAL_ERROR_INVALID_ARGUMENT;*v=get(s);return FRACTAL_OK;}
-#define OP(fn,expr) static fractal_result fn(const fractal_scalar*a,const fractal_scalar*b,fractal_scalar*o){double v;if(!a||!b||!o)return FRACTAL_ERROR_INVALID_ARGUMENT;v=(expr);if(!isfinite(v))return FRACTAL_ERROR_INVALID_SPEC;put(o,v);return FRACTAL_OK;}
-OP(add,get(a)+get(b)) OP(sub,get(a)-get(b)) OP(mul,get(a)*get(b))
-static bool finite_scalar(const fractal_scalar*s){return s&&isfinite(get(s));}
-static fractal_result serialize_scalar(const fractal_scalar*s,char*b,size_t c,size_t*l){uint64_t bits;int n;if(!s||!l)return FRACTAL_ERROR_INVALID_ARGUMENT;memcpy(&bits,s->storage,8);n=snprintf(b,c,"%016llx",(unsigned long long)bits);*l=16u;return n<0||!b||c<17u?FRACTAL_ERROR_BUFFER_TOO_SMALL:FRACTAL_OK;}
-const fractal_numeric_vtable fractal_numeric_binary64={&d_num,53u,8u,8u,from,to,add,sub,mul,finite_scalar,serialize_scalar};
-
-static fractal_result valid_params(const fractal_formula_parameters*p,const char*id,size_t size){if(!p||!p->type_id||strcmp(p->type_id,id)||!p->data||p->size!=size)return FRACTAL_ERROR_INVALID_SPEC;return FRACTAL_OK;}
-static fractal_result valid_man(const fractal_formula_parameters*p){const fractal_mandelbrot_parameters*q;if(valid_params(p,d_man.module_id,sizeof(*q))!=FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;q=p->data;return isfinite(q->escape_radius)&&q->escape_radius>0.0?FRACTAL_OK:FRACTAL_ERROR_INVALID_SPEC;}
-static fractal_result valid_jul(const fractal_formula_parameters*p){const fractal_julia_parameters*q;if(valid_params(p,d_jul.module_id,sizeof(*q))!=FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;q=p->data;return isfinite(q->constant_real)&&isfinite(q->constant_imaginary)&&isfinite(q->escape_radius)&&q->escape_radius>0.0?FRACTAL_OK:FRACTAL_ERROR_INVALID_SPEC;}
-static size_t state_size(void){return sizeof(fractal_complex_state);} static size_t state_align(void){return _Alignof(fractal_complex_state);}
-static fractal_result init_common(const fractal_numeric_vtable*n,double zr,double zi,double cr,double ci,double radius,void*out){fractal_complex_state*s=out;fractal_scalar r;if(!n||!out)return FRACTAL_ERROR_INVALID_ARGUMENT;if(n->from_double(zr,&s->zr)||n->from_double(zi,&s->zi)||n->from_double(cr,&s->cr)||n->from_double(ci,&s->ci)||n->from_double(radius,&r)||n->multiply(&r,&r,&s->radius_squared))return FRACTAL_ERROR_INVALID_SPEC;return FRACTAL_OK;}
-static fractal_result init_man(const fractal_numeric_vtable*n,const fractal_formula_parameters*p,double x,double y,void*s){const fractal_mandelbrot_parameters*q;if(valid_man(p)!=FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;q=p->data;return init_common(n,0,0,x,y,q->escape_radius,s);}
-static fractal_result init_jul(const fractal_numeric_vtable*n,const fractal_formula_parameters*p,double x,double y,void*s){const fractal_julia_parameters*q;if(valid_jul(p)!=FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;q=p->data;return init_common(n,x,y,q->constant_real,q->constant_imaginary,q->escape_radius,s);}
-static fractal_result step(const fractal_numeric_vtable*n,void*v){fractal_complex_state*s=v;fractal_scalar rr,ii,ri,two,next_r,next_i;if(!n||!s)return FRACTAL_ERROR_INVALID_ARGUMENT;if(n->multiply(&s->zr,&s->zr,&rr)||n->multiply(&s->zi,&s->zi,&ii)||n->subtract(&rr,&ii,&next_r)||n->add(&next_r,&s->cr,&next_r)||n->multiply(&s->zr,&s->zi,&ri)||n->from_double(2,&two)||n->multiply(&two,&ri,&next_i)||n->add(&next_i,&s->ci,&next_i))return FRACTAL_ERROR_INVALID_SPEC;s->zr=next_r;s->zi=next_i;return FRACTAL_OK;}
-static fractal_result classify(const fractal_numeric_vtable*n,const void*v,fractal_point_class*c){const fractal_complex_state*s=v;fractal_scalar rr,ii,m;if(!n||!s||!c)return FRACTAL_ERROR_INVALID_ARGUMENT;if(n->multiply(&s->zr,&s->zr,&rr)||n->multiply(&s->zi,&s->zi,&ii)||n->add(&rr,&ii,&m)){*c=FRACTAL_CLASS_FAILED;return FRACTAL_OK;}*c=get(&m)>get(&s->radius_squared)?FRACTAL_CLASS_ESCAPED:FRACTAL_CLASS_UNRESOLVED;return FRACTAL_OK;}
-static fractal_result ser_man(const fractal_formula_parameters*p,char*b,size_t c,size_t*l){const fractal_mandelbrot_parameters*q;int n;if(valid_man(p)!=FRACTAL_OK||!l)return FRACTAL_ERROR_INVALID_SPEC;q=p->data;n=snprintf(b,c,"{\"escape_radius\":%.17g}",q->escape_radius);*l=n<0?0u:(size_t)n;return n<0||!b||c<=(size_t)n?FRACTAL_ERROR_BUFFER_TOO_SMALL:FRACTAL_OK;}
-static fractal_result ser_jul(const fractal_formula_parameters*p,char*b,size_t c,size_t*l){const fractal_julia_parameters*q;int n;if(valid_jul(p)!=FRACTAL_OK||!l)return FRACTAL_ERROR_INVALID_SPEC;q=p->data;n=snprintf(b,c,"{\"constant_imaginary\":%.17g,\"constant_real\":%.17g,\"escape_radius\":%.17g}",q->constant_imaginary,q->constant_real,q->escape_radius);*l=n<0?0u:(size_t)n;return n<0||!b||c<=(size_t)n?FRACTAL_ERROR_BUFFER_TOO_SMALL:FRACTAL_OK;}
-const fractal_formula_vtable fractal_formula_mandelbrot={&d_man,FRACTAL_CAP_SCALAR_ARITHMETIC,valid_man,state_size,state_align,init_man,step,classify,ser_man};
-const fractal_formula_vtable fractal_formula_julia={&d_jul,FRACTAL_CAP_SCALAR_ARITHMETIC,valid_jul,state_size,state_align,init_jul,step,classify,ser_jul};
-
-static fractal_result point(const fractal_formula_vtable*f,const fractal_numeric_vtable*n,const fractal_formula_parameters*p,double x,double y,uint32_t budget,const fractal_cancellation*cancel,fractal_point_result_compact*out){fractal_complex_state state;uint32_t i;if(!f||!n||!out||budget==0||f->state_size()>sizeof(state)||f->validate_parameters(p)!=FRACTAL_OK)return FRACTAL_ERROR_INVALID_ARGUMENT;memset(out,0,sizeof(*out));out->classification=FRACTAL_CLASS_UNRESOLVED;if(f->initialize_state(n,p,x,y,&state)!=FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;for(i=1;i<=budget;i++){fractal_point_class c;if(fractal_cancellation_is_requested(cancel)){out->classification=FRACTAL_CLASS_CANCELLED;return FRACTAL_ERROR_CANCELLED;}if(f->step(n,&state)!=FRACTAL_OK){out->classification=FRACTAL_CLASS_FAILED;return FRACTAL_OK;}out->steps=i;if(f->classify(n,&state,&c)!=FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;if(c==FRACTAL_CLASS_ESCAPED){out->classification=(uint8_t)c;return FRACTAL_OK;}}return FRACTAL_OK;}
 
 uint64_t fractal_checksum64(const void*d,size_t n){const unsigned char*p=d;uint64_t h=UINT64_C(1469598103934665603);while(n--){h^=*p++;h*=UINT64_C(1099511628211);}return h;}
 
@@ -61,113 +30,6 @@ uint64_t fractal_module_identity_v1(const fractal_module_descriptor*d){
  return n<0||(size_t)n>=sizeof(text)?0:fractal_checksum64(text,(size_t)n);
 }
 
-static uint64_t computation_problem_identity(const fractal_compute_vtable*c,const fractal_computation_problem_v1*p){
- char params[256],text[1024];size_t length=0;int n;
- if(!c||!p||!p->formula||!p->numeric||!p->formula->serialize_parameters||
-    p->formula->serialize_parameters(&p->parameters,params,sizeof(params),&length)!=FRACTAL_OK)return 0;
- n=snprintf(text,sizeof(text),"compute-work-unit|abi=%u|contract=%u|compute=%s@%u|numeric=%s@%u|formula=%s@%u|parameters=%.*s|max=%u|center=%.17g,%.17g|scale=%.17g|field=%u,%u,%zu,%u,%u",
-  p->abi_version,p->contract_version,c->descriptor->module_id,c->descriptor->module_version,
-  p->numeric->descriptor->module_id,p->numeric->descriptor->module_version,
-  p->formula->descriptor->module_id,p->formula->descriptor->module_version,(int)length,params,
-  p->maximum_steps,p->center_real,p->center_imaginary,p->scale,p->field.width,p->field.height,
-  p->field.stride,(unsigned)p->field.format,p->field.flags);
- return n<0||(size_t)n>=sizeof(text)?0:fractal_checksum64(text,(size_t)n);
-}
-
-fractal_result fractal_computation_problem_validate_v1(const fractal_compute_vtable*c,const fractal_computation_problem_v1*p){
- size_t bytes;uint64_t identity;
- if(!c||!p||!c->descriptor||!p->formula||!p->numeric||!p->formula->descriptor||
-    !p->numeric->descriptor||!p->formula->validate_parameters||!p->formula->state_size||
-    !p->formula->state_alignment||!p->formula->initialize_state||!p->formula->step||
-    !p->formula->classify||!p->formula->serialize_parameters||!p->numeric->from_double||
-    !p->numeric->to_double||!p->numeric->add||!p->numeric->subtract||
-    !p->numeric->multiply||!p->numeric->finite||!p->numeric->serialize||
-    p->abi_version!=FRACTAL_COMPUTATION_ABI_VERSION||
-    p->contract_version!=FRACTAL_COMPUTATION_CONTRACT_VERSION||
-    c->contract_version!=FRACTAL_COMPUTATION_CONTRACT_VERSION||!c->execute||!c->point||
-    fractal_module_descriptor_validate(c->descriptor,FRACTAL_MODULE_COMPUTE)!=FRACTAL_OK||
-    fractal_module_descriptor_validate(p->formula->descriptor,FRACTAL_MODULE_FORMULA)!=FRACTAL_OK||
-    fractal_module_descriptor_validate(p->numeric->descriptor,FRACTAL_MODULE_NUMERIC)!=FRACTAL_OK||
-    !p->maximum_steps||!isfinite(p->center_real)||!isfinite(p->center_imaginary)||
-    !isfinite(p->scale)||p->scale<=0.0||
-    fractal_field_descriptor_validate(&p->field,sizeof(fractal_point_result_compact),&bytes)!=FRACTAL_OK||
-    p->field.format!=FRACTAL_FIELD_ITERATION_CLASSIFICATION_V1||
-    (c->descriptor->capability_flags&(FRACTAL_CAP_COMPUTE_CONTIGUOUS_ROWS|
-     FRACTAL_CAP_COMPUTE_CALLER_FIELD|FRACTAL_CAP_COMPUTE_CANCELLATION))!=
-     (FRACTAL_CAP_COMPUTE_CONTIGUOUS_ROWS|FRACTAL_CAP_COMPUTE_CALLER_FIELD|
-      FRACTAL_CAP_COMPUTE_CANCELLATION)||
-    (c->descriptor->capability_flags&c->required_field_capabilities)!=c->required_field_capabilities||
-    (p->formula->descriptor->capability_flags&c->required_formula_capabilities)!=c->required_formula_capabilities||
-    (p->numeric->descriptor->capability_flags&c->required_numeric_capabilities)!=c->required_numeric_capabilities||
-    (p->numeric->descriptor->capability_flags&p->formula->required_numeric_capabilities)!=p->formula->required_numeric_capabilities||
-    p->formula->validate_parameters(&p->parameters)!=FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;
- identity=computation_problem_identity(c,p);
- return identity&&identity==p->identity?FRACTAL_OK:FRACTAL_ERROR_INVALID_SPEC;
-}
-
-fractal_result fractal_computation_problem_init_v1(const fractal_runtime_modules*r,const fractal_job_spec*j,const fractal_field_descriptor*d,fractal_computation_problem_v1*out){
- if(!r||!j||!d||!out||!r->compute||!r->formula||!r->numeric)return FRACTAL_ERROR_INVALID_ARGUMENT;
- *out=(fractal_computation_problem_v1){FRACTAL_COMPUTATION_ABI_VERSION,FRACTAL_COMPUTATION_CONTRACT_VERSION,
-  r->formula,r->numeric,j->problem.parameters,j->problem.maximum_steps,j->view.center_real,
-  j->view.center_imaginary,j->view.scale,*d,0};
- out->identity=computation_problem_identity(r->compute,out);
- return fractal_computation_problem_validate_v1(r->compute,out);
-}
-
-static fractal_result computation_execute(const fractal_compute_vtable*c,const fractal_computation_request_v1*q,fractal_computation_result_v1*out){
- const fractal_computation_problem_v1*p;const fractal_sealed_work_unit_v1*a;uint32_t x,y;double aspect;
- if(!out)return FRACTAL_ERROR_INVALID_ARGUMENT;
- memset(out,0,sizeof(*out));out->status=FRACTAL_COMPUTATION_NOT_STARTED;out->result=FRACTAL_ERROR_INVALID_ARGUMENT;
- if(!q||q->abi_version!=FRACTAL_COMPUTATION_ABI_VERSION||q->contract_version!=FRACTAL_COMPUTATION_CONTRACT_VERSION||
-    !q->problem||!q->assignment)return FRACTAL_ERROR_INVALID_ARGUMENT;
- p=q->problem;a=q->assignment;out->assignment_identity=a->identity;out->sequence=a->sequence;
- if(fractal_computation_problem_validate_v1(c,p)!=FRACTAL_OK||
-    fractal_mutable_field_view_validate(&q->destination,sizeof(fractal_point_result_compact))!=FRACTAL_OK||
-    memcmp(&q->destination.descriptor,&p->field,sizeof(p->field))||
-    a->abi_version!=FRACTAL_COMPUTATION_ABI_VERSION||a->contract_version!=FRACTAL_COMPUTATION_CONTRACT_VERSION||
-    a->work_unit_identity!=p->identity||a->computation_identity!=fractal_module_identity_v1(c->descriptor)||
-    a->numeric_identity!=fractal_module_identity_v1(p->numeric->descriptor)||
-    a->formula_identity!=fractal_module_identity_v1(p->formula->descriptor)||
-    a->computation_version!=c->descriptor->module_version||a->numeric_version!=p->numeric->descriptor->module_version||
-    a->formula_version!=p->formula->descriptor->module_version||a->field_format!=(uint32_t)p->field.format||
-    (a->cancellation_mode!=FRACTAL_COMPUTATION_CANCEL_POINT_ITERATION&&
-     a->cancellation_mode!=FRACTAL_COMPUTATION_CANCEL_ROW_BOUNDARY)||
-    a->width!=p->field.width||a->height!=p->field.height||!a->worker_count||
-    a->sequence>=a->worker_count||
-    a->row_begin>a->row_end||a->row_end>a->height||
-    a->sample_begin!=(uint64_t)a->row_begin*a->width||a->sample_end!=(uint64_t)a->row_end*a->width||
-    a->identity!=fractal_scheduler_work_unit_identity_v1(a)){
-  out->status=FRACTAL_COMPUTATION_FAILED;out->result=FRACTAL_ERROR_INVALID_SPEC;return out->result;
- }
- if(fractal_cancellation_is_requested(q->cancellation)){
-  out->status=FRACTAL_COMPUTATION_CANCELLED;out->result=FRACTAL_ERROR_CANCELLED;return out->result;
- }
- aspect=(double)p->field.width/(double)p->field.height;
- for(y=a->row_begin;y<a->row_end;y++){
-  fractal_point_result_compact*row;
-  if(fractal_cancellation_is_requested(q->cancellation)){
-   out->status=FRACTAL_COMPUTATION_CANCELLED;out->result=FRACTAL_ERROR_CANCELLED;return out->result;
-  }
-  row=(fractal_point_result_compact*)((unsigned char*)q->destination.data+(size_t)y*p->field.stride);
-  for(x=0;x<p->field.width;x++){
-   double re=p->center_real+(((double)x+0.5)/(double)p->field.width-0.5)*p->scale*aspect;
-   double im=p->center_imaginary+(0.5-((double)y+0.5)/(double)p->field.height)*p->scale;
-   const fractal_cancellation *point_cancellation=
-    a->cancellation_mode==FRACTAL_COMPUTATION_CANCEL_POINT_ITERATION?q->cancellation:NULL;
-   fractal_result result=c->point(p->formula,p->numeric,&p->parameters,re,im,p->maximum_steps,point_cancellation,&row[x]);
-   if(result!=FRACTAL_OK){out->status=result==FRACTAL_ERROR_CANCELLED?FRACTAL_COMPUTATION_CANCELLED:FRACTAL_COMPUTATION_FAILED;out->result=result;return result;}
-   out->samples_completed++;
-  }
-  out->rows_completed++;
- }
- out->status=FRACTAL_COMPUTATION_SUCCEEDED;out->result=FRACTAL_OK;return FRACTAL_OK;
-}
-static fractal_result scalar_execute(const fractal_computation_request_v1*q,fractal_computation_result_v1*out);
-static fractal_result compatibility_execute(const fractal_computation_request_v1*q,fractal_computation_result_v1*out);
-const fractal_compute_vtable fractal_compute_scalar_v1={&d_compute_v1,FRACTAL_CAP_POINT_SCALAR,FRACTAL_CAP_SCALAR_ARITHMETIC,FRACTAL_CAP_ITERATION_FIELD,FRACTAL_COMPUTATION_CONTRACT_VERSION,point,scalar_execute};
-const fractal_compute_vtable fractal_compute_conventional={&d_compute_compat,FRACTAL_CAP_POINT_SCALAR,FRACTAL_CAP_SCALAR_ARITHMETIC,FRACTAL_CAP_ITERATION_FIELD,FRACTAL_COMPUTATION_CONTRACT_VERSION,point,compatibility_execute};
-static fractal_result scalar_execute(const fractal_computation_request_v1*q,fractal_computation_result_v1*out){return computation_execute(&fractal_compute_scalar_v1,q,out);}
-static fractal_result compatibility_execute(const fractal_computation_request_v1*q,fractal_computation_result_v1*out){return computation_execute(&fractal_compute_conventional,q,out);}
 const fractal_refinement_vtable fractal_refinement_none={&d_none,true},fractal_refinement_cdc_unavailable={&d_cdc,false};
 
 static fractal_result execute(const fractal_runtime_modules*r,const fractal_job_spec*j,fractal_field*f,const fractal_cancellation*c,fractal_progress_fn progress,void*ctx){fractal_field_descriptor d;fractal_mutable_field_view destination;fractal_computation_problem_v1 problem;fractal_sealed_work_unit_v1 assignment;fractal_computation_request_v1 request;fractal_computation_result_v1 result;size_t count=0;uint32_t y;if(!r||!j||!f||!f->samples)return FRACTAL_ERROR_INVALID_ARGUMENT;if(fractal_cancellation_is_requested(c))return FRACTAL_ERROR_CANCELLED;if(f->width!=j->view.width||f->height!=j->view.height||f->stride<(size_t)f->width*sizeof(*f->samples)||(f->height&&f->stride>SIZE_MAX/f->height))return FRACTAL_ERROR_INVALID_SPEC;d=(fractal_field_descriptor){f->width,f->height,f->stride,FRACTAL_FIELD_ITERATION_CLASSIFICATION_V1,0};destination=(fractal_mutable_field_view){d,f->samples,f->stride*f->height};if(fractal_computation_problem_init_v1(r,j,&d,&problem)!=FRACTAL_OK||fractal_scheduler_decompose_computation_v1(r->compute,&problem,1,FRACTAL_COMPUTATION_CANCEL_POINT_ITERATION,&assignment,1,&count)!=FRACTAL_OK||count!=1)return FRACTAL_ERROR_INVALID_SPEC;request=(fractal_computation_request_v1){FRACTAL_COMPUTATION_ABI_VERSION,FRACTAL_COMPUTATION_CONTRACT_VERSION,&problem,&assignment,destination,c};if(r->compute->execute(&request,&result)!=FRACTAL_OK)return result.result;f->completed_rows=f->height;f->complete=true;if(progress)for(y=1;y<=f->height;y++)progress(y,f->height,ctx);return FRACTAL_OK;}
@@ -180,8 +42,74 @@ const fractal_encoder_vtable fractal_encoder_bmp={&d_bmp,FRACTAL_CAP_BGR8,encode
 const fractal_memory_vtable fractal_memory_system_module={&d_mem},fractal_memory_ouro_unavailable_module={&d_ouro};
 static void noop(void*s,const fractal_telemetry_event*e){(void)s;(void)e;} const fractal_telemetry_vtable fractal_telemetry_noop={&d_tel,noop}; const fractal_platform_vtable fractal_platform_host={&d_host};
 
-fractal_result fractal_runtime_validate(const fractal_runtime_modules*r){const fractal_module_descriptor*d[10];if(!r||!r->formula||!r->numeric||!r->compute||!r->refinement||!r->scheduler||!r->raster||!r->encoder||!r->memory_module||!r->memory||!r->telemetry||!r->platform)return FRACTAL_ERROR_INVALID_ARGUMENT;d[0]=r->formula->descriptor;d[1]=r->numeric->descriptor;d[2]=r->compute->descriptor;d[3]=r->refinement->descriptor;d[4]=r->scheduler->descriptor;d[5]=r->raster->descriptor;d[6]=r->encoder->descriptor;d[7]=r->memory_module->descriptor;d[8]=r->telemetry->descriptor;d[9]=r->platform->descriptor;for(unsigned i=0;i<10;i++)if(fractal_module_descriptor_validate(d[i],(fractal_module_kind)i)!=FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;if(r->compute->contract_version!=FRACTAL_COMPUTATION_CONTRACT_VERSION||!r->compute->execute||!r->compute->point)return FRACTAL_ERROR_INVALID_SPEC;if(!strcmp(r->scheduler->descriptor->module_id,FRACTAL_SCHEDULER_THREAD_POOL_V1_ID)&&(!r->scheduler_options.requested_worker_count||r->scheduler_options.requested_worker_count>FRACTAL_THREAD_POOL_MAX_WORKERS))return FRACTAL_ERROR_INVALID_SPEC;if(r->analysis.count>FRACTAL_ANALYZER_CHAIN_MAX)return FRACTAL_ERROR_INVALID_SPEC;for(unsigned i=0;i<r->analysis.count;i++)if(!r->analysis.analyzers[i]||fractal_module_descriptor_validate(r->analysis.analyzers[i]->descriptor,FRACTAL_MODULE_ANALYZER)!=FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;if(!r->refinement->available||r->memory_module==&fractal_memory_ouro_unavailable_module||r->memory->kind!=FRACTAL_MEMORY_BACKEND_SYSTEM)return FRACTAL_ERROR_NOT_IMPLEMENTED;if((r->numeric->descriptor->capability_flags&r->formula->required_numeric_capabilities)!=r->formula->required_numeric_capabilities||(r->formula->descriptor->capability_flags&r->compute->required_formula_capabilities)!=r->compute->required_formula_capabilities||(r->numeric->descriptor->capability_flags&r->compute->required_numeric_capabilities)!=r->compute->required_numeric_capabilities||(r->compute->descriptor->capability_flags&r->scheduler->required_compute_capabilities)!=r->scheduler->required_compute_capabilities||(r->compute->descriptor->capability_flags&r->compute->required_field_capabilities)!=r->compute->required_field_capabilities||(r->scheduler->produced_capabilities&r->raster->accepted_field_capabilities)!=r->raster->accepted_field_capabilities||(r->raster->produced_capabilities&r->encoder->accepted_pixel_capabilities)!=r->encoder->accepted_pixel_capabilities)return FRACTAL_ERROR_INVALID_SPEC;return FRACTAL_OK;}
-fractal_result fractal_job_spec_validate(const fractal_runtime_modules*r,const fractal_job_spec*j){if(fractal_runtime_validate(r)!=FRACTAL_OK||!j||!j->problem.formula_id||strcmp(j->problem.formula_id,r->formula->descriptor->module_id)||!j->artifact.encoder_id||strcmp(j->artifact.encoder_id,r->encoder->descriptor->module_id)||!j->raster.palette_id||strcmp(j->raster.palette_id,"palette.socket-v1")||j->raster.pixel_format!=FRACTAL_PIXEL_BGR8||!j->view.width||!j->view.height||j->view.width>4096||j->view.height>4096||!isfinite(j->view.scale)||j->view.scale<=0||!j->problem.maximum_steps)return FRACTAL_ERROR_INVALID_SPEC;if(r->analysis.count){fractal_field_descriptor d={j->view.width,j->view.height,(size_t)j->view.width*sizeof(fractal_point_result_compact),FRACTAL_FIELD_ITERATION_CLASSIFICATION_V1,0};if(fractal_analysis_pipeline_validate(&r->analysis,&d,FRACTAL_ANALYSIS_MAX_RECORDS)!=FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;}return r->formula->validate_parameters(&j->problem.parameters);}
+fractal_result fractal_runtime_validate(const fractal_runtime_modules*r){
+ const fractal_module_descriptor*d[10];
+ uint64_t required_numeric;
+ unsigned i;
+ if(!r||!r->formula||!r->numeric||!r->compute||!r->refinement||!r->scheduler||
+    !r->raster||!r->encoder||!r->memory_module||!r->memory||!r->telemetry||
+    !r->platform)return FRACTAL_ERROR_INVALID_ARGUMENT;
+ d[0]=r->formula->descriptor;d[1]=r->numeric->descriptor;d[2]=r->compute->descriptor;
+ d[3]=r->refinement->descriptor;d[4]=r->scheduler->descriptor;d[5]=r->raster->descriptor;
+ d[6]=r->encoder->descriptor;d[7]=r->memory_module->descriptor;d[8]=r->telemetry->descriptor;
+ d[9]=r->platform->descriptor;
+ for(i=0;i<10;i++)if(fractal_module_descriptor_validate(d[i],(fractal_module_kind)i)!=FRACTAL_OK)
+  return FRACTAL_ERROR_INVALID_SPEC;
+ if(r->compute->contract_version!=FRACTAL_COMPUTATION_CONTRACT_VERSION||
+    !r->compute->execute||!r->compute->point)return FRACTAL_ERROR_INVALID_SPEC;
+ required_numeric=r->formula->required_numeric_capabilities|
+  r->compute->required_numeric_capabilities;
+ if(fractal_numeric_validate_v1(r->numeric,required_numeric)!=FRACTAL_OK)
+  return FRACTAL_ERROR_INVALID_SPEC;
+ if(!strcmp(r->scheduler->descriptor->module_id,FRACTAL_SCHEDULER_THREAD_POOL_V1_ID)&&
+    (!r->scheduler_options.requested_worker_count||
+     r->scheduler_options.requested_worker_count>FRACTAL_THREAD_POOL_MAX_WORKERS))
+  return FRACTAL_ERROR_INVALID_SPEC;
+ if(r->analysis.count>FRACTAL_ANALYZER_CHAIN_MAX)return FRACTAL_ERROR_INVALID_SPEC;
+ for(i=0;i<r->analysis.count;i++)if(!r->analysis.analyzers[i]||
+    fractal_module_descriptor_validate(r->analysis.analyzers[i]->descriptor,
+     FRACTAL_MODULE_ANALYZER)!=FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;
+ if(!r->refinement->available||r->memory_module==&fractal_memory_ouro_unavailable_module||
+    r->memory->kind!=FRACTAL_MEMORY_BACKEND_SYSTEM)return FRACTAL_ERROR_NOT_IMPLEMENTED;
+ if((r->formula->descriptor->capability_flags&r->compute->required_formula_capabilities)!=
+     r->compute->required_formula_capabilities||
+    (r->compute->descriptor->capability_flags&r->scheduler->required_compute_capabilities)!=
+     r->scheduler->required_compute_capabilities||
+    (r->compute->descriptor->capability_flags&r->compute->required_field_capabilities)!=
+     r->compute->required_field_capabilities||
+    (r->scheduler->produced_capabilities&r->raster->accepted_field_capabilities)!=
+     r->raster->accepted_field_capabilities||
+    (r->raster->produced_capabilities&r->encoder->accepted_pixel_capabilities)!=
+     r->encoder->accepted_pixel_capabilities)return FRACTAL_ERROR_INVALID_SPEC;
+ return FRACTAL_OK;
+}
+
+fractal_result fractal_job_spec_validate(const fractal_runtime_modules*r,
+ const fractal_job_spec*j){
+ fractal_scalar value,zero;
+ fractal_numeric_order_v1 order;
+ if(fractal_runtime_validate(r)!=FRACTAL_OK||!j||!j->problem.formula_id||
+    strcmp(j->problem.formula_id,r->formula->descriptor->module_id)||
+    !j->artifact.encoder_id||strcmp(j->artifact.encoder_id,r->encoder->descriptor->module_id)||
+    !j->raster.palette_id||strcmp(j->raster.palette_id,"palette.socket-v1")||
+    j->raster.pixel_format!=FRACTAL_PIXEL_BGR8||!j->view.width||!j->view.height||
+    j->view.width>4096||j->view.height>4096||!j->problem.maximum_steps)
+  return FRACTAL_ERROR_INVALID_SPEC;
+ if(r->numeric->from_binary64(j->view.center_real,&value)!=FRACTAL_OK||
+    r->numeric->from_binary64(j->view.center_imaginary,&value)!=FRACTAL_OK||
+    r->numeric->from_binary64(j->view.scale,&value)!=FRACTAL_OK||
+    r->numeric->constant(FRACTAL_NUMERIC_CONSTANT_ZERO,&zero)!=FRACTAL_OK||
+    r->numeric->real_compare(&value,&zero,&order)!=FRACTAL_OK||
+    order!=FRACTAL_NUMERIC_ORDER_GREATER)return FRACTAL_ERROR_INVALID_SPEC;
+ if(r->analysis.count){
+  fractal_field_descriptor d={j->view.width,j->view.height,
+   (size_t)j->view.width*sizeof(fractal_point_result_compact),
+   FRACTAL_FIELD_ITERATION_CLASSIFICATION_V1,0};
+  if(fractal_analysis_pipeline_validate(&r->analysis,&d,FRACTAL_ANALYSIS_MAX_RECORDS)!=
+     FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;
+ }
+ return r->formula->validate_parameters(r->numeric,&j->problem.parameters);
+}
 typedef struct counting_sink {fractal_write_sink *next;uint64_t hash;size_t bytes;} counting_sink;static fractal_result count_write(void*c,const void*d,size_t n){counting_sink*x=c;const unsigned char*p=d;x->bytes+=n;while(n--){x->hash^=*p++;x->hash*=UINT64_C(1099511628211);}return x->next->write(x->next->context,d,(size_t)(p-(const unsigned char*)d));}
 static void scheduler_execution_prepare(const fractal_runtime_modules*r,const fractal_job_spec*j,fractal_scheduler_execution*e){
  fractal_sealed_work_unit_v1 units[FRACTAL_THREAD_POOL_MAX_WORKERS];fractal_computation_problem_v1 problem;fractal_field_descriptor d;size_t count=0;uint32_t workers;
@@ -197,5 +125,104 @@ fractal_result fractal_runtime_render(const fractal_runtime_modules*r,const frac
 static fractal_result artifact_write(void*c,const void*d,size_t n){return fractal_artifact_sink_write((fractal_artifact_sink*)c,d,n);}
 fractal_result fractal_runtime_render_artifact(const fractal_runtime_modules*r,const fractal_job_spec*j,fractal_artifact_sink*s,const fractal_cancellation*c,fractal_runtime_output*o,fractal_artifact_result*a){fractal_artifact_begin_info begin;fractal_write_sink writer;fractal_result q;if(!s||!s->vtable||!a||!j||!o)return FRACTAL_ERROR_INVALID_ARGUMENT;memset(a,0,sizeof(*a));memset(o,0,sizeof(*o));begin=(fractal_artifact_begin_info){j->artifact.output_name,"image/bmp",0};q=fractal_artifact_sink_begin(s,&begin);if(q!=FRACTAL_OK){o->publication_status=FRACTAL_PUBLICATION_FAILED;o->pipeline_result=q;return q;}o->publication_status=FRACTAL_PUBLICATION_ACTIVE;writer=(fractal_write_sink){s,artifact_write};q=fractal_runtime_render(r,j,&writer,c,o);if(q!=FRACTAL_OK){a->result=q;fractal_artifact_sink_abort(s);o->publication_status=FRACTAL_PUBLICATION_ABORTED;return q;}o->publication_status=FRACTAL_PUBLICATION_ACTIVE;q=fractal_artifact_sink_commit(s,a);if(q!=FRACTAL_OK){a->committed=false;fractal_artifact_sink_abort(s);o->publication_status=FRACTAL_PUBLICATION_ABORTED;o->pipeline_result=q;return q;}a->encoder_module_id=r->encoder->descriptor->module_id;a->pixel_checksum=o->pixel_checksum;strncpy(a->logical_name,j->artifact.output_name,sizeof(a->logical_name)-1u);strcpy(a->media_type,"image/bmp");if(a->byte_count!=o->artifact_bytes||a->encoded_checksum!=o->artifact_checksum){a->committed=false;a->result=FRACTAL_ERROR_IO;o->publication_status=FRACTAL_PUBLICATION_FAILED;o->pipeline_result=FRACTAL_ERROR_IO;return FRACTAL_ERROR_IO;}o->publication_status=FRACTAL_PUBLICATION_COMMITTED;return FRACTAL_OK;}
 static const char *scheduler_decomposition_id(const fractal_runtime_modules*r){return !strcmp(r->scheduler->descriptor->module_id,FRACTAL_SCHEDULER_THREAD_POOL_V1_ID)?FRACTAL_SCHEDULER_THREAD_POOL_DECOMPOSITION_V1_ID:FRACTAL_SCHEDULER_SERIAL_DECOMPOSITION_V1_ID;}
-fractal_result fractal_runtime_manifest(const fractal_runtime_modules*r,const fractal_job_spec*j,const fractal_runtime_output*o,char*b,size_t c,size_t*l){char params[192];size_t pl;int n;fractal_escape_classification_summary_v1 v={0};const char*schema="";uint32_t schema_version=0;uint64_t record_identity=0;if(!l||!o||fractal_job_spec_validate(r,j)!=FRACTAL_OK||r->formula->serialize_parameters(&j->problem.parameters,params,sizeof(params),&pl)!=FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;if(o->analysis_result.records_produced==1&&fractal_escape_summary_record_decode(&o->analysis_result.records[0],&v)==FRACTAL_OK){schema=FRACTAL_ESCAPE_SUMMARY_SCHEMA_ID;schema_version=FRACTAL_ESCAPE_SUMMARY_SCHEMA_VERSION;record_identity=o->analysis_result.records[0].identity;}else if(o->analysis_result.records_produced==1&&o->analysis_result.records[0].type_id==FRACTAL_ANALYSIS_RECORD_ITERATION_HISTOGRAM){schema=FRACTAL_ITERATION_HISTOGRAM_SCHEMA_ID;schema_version=FRACTAL_ITERATION_HISTOGRAM_SCHEMA_VERSION;record_identity=o->analysis_result.records[0].identity;}else if(o->analysis_result.records_produced==1&&o->analysis_result.records[0].type_id==FRACTAL_ANALYSIS_RECORD_SPATIAL_WORKLOAD_GRID){schema=FRACTAL_SPATIAL_WORKLOAD_SCHEMA_ID;schema_version=FRACTAL_SPATIAL_WORKLOAD_SCHEMA_VERSION;record_identity=o->analysis_result.records[0].identity;}n=snprintf(b,c,"{\"abi\":1,\"analysis_pipeline_identity\":\"%016llx\",\"analysis_record_count\":%zu,\"analysis_record_identity\":\"%016llx\",\"analysis_result\":%u,\"analysis_samples_examined\":%llu,\"analyzed_field_checksum\":\"%016llx\",\"analyzer\":\"%s\",\"analyzer_count\":%zu,\"analyzer_version\":%u,\"artifact_checksum\":\"%016llx\",\"computation\":\"%s\",\"computation_identity\":\"%016llx\",\"computation_status\":\"%s\",\"computation_version\":%u,\"assignment_count\":%u,\"bounded_samples\":%llu,\"cancelled_samples\":%llu,\"decomposition\":\"%s\",\"decomposition_version\":%u,\"effective_worker_count\":%u,\"escaped_samples\":%llu,\"execution_result\":%u,\"execution_status\":\"%s\",\"failed_samples\":%llu,\"field_checksum\":\"%016llx\",\"field_preserved\":%s,\"formula\":\"%s@1\",\"formula_parameters\":%s,\"iteration_samples\":%llu,\"iteration_statistics_valid\":%s,\"maximum_iteration_samples\":%llu,\"pixel_checksum\":\"%016llx\",\"publication_status\":\"%s\",\"record_schema\":\"%s\",\"record_schema_version\":%u,\"requested_worker_count\":%u,\"scheduler\":\"%s\",\"scheduler_version\":%u,\"sealed_work_unit\":\"%s\",\"sealed_work_unit_identity\":\"%016llx\",\"source_field_checksum\":\"%016llx\",\"unresolved_samples\":%llu}",(unsigned long long)o->analysis_pipeline_identity,o->analysis_result.records_produced,(unsigned long long)record_identity,(unsigned)o->analysis_result.result,(unsigned long long)o->analysis_result.samples_examined,(unsigned long long)o->analyzed_field_checksum,r->analysis.count?r->analysis.requests[0].analyzer_id:"",o->analyzer_count,o->analysis_result.analyzer_version,(unsigned long long)o->artifact_checksum,r->compute->descriptor->module_id,(unsigned long long)o->scheduler_execution.computation_identity,fractal_scheduler_execution_status_string(o->scheduler_execution.status),r->compute->descriptor->module_version,o->scheduler_execution.assignment_count,(unsigned long long)v.bounded_samples,(unsigned long long)v.cancelled_samples,scheduler_decomposition_id(r),o->scheduler_execution.decomposition_version,o->scheduler_execution.effective_worker_count,(unsigned long long)v.escaped_samples,(unsigned)o->scheduler_execution.result,fractal_scheduler_execution_status_string(o->scheduler_execution.status),(unsigned long long)v.failed_samples,(unsigned long long)o->field_checksum,o->analyzer_count?(o->analysis_result.field_preserved?"true":"false"):"true",r->formula->descriptor->module_id,params,(unsigned long long)v.iteration_samples,v.iteration_statistics_valid?"true":"false",(unsigned long long)v.maximum_iteration_samples,(unsigned long long)o->pixel_checksum,fractal_publication_status_string(o->publication_status),schema,schema_version,o->scheduler_execution.requested_worker_count,r->scheduler->descriptor->module_id,r->scheduler->descriptor->module_version,FRACTAL_SCHEDULER_WORK_UNIT_V1_ID,(unsigned long long)o->scheduler_execution.sealed_work_unit_identity,(unsigned long long)o->source_field_checksum,(unsigned long long)v.unresolved_samples);*l=n<0?0u:(size_t)n;return n<0||!b||c<=(size_t)n?FRACTAL_ERROR_BUFFER_TOO_SMALL:FRACTAL_OK;}
-fractal_result fractal_runtime_artifact_manifest(const fractal_module_registry*g,const fractal_runtime_modules*r,const fractal_job_spec*j,const fractal_runtime_output*o,const fractal_artifact_result*a,char*b,size_t c,size_t*l){int n;const char*schema="";uint32_t sv=0;uint64_t ri=0;if(!g||!r||!j||!o||!a||!l||!a->committed)return FRACTAL_ERROR_INVALID_ARGUMENT;if(o->analysis_result.records_produced==1){const fractal_analysis_record*record=&o->analysis_result.records[0];ri=record->identity;if(record->type_id==FRACTAL_ANALYSIS_RECORD_ESCAPE_SUMMARY){schema=FRACTAL_ESCAPE_SUMMARY_SCHEMA_ID;sv=1;}else if(record->type_id==FRACTAL_ANALYSIS_RECORD_ITERATION_HISTOGRAM){schema=FRACTAL_ITERATION_HISTOGRAM_SCHEMA_ID;sv=1;}else if(record->type_id==FRACTAL_ANALYSIS_RECORD_SPATIAL_WORKLOAD_GRID){schema=FRACTAL_SPATIAL_WORKLOAD_SCHEMA_ID;sv=1;}}n=snprintf(b,c,"{\"analysis_pipeline_identity\":\"%016llx\",\"analysis_record_count\":%zu,\"analysis_record_identity\":\"%016llx\",\"analysis_result\":%u,\"analysis_samples_examined\":%llu,\"analyzed_field_checksum\":\"%016llx\",\"analyzer\":\"%s\",\"analyzer_count\":%zu,\"artifact_bytes\":%zu,\"artifact_checksum\":\"%016llx\",\"computation\":\"%s\",\"computation_identity\":\"%016llx\",\"computation_status\":\"%s\",\"computation_version\":%u,\"assignment_count\":%u,\"decomposition\":\"%s\",\"decomposition_version\":%u,\"destination\":\"%s\",\"effective_worker_count\":%u,\"execution_result\":%u,\"execution_status\":\"%s\",\"field_preserved\":%s,\"pixel_checksum\":\"%016llx\",\"publication_status\":\"%s\",\"record_schema\":\"%s\",\"record_schema_version\":%u,\"registry_identity\":\"%016llx\",\"requested_worker_count\":%u,\"scheduler\":\"%s\",\"scheduler_version\":%u,\"sealed_work_unit\":\"%s\",\"sealed_work_unit_identity\":\"%016llx\",\"sink\":\"%s\",\"source_field_checksum\":\"%016llx\"}",(unsigned long long)o->analysis_pipeline_identity,o->analysis_result.records_produced,(unsigned long long)ri,(unsigned)o->analysis_result.result,(unsigned long long)o->analysis_result.samples_examined,(unsigned long long)o->analyzed_field_checksum,r->analysis.count?r->analysis.requests[0].analyzer_id:"",o->analyzer_count,a->byte_count,(unsigned long long)a->encoded_checksum,r->compute->descriptor->module_id,(unsigned long long)o->scheduler_execution.computation_identity,fractal_scheduler_execution_status_string(o->scheduler_execution.status),r->compute->descriptor->module_version,o->scheduler_execution.assignment_count,scheduler_decomposition_id(r),o->scheduler_execution.decomposition_version,a->destination==FRACTAL_ARTIFACT_DESTINATION_FILE?"file":"memory",o->scheduler_execution.effective_worker_count,(unsigned)o->scheduler_execution.result,fractal_scheduler_execution_status_string(o->scheduler_execution.status),o->analyzer_count?(o->analysis_result.field_preserved?"true":"false"):"true",(unsigned long long)o->pixel_checksum,fractal_publication_status_string(o->publication_status),schema,sv,(unsigned long long)g->identity,o->scheduler_execution.requested_worker_count,r->scheduler->descriptor->module_id,r->scheduler->descriptor->module_version,FRACTAL_SCHEDULER_WORK_UNIT_V1_ID,(unsigned long long)o->scheduler_execution.sealed_work_unit_identity,a->sink_module_id,(unsigned long long)o->source_field_checksum);*l=n<0?0u:(size_t)n;return n<0||!b||c<=(size_t)n?FRACTAL_ERROR_BUFFER_TOO_SMALL:FRACTAL_OK;}
+fractal_result fractal_runtime_manifest(const fractal_runtime_modules*r,
+ const fractal_job_spec*j,const fractal_runtime_output*o,char*b,size_t c,size_t*l){
+ char params[192];size_t pl;int n;
+ fractal_escape_classification_summary_v1 v={0};
+ const char*schema="";uint32_t schema_version=0;uint64_t record_identity=0;
+ uint64_t numeric_identity;
+ if(!l||!o||fractal_job_spec_validate(r,j)!=FRACTAL_OK||
+    r->formula->serialize_parameters(r->numeric,&j->problem.parameters,params,
+     sizeof(params),&pl)!=FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;
+ numeric_identity=fractal_numeric_execution_identity_v1(r->numeric);
+ if(!numeric_identity)return FRACTAL_ERROR_INVALID_SPEC;
+ if(o->analysis_result.records_produced==1&&
+    fractal_escape_summary_record_decode(&o->analysis_result.records[0],&v)==FRACTAL_OK){
+  schema=FRACTAL_ESCAPE_SUMMARY_SCHEMA_ID;schema_version=FRACTAL_ESCAPE_SUMMARY_SCHEMA_VERSION;
+  record_identity=o->analysis_result.records[0].identity;
+ }else if(o->analysis_result.records_produced==1&&
+    o->analysis_result.records[0].type_id==FRACTAL_ANALYSIS_RECORD_ITERATION_HISTOGRAM){
+  schema=FRACTAL_ITERATION_HISTOGRAM_SCHEMA_ID;schema_version=FRACTAL_ITERATION_HISTOGRAM_SCHEMA_VERSION;
+  record_identity=o->analysis_result.records[0].identity;
+ }else if(o->analysis_result.records_produced==1&&
+    o->analysis_result.records[0].type_id==FRACTAL_ANALYSIS_RECORD_SPATIAL_WORKLOAD_GRID){
+  schema=FRACTAL_SPATIAL_WORKLOAD_SCHEMA_ID;schema_version=FRACTAL_SPATIAL_WORKLOAD_SCHEMA_VERSION;
+  record_identity=o->analysis_result.records[0].identity;
+ }
+ n=snprintf(b,c,"{\"abi\":1,\"analysis_pipeline_identity\":\"%016llx\",\"analysis_record_count\":%zu,\"analysis_record_identity\":\"%016llx\",\"analysis_result\":%u,\"analysis_samples_examined\":%llu,\"analyzed_field_checksum\":\"%016llx\",\"analyzer\":\"%s\",\"analyzer_count\":%zu,\"analyzer_version\":%u,\"artifact_checksum\":\"%016llx\",\"computation\":\"%s\",\"computation_identity\":\"%016llx\",\"computation_status\":\"%s\",\"computation_version\":%u,\"assignment_count\":%u,\"bounded_samples\":%llu,\"cancelled_samples\":%llu,\"decomposition\":\"%s\",\"decomposition_version\":%u,\"effective_worker_count\":%u,\"escaped_samples\":%llu,\"execution_result\":%u,\"execution_status\":\"%s\",\"failed_samples\":%llu,\"field_checksum\":\"%016llx\",\"field_preserved\":%s,\"formula\":\"%s@1\",\"formula_parameters\":%s,\"iteration_samples\":%llu,\"iteration_statistics_valid\":%s,\"maximum_iteration_samples\":%llu,\"numeric\":\"%s\",\"numeric_abi_version\":%u,\"numeric_compatibility\":\"compatible\",\"numeric_execution_identity\":\"%016llx\",\"numeric_version\":%u,\"pixel_checksum\":\"%016llx\",\"publication_status\":\"%s\",\"record_schema\":\"%s\",\"record_schema_version\":%u,\"requested_worker_count\":%u,\"scheduler\":\"%s\",\"scheduler_version\":%u,\"sealed_work_unit\":\"%s\",\"sealed_work_unit_identity\":\"%016llx\",\"source_field_checksum\":\"%016llx\",\"unresolved_samples\":%llu}",
+  (unsigned long long)o->analysis_pipeline_identity,o->analysis_result.records_produced,
+  (unsigned long long)record_identity,(unsigned)o->analysis_result.result,
+  (unsigned long long)o->analysis_result.samples_examined,
+  (unsigned long long)o->analyzed_field_checksum,
+  r->analysis.count?r->analysis.requests[0].analyzer_id:"",o->analyzer_count,
+  o->analysis_result.analyzer_version,(unsigned long long)o->artifact_checksum,
+  r->compute->descriptor->module_id,(unsigned long long)o->scheduler_execution.computation_identity,
+  fractal_scheduler_execution_status_string(o->scheduler_execution.status),
+  r->compute->descriptor->module_version,o->scheduler_execution.assignment_count,
+  (unsigned long long)v.bounded_samples,(unsigned long long)v.cancelled_samples,
+  scheduler_decomposition_id(r),o->scheduler_execution.decomposition_version,
+  o->scheduler_execution.effective_worker_count,(unsigned long long)v.escaped_samples,
+  (unsigned)o->scheduler_execution.result,
+  fractal_scheduler_execution_status_string(o->scheduler_execution.status),
+  (unsigned long long)v.failed_samples,(unsigned long long)o->field_checksum,
+  o->analyzer_count?(o->analysis_result.field_preserved?"true":"false"):"true",
+  r->formula->descriptor->module_id,params,(unsigned long long)v.iteration_samples,
+  v.iteration_statistics_valid?"true":"false",
+  (unsigned long long)v.maximum_iteration_samples,r->numeric->descriptor->module_id,
+  r->numeric->abi_version,(unsigned long long)numeric_identity,
+  r->numeric->descriptor->module_version,(unsigned long long)o->pixel_checksum,
+  fractal_publication_status_string(o->publication_status),schema,schema_version,
+  o->scheduler_execution.requested_worker_count,r->scheduler->descriptor->module_id,
+  r->scheduler->descriptor->module_version,FRACTAL_SCHEDULER_WORK_UNIT_V1_ID,
+  (unsigned long long)o->scheduler_execution.sealed_work_unit_identity,
+  (unsigned long long)o->source_field_checksum,(unsigned long long)v.unresolved_samples);
+ *l=n<0?0u:(size_t)n;
+ return n<0||!b||c<=(size_t)n?FRACTAL_ERROR_BUFFER_TOO_SMALL:FRACTAL_OK;
+}
+
+fractal_result fractal_runtime_artifact_manifest(const fractal_module_registry*g,
+ const fractal_runtime_modules*r,const fractal_job_spec*j,const fractal_runtime_output*o,
+ const fractal_artifact_result*a,char*b,size_t c,size_t*l){
+ int n;const char*schema="";uint32_t sv=0;uint64_t ri=0,numeric_identity;
+ if(!g||!r||!j||!o||!a||!l||!a->committed||fractal_job_spec_validate(r,j)!=FRACTAL_OK)
+  return FRACTAL_ERROR_INVALID_ARGUMENT;
+ numeric_identity=fractal_numeric_execution_identity_v1(r->numeric);
+ if(!numeric_identity)return FRACTAL_ERROR_INVALID_SPEC;
+ if(o->analysis_result.records_produced==1){
+  const fractal_analysis_record*record=&o->analysis_result.records[0];
+  ri=record->identity;
+  if(record->type_id==FRACTAL_ANALYSIS_RECORD_ESCAPE_SUMMARY){
+   schema=FRACTAL_ESCAPE_SUMMARY_SCHEMA_ID;sv=1;
+  }else if(record->type_id==FRACTAL_ANALYSIS_RECORD_ITERATION_HISTOGRAM){
+   schema=FRACTAL_ITERATION_HISTOGRAM_SCHEMA_ID;sv=1;
+  }else if(record->type_id==FRACTAL_ANALYSIS_RECORD_SPATIAL_WORKLOAD_GRID){
+   schema=FRACTAL_SPATIAL_WORKLOAD_SCHEMA_ID;sv=1;
+  }
+ }
+ n=snprintf(b,c,"{\"analysis_pipeline_identity\":\"%016llx\",\"analysis_record_count\":%zu,\"analysis_record_identity\":\"%016llx\",\"analysis_result\":%u,\"analysis_samples_examined\":%llu,\"analyzed_field_checksum\":\"%016llx\",\"analyzer\":\"%s\",\"analyzer_count\":%zu,\"artifact_bytes\":%zu,\"artifact_checksum\":\"%016llx\",\"computation\":\"%s\",\"computation_identity\":\"%016llx\",\"computation_status\":\"%s\",\"computation_version\":%u,\"assignment_count\":%u,\"decomposition\":\"%s\",\"decomposition_version\":%u,\"destination\":\"%s\",\"effective_worker_count\":%u,\"execution_result\":%u,\"execution_status\":\"%s\",\"field_preserved\":%s,\"numeric\":\"%s\",\"numeric_abi_version\":%u,\"numeric_compatibility\":\"compatible\",\"numeric_execution_identity\":\"%016llx\",\"numeric_version\":%u,\"pixel_checksum\":\"%016llx\",\"publication_status\":\"%s\",\"record_schema\":\"%s\",\"record_schema_version\":%u,\"registry_identity\":\"%016llx\",\"requested_worker_count\":%u,\"scheduler\":\"%s\",\"scheduler_version\":%u,\"sealed_work_unit\":\"%s\",\"sealed_work_unit_identity\":\"%016llx\",\"sink\":\"%s\",\"source_field_checksum\":\"%016llx\"}",
+  (unsigned long long)o->analysis_pipeline_identity,o->analysis_result.records_produced,
+  (unsigned long long)ri,(unsigned)o->analysis_result.result,
+  (unsigned long long)o->analysis_result.samples_examined,
+  (unsigned long long)o->analyzed_field_checksum,
+  r->analysis.count?r->analysis.requests[0].analyzer_id:"",o->analyzer_count,
+  a->byte_count,(unsigned long long)a->encoded_checksum,r->compute->descriptor->module_id,
+  (unsigned long long)o->scheduler_execution.computation_identity,
+  fractal_scheduler_execution_status_string(o->scheduler_execution.status),
+  r->compute->descriptor->module_version,o->scheduler_execution.assignment_count,
+  scheduler_decomposition_id(r),o->scheduler_execution.decomposition_version,
+  a->destination==FRACTAL_ARTIFACT_DESTINATION_FILE?"file":"memory",
+  o->scheduler_execution.effective_worker_count,(unsigned)o->scheduler_execution.result,
+  fractal_scheduler_execution_status_string(o->scheduler_execution.status),
+  o->analyzer_count?(o->analysis_result.field_preserved?"true":"false"):"true",
+  r->numeric->descriptor->module_id,r->numeric->abi_version,
+  (unsigned long long)numeric_identity,r->numeric->descriptor->module_version,
+  (unsigned long long)o->pixel_checksum,
+  fractal_publication_status_string(o->publication_status),schema,sv,
+  (unsigned long long)g->identity,o->scheduler_execution.requested_worker_count,
+  r->scheduler->descriptor->module_id,r->scheduler->descriptor->module_version,
+  FRACTAL_SCHEDULER_WORK_UNIT_V1_ID,
+  (unsigned long long)o->scheduler_execution.sealed_work_unit_identity,a->sink_module_id,
+  (unsigned long long)o->source_field_checksum);
+ *l=n<0?0u:(size_t)n;
+ return n<0||!b||c<=(size_t)n?FRACTAL_ERROR_BUFFER_TOO_SMALL:FRACTAL_OK;
+}

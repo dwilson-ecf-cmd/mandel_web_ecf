@@ -24,10 +24,11 @@ static uint64_t identity_from_values(const fractal_sealed_work_unit_v1 *u){
  int n;
  if(!u)return 0;
  n=snprintf(text,sizeof(text),
-  "%s|abi=%u|contract=%u|work=%016llx|compute=%016llx@%u|numeric=%016llx@%u|formula=%016llx@%u|field=%u|cancel=%u|sequence=%u|workers=%u|width=%u|height=%u|rows=%u:%u|samples=%llu:%llu",
+  "%s|abi=%u|contract=%u|work=%016llx|compute=%016llx@%u|numeric=%016llx@%u|numeric-abi=%u|numeric-caps=%016llx|formula=%016llx@%u|field=%u|cancel=%u|sequence=%u|workers=%u|width=%u|height=%u|rows=%u:%u|samples=%llu:%llu",
   FRACTAL_SCHEDULER_WORK_UNIT_V1_ID,u->abi_version,u->contract_version,
   (unsigned long long)u->work_unit_identity,(unsigned long long)u->computation_identity,
   u->computation_version,(unsigned long long)u->numeric_identity,u->numeric_version,
+  u->numeric_abi_version,(unsigned long long)u->numeric_capability_flags,
   (unsigned long long)u->formula_identity,u->formula_version,u->field_format,u->cancellation_mode,u->sequence,u->worker_count,
   u->width,u->height,u->row_begin,u->row_end,
   (unsigned long long)u->sample_begin,(unsigned long long)u->sample_end);
@@ -97,6 +98,8 @@ fractal_result fractal_scheduler_decompose_computation_v1(
   units[i].formula_identity=fractal_module_identity_v1(problem->formula->descriptor);
   units[i].computation_version=compute->descriptor->module_version;
   units[i].numeric_version=problem->numeric->descriptor->module_version;
+  units[i].numeric_abi_version=problem->numeric->abi_version;
+  units[i].numeric_capability_flags=problem->numeric->capability_flags;
   units[i].formula_version=problem->formula->descriptor->module_version;
   units[i].field_format=(uint32_t)problem->field.format;
   units[i].cancellation_mode=(uint32_t)cancellation_mode;
@@ -142,6 +145,8 @@ fractal_result fractal_scheduler_validate_computation_v1(
     units[i].formula_identity!=fractal_module_identity_v1(problem->formula->descriptor)||
     units[i].computation_version!=compute->descriptor->module_version||
     units[i].numeric_version!=problem->numeric->descriptor->module_version||
+    units[i].numeric_abi_version!=problem->numeric->abi_version||
+    units[i].numeric_capability_flags!=problem->numeric->capability_flags||
     units[i].formula_version!=problem->formula->descriptor->module_version||
     units[i].field_format!=(uint32_t)problem->field.format||
     (units[i].cancellation_mode!=FRACTAL_COMPUTATION_CANCEL_POINT_ITERATION&&

@@ -138,7 +138,7 @@ thread creation is per invocation rather than a persistent service pool. The
 serial compatibility ID remains installed, so catalogs contain both the legacy
 ID and the exact v1 reference ID.
 
-## Recommended next milestone
+## Successor architecture
 
-Extract the numeric socket from the scalar computation implementation while
-preserving the computation contract and every frozen output.
+The completed computation and numeric extractions are recorded in
+`computation_socket.md` and `binary64_numeric_socket.md`.

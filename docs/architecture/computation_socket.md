@@ -169,7 +169,7 @@ supports only the existing iteration/classification field and contiguous row
 assignments. Native threads are still created per invocation, and registry
 loading remains static.
 
-## Recommended next milestone
+## Successor architecture
 
-Extract the numeric socket from the scalar computation implementation while
-preserving the computation contract and every frozen output.
+The completed numeric extraction and current forward boundary are recorded in
+`binary64_numeric_socket.md`.

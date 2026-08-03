@@ -9,6 +9,17 @@ fractal_result fractal_render_manifest_set_computation(fractal_render_manifest *
  m->computation_module_version=version;m->computation_assignment_count=assignments;
  m->computation_execution_identity=identity;return FRACTAL_OK;
 }
+fractal_result fractal_render_manifest_set_numeric(fractal_render_manifest *m,
+ const char *id,uint32_t version,uint32_t abi_version,const char *status,
+ uint64_t identity){
+ if(!m||!id||!*id||strlen(id)>=sizeof(m->numeric_module)||!version||!abi_version||
+    !status||!*status||strlen(status)>=sizeof(m->numeric_compatibility_status)||!identity)
+  return FRACTAL_ERROR_INVALID_ARGUMENT;
+ strcpy(m->numeric_module,id);strcpy(m->numeric_compatibility_status,status);
+ m->numeric_module_version=version;m->numeric_abi_version=abi_version;
+ m->numeric_execution_identity=identity;
+ return FRACTAL_OK;
+}
 fractal_result fractal_render_manifest_init(fractal_render_manifest *m, const fractal_render_spec *spec,
  fractal_computation_backend_kind computation, fractal_renderer_backend_kind renderer,
  fractal_memory_backend_kind memory) {
@@ -23,12 +34,15 @@ fractal_result fractal_render_manifest_init(fractal_render_manifest *m, const fr
 fractal_result fractal_render_manifest_serialize_identity_json(const fractal_render_manifest *m,
  char *output, size_t capacity, size_t *length) {
  const char *computation,*renderer,*memory; int count;
- if (!m || !length || (output==NULL && capacity!=0u)) return FRACTAL_ERROR_INVALID_ARGUMENT;
+ if (!m || !length || (output==NULL && capacity!=0u)||!m->numeric_module[0]||
+     !m->numeric_module_version||!m->numeric_abi_version||
+     !m->numeric_compatibility_status[0]||!m->numeric_execution_identity)
+  return FRACTAL_ERROR_INVALID_ARGUMENT;
  computation=fractal_computation_backend_string(m->metrics.computation_backend);
  renderer=fractal_renderer_backend_string(m->metrics.renderer_backend);
  memory=m->metrics.memory_backend==FRACTAL_MEMORY_BACKEND_SYSTEM?"system":m->metrics.memory_backend==FRACTAL_MEMORY_BACKEND_OURO?"ouro":NULL;
  if (!computation || !renderer || !memory) return FRACTAL_ERROR_INVALID_ARGUMENT;
- count=snprintf(output,capacity,"{\"cdc_reference_sha256\":\"%s\",\"computation_assignment_count\":%u,\"computation_backend\":\"%s\",\"computation_execution_identity\":\"%016llx\",\"computation_execution_status\":\"%s\",\"computation_module\":\"%s\",\"computation_module_version\":%u,\"memory_backend\":\"%s\",\"renderer_backend\":\"%s\"}",m->cdc_reference_sha256,m->computation_assignment_count,computation,(unsigned long long)m->computation_execution_identity,m->computation_execution_status,m->computation_module,m->computation_module_version,memory,renderer);
+ count=snprintf(output,capacity,"{\"cdc_reference_sha256\":\"%s\",\"computation_assignment_count\":%u,\"computation_backend\":\"%s\",\"computation_execution_identity\":\"%016llx\",\"computation_execution_status\":\"%s\",\"computation_module\":\"%s\",\"computation_module_version\":%u,\"memory_backend\":\"%s\",\"numeric_abi_version\":%u,\"numeric_compatibility_status\":\"%s\",\"numeric_execution_identity\":\"%016llx\",\"numeric_module\":\"%s\",\"numeric_module_version\":%u,\"renderer_backend\":\"%s\"}",m->cdc_reference_sha256,m->computation_assignment_count,computation,(unsigned long long)m->computation_execution_identity,m->computation_execution_status,m->computation_module,m->computation_module_version,memory,m->numeric_abi_version,m->numeric_compatibility_status,(unsigned long long)m->numeric_execution_identity,m->numeric_module,m->numeric_module_version,renderer);
  if (count<0) return FRACTAL_ERROR_IO;
  *length=(size_t)count;
  return !output || capacity<=(size_t)count ? FRACTAL_ERROR_BUFFER_TOO_SMALL : FRACTAL_OK;

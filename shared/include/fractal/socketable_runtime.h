@@ -11,14 +11,14 @@
 #include "fractal/artifact_sink.h"
 #include "fractal/module_registry.h"
 #include "fractal/analysis.h"
+#include "fractal/numeric.h"
 #include "fractal/scheduler.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 typedef enum fractal_point_class { FRACTAL_CLASS_ESCAPED=0,FRACTAL_CLASS_BOUNDED,FRACTAL_CLASS_UNRESOLVED,FRACTAL_CLASS_CANCELLED,FRACTAL_CLASS_FAILED } fractal_point_class;
 typedef enum fractal_pixel_format { FRACTAL_PIXEL_BGR8=0 } fractal_pixel_format;
-typedef struct fractal_scalar { unsigned char storage[8]; } fractal_scalar;
-typedef struct fractal_complex_state { fractal_scalar zr,zi,cr,ci,radius_squared; } fractal_complex_state;
+typedef struct fractal_complex_state { fractal_numeric_complex z,c; fractal_scalar radius_squared; } fractal_complex_state;
 typedef struct fractal_formula_parameters { const char *type_id; const void *data; size_t size; } fractal_formula_parameters;
 typedef struct fractal_mandelbrot_parameters { double escape_radius; } fractal_mandelbrot_parameters;
 typedef struct fractal_julia_parameters { double constant_real,constant_imaginary,escape_radius; } fractal_julia_parameters;
@@ -36,16 +36,11 @@ void fractal_cancellation_request(fractal_cancellation*);
 void fractal_cancellation_reset(fractal_cancellation*);
 struct fractal_runtime_modules;
 
-typedef struct fractal_numeric_vtable { const fractal_module_descriptor *descriptor; uint32_t precision_bits; size_t scalar_size,scalar_alignment;
- fractal_result (*from_double)(double,fractal_scalar*); fractal_result (*to_double)(const fractal_scalar*,double*);
- fractal_result (*add)(const fractal_scalar*,const fractal_scalar*,fractal_scalar*); fractal_result (*subtract)(const fractal_scalar*,const fractal_scalar*,fractal_scalar*);
- fractal_result (*multiply)(const fractal_scalar*,const fractal_scalar*,fractal_scalar*); bool (*finite)(const fractal_scalar*);
- fractal_result (*serialize)(const fractal_scalar*,char*,size_t,size_t*); } fractal_numeric_vtable;
 typedef struct fractal_formula_vtable { const fractal_module_descriptor *descriptor; uint64_t required_numeric_capabilities;
- fractal_result (*validate_parameters)(const fractal_formula_parameters*); size_t (*state_size)(void); size_t (*state_alignment)(void);
- fractal_result (*initialize_state)(const fractal_numeric_vtable*,const fractal_formula_parameters*,double,double,void*);
+ fractal_result (*validate_parameters)(const fractal_numeric_vtable*,const fractal_formula_parameters*); size_t (*state_size)(void); size_t (*state_alignment)(void);
+ fractal_result (*initialize_state)(const fractal_numeric_vtable*,const fractal_formula_parameters*,const fractal_numeric_complex*,void*);
  fractal_result (*step)(const fractal_numeric_vtable*,void*); fractal_result (*classify)(const fractal_numeric_vtable*,const void*,fractal_point_class*);
- fractal_result (*serialize_parameters)(const fractal_formula_parameters*,char*,size_t,size_t*); } fractal_formula_vtable;
+ fractal_result (*serialize_parameters)(const fractal_numeric_vtable*,const fractal_formula_parameters*,char*,size_t,size_t*); } fractal_formula_vtable;
 
 #define FRACTAL_COMPUTATION_SCALAR_V1_ID "fractal.compute.scalar.v1"
 #define FRACTAL_COMPUTE_CONVENTIONAL_COMPATIBILITY_ID "compute.conventional.scalar-c"
@@ -117,7 +112,6 @@ typedef struct fractal_runtime_modules { const fractal_formula_vtable *formula; 
 typedef struct fractal_runtime_output { uint64_t work_unit_identity; uint32_t scheduler_status; fractal_field field; fractal_pixel_buffer pixels; uint64_t field_checksum,source_field_checksum,analyzed_field_checksum,pixel_checksum,artifact_checksum; size_t artifact_bytes; fractal_analysis_result analysis_result; uint64_t analysis_pipeline_identity; size_t analyzer_count; } fractal_runtime_output;
 
 extern const fractal_formula_vtable fractal_formula_mandelbrot,fractal_formula_julia;
-extern const fractal_numeric_vtable fractal_numeric_binary64;
 extern const fractal_compute_vtable fractal_compute_scalar_v1,fractal_compute_conventional;
 extern const fractal_refinement_vtable fractal_refinement_none,fractal_refinement_cdc_unavailable;
 extern const fractal_scheduler_vtable fractal_scheduler_serial,fractal_scheduler_serial_v1,fractal_scheduler_thread_pool_v1;

@@ -1,8 +1,9 @@
 # Module compatibility
 
 Assembly first validates every descriptor's ABI, version, kind, stable ASCII ID, and
-lifetime-bearing pointers. It then resolves the small capability chain: formulas and
-the scalar computation module require scalar arithmetic; scalar computation consumes
+lifetime-bearing pointers. It then validates the selected numeric ABI, contract,
+operation table, and exact capabilities required by formula and computation before
+resolving the remaining capability chain. Scalar computation consumes
 point-scalar formulas and validated contiguous assignments, borrows a caller-owned
 iteration field, and satisfies both scheduler contracts; scheduling produces an iteration field; native raster consumes that
 field and produces BGR8; BMP consumes BGR8; system memory supplies scopes.

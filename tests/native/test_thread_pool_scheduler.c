@@ -24,7 +24,7 @@ static fractal_runtime_modules direct_runtime(fractal_memory_backend *memory,
  uint32_t workers){
  fractal_runtime_modules runtime={0};
  runtime.formula=formula;
- runtime.numeric=&fractal_numeric_binary64;
+ runtime.numeric=&fractal_numeric_binary64_v1;
  runtime.compute=&fractal_compute_scalar_v1;
  runtime.refinement=&fractal_refinement_none;
  runtime.scheduler=scheduler;
@@ -122,7 +122,7 @@ static void decomposition_contract(void){
 static fractal_runtime_selection selection(const char *scheduler,uint32_t workers){
  fractal_runtime_selection selected={0};
  selected.formula="formula.mandelbrot.quadratic";
- selected.numeric="numeric.binary64";
+ selected.numeric=FRACTAL_NUMERIC_BINARY64_V1_ID;
  selected.compute=FRACTAL_COMPUTATION_SCALAR_V1_ID;
  selected.refinement="refinement.none";
  selected.scheduler=scheduler;
@@ -203,9 +203,9 @@ static void cross_scheduler_equivalence(void){
  CHECK(serial.output.pixel_checksum==UINT64_C(0x4866aacc38290b5f));
  CHECK(serial.output.artifact_checksum==UINT64_C(0xfb1a83bd5ca28e5f));
  CHECK(serial.artifact.byte_count==2358);
- CHECK(serial.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0x4258a35a8206a3d8));
- CHECK(many.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0xafec0821f63abdbb));
- CHECK(many.output.scheduler_execution.computation_identity==UINT64_C(0x5e64dd353daa28be));
+ CHECK(serial.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0x620256268dda7e56));
+ CHECK(many.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0x2a0f4cd0c8e2c7ad));
+ CHECK(many.output.scheduler_execution.computation_identity==UINT64_C(0x94f552e7f207b40c));
  printf("SCHEDULER mandelbrot serial=%016llx thread-pool=%016llx computation=%016llx\n",
   (unsigned long long)serial.output.scheduler_execution.sealed_work_unit_identity,
   (unsigned long long)many.output.scheduler_execution.sealed_work_unit_identity,
@@ -219,11 +219,18 @@ static void cross_scheduler_equivalence(void){
  CHECK(strstr(many.runtime_manifest,"\"computation\":\"fractal.compute.scalar.v1\"")!=NULL);
  CHECK(strstr(many.runtime_manifest,"\"computation_version\":1")!=NULL);
  CHECK(strstr(many.runtime_manifest,"\"computation_status\":\"succeeded\"")!=NULL);
+ CHECK(strstr(many.runtime_manifest,"\"numeric\":\"fractal.numeric.binary64.v1\"")!=NULL);
+ CHECK(strstr(many.runtime_manifest,"\"numeric_abi_version\":1")!=NULL);
+ CHECK(strstr(many.runtime_manifest,"\"numeric_compatibility\":\"compatible\"")!=NULL);
+ CHECK(strstr(many.runtime_manifest,"\"numeric_execution_identity\":\"2f300bf0f7ea5244\"")!=NULL);
+ CHECK(strstr(many.runtime_manifest,"\"numeric_version\":1")!=NULL);
  CHECK(strstr(many.runtime_manifest,FRACTAL_SCHEDULER_WORK_UNIT_V1_ID)!=NULL);
  CHECK(strstr(many.runtime_manifest,"\"requested_worker_count\":5")!=NULL);
  CHECK(strstr(many.runtime_manifest,"\"execution_status\":\"succeeded\"")!=NULL);
  CHECK(strstr(many.artifact_manifest,"\"publication_status\":\"committed\"")!=NULL);
  CHECK(strstr(many.artifact_manifest,"\"computation\":\"fractal.compute.scalar.v1\"")!=NULL);
+ CHECK(strstr(many.artifact_manifest,"\"numeric\":\"fractal.numeric.binary64.v1\"")!=NULL);
+ CHECK(strstr(many.artifact_manifest,"\"numeric_compatibility\":\"compatible\"")!=NULL);
  CHECK(many.output.analysis_result.records_produced==3&&
   many.output.analysis_result.records[0].chain_ordinal==0&&
   many.output.analysis_result.records[1].chain_ordinal==1&&
@@ -235,9 +242,9 @@ static void cross_scheduler_equivalence(void){
  CHECK(julia_serial.output.field_checksum==UINT64_C(0x0fb4458e08bad6e1));
  CHECK(julia_serial.output.pixel_checksum==UINT64_C(0xb272f08b0bbdca2b));
  CHECK(julia_serial.output.artifact_checksum==UINT64_C(0x4d4aa95bd137ec87));
- CHECK(julia_serial.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0x53b154689c9ca381));
- CHECK(julia_many.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0x30dd9c1c387d9962));
- CHECK(julia_many.output.scheduler_execution.computation_identity==UINT64_C(0x917e7c5c82198c29));
+ CHECK(julia_serial.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0xbf0e5edc2606d17c));
+ CHECK(julia_many.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0x58eb7ae4f27c9fa4));
+ CHECK(julia_many.output.scheduler_execution.computation_identity==UINT64_C(0x41759bab6ee892b3));
  printf("SCHEDULER julia serial=%016llx thread-pool=%016llx computation=%016llx\n",
   (unsigned long long)julia_serial.output.scheduler_execution.sealed_work_unit_identity,
   (unsigned long long)julia_many.output.scheduler_execution.sealed_work_unit_identity,
@@ -308,12 +315,12 @@ static fractal_result failure_execute(const fractal_computation_request_v1 *requ
  return result->result;
 }
 static const fractal_compute_vtable cancellation_compute={
- &cancellation_compute_descriptor,FRACTAL_CAP_POINT_SCALAR,FRACTAL_CAP_SCALAR_ARITHMETIC,
+ &cancellation_compute_descriptor,FRACTAL_CAP_POINT_SCALAR,FRACTAL_NUMERIC_SCALAR_V1_REQUIRED_CAPABILITIES,
  FRACTAL_CAP_ITERATION_FIELD,FRACTAL_COMPUTATION_CONTRACT_VERSION,cancellation_point,
  cancellation_execute
 };
 static const fractal_compute_vtable failure_compute={
- &failure_compute_descriptor,FRACTAL_CAP_POINT_SCALAR,FRACTAL_CAP_SCALAR_ARITHMETIC,
+ &failure_compute_descriptor,FRACTAL_CAP_POINT_SCALAR,FRACTAL_NUMERIC_SCALAR_V1_REQUIRED_CAPABILITIES,
  FRACTAL_CAP_ITERATION_FIELD,FRACTAL_COMPUTATION_CONTRACT_VERSION,failure_point,
  failure_execute
 };

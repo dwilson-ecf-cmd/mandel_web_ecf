@@ -27,6 +27,10 @@ list(APPEND required
  "docs/research/cdc_refinement_contract_comparison.md" "docs/research/cdc_refinement_exhaustion.md"
  "docs/research/cdc_refinement_contract_extension.md" "docs/research/cdc_refinement_ownership.md"
  "docs/research/cdc_refinement_contract_decision.md")
+list(APPEND required
+ "shared/include/fractal/numeric.h" "runtime/src/numeric_binary64.c"
+ "runtime/src/scalar_computation.c" "tests/native/test_numeric_socket.c"
+ "docs/architecture/binary64_numeric_socket.md")
 foreach(path IN LISTS required)
  if(NOT EXISTS "${SOURCE_DIR}/${path}")
   message(FATAL_ERROR "required preserved/traceability file missing: ${path}")
@@ -44,3 +48,13 @@ file(SHA256 "${SOURCE_DIR}/CDC.pdf" cdc_sha256)
 if(NOT cdc_sha256 STREQUAL "5e838e88022696fbc99deec0b67be122f9cc74770153b710d7666abf0b066e7c")
  message(FATAL_ERROR "CDC.pdf checksum changed")
 endif()
+file(READ "${SOURCE_DIR}/runtime/src/scalar_computation.c" scalar_computation)
+if(scalar_computation MATCHES "#include[ \t]*<math.h>|isfinite[ \t]*\\(|\\(double\\)[ \t]*[xy]")
+ message(FATAL_ERROR "scalar computation contains direct floating-point arithmetic helpers")
+endif()
+foreach(operation IN ITEMS real_add real_subtract real_multiply real_divide
+ complex_construct complex_add complex_square squared_magnitude bailout_exceeded)
+ if(NOT scalar_computation MATCHES "numeric->${operation}\\(")
+  message(FATAL_ERROR "scalar computation does not route ${operation} through numeric ABI")
+ endif()
+endforeach()
