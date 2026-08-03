@@ -1,5 +1,6 @@
 #include "fractal/socketable_runtime.h"
 #include "fractal/installed_modules.h"
+#include "fractal/scheduler.h"
 #include <stdio.h>
 #include <string.h>
 static int failures;
