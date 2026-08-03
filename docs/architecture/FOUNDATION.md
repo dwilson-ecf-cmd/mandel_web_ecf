@@ -1,11 +1,32 @@
-# Native foundation status
+# Состояние нативной основы
 
-The C11 foundation now has an authoritative static registry and destination-independent artifact output. Formula, numeric, compute, refinement, scheduler, raster, encoder, memory, telemetry, platform, and artifact-sink metadata can be inspected before assembly. Runtime selection is registry-driven while direct vtable construction remains a low-level option.
+Основа на C11 теперь содержит авторитетный статический реестр и независимый от
+места назначения вывод артефактов. До сборки среды можно проверить метаданные
+формулы, числовой реализации, вычисления, уточнения, планировщика,
+растеризатора, кодировщика, памяти, телеметрии, платформы и приёмника
+артефактов. Выбор среды выполнения управляется реестром, а непосредственное
+конструирование таблиц виртуальных функций остаётся низкоуровневой возможностью.
 
-BMP encoding remains deterministic and incremental. Bounded memory and transactional host-file sinks share byte counts and encoded checksums. CDC and Ouro remain explicitly unavailable and inactive. Dynamic loading, Android, networking, analysis, multithreading, and new mathematics remain outside the foundation.
+Кодирование BMP остаётся детерминированным и инкрементальным. Ограниченный
+приёмник памяти и транзакционный приёмник файлов хоста согласуются по числу
+байтов и контрольным суммам кодированного содержимого. CDC и Ouro явно
+зарегистрированы как недоступные и неактивные. Динамическая загрузка, Android,
+сеть и новая математика не входят в основу; анализ и многопоточность добавлены
+последующими завершёнными этапами.
 
-## Analysis seam
+## Точка подключения анализа
 
-The authoritative pipeline now places a bounded analysis pipeline between the scheduler-produced source field and rasterization. Zero analyzers preserve the historic route; `fractal.analyzer.passthrough` proves registry, assembly, ownership, cancellation, deterministic metadata, and manifest participation without changing field, pixel, or artifact bytes. Analysis may eventually preserve or transform fields and emit typed records, but it does not own recurrence, arithmetic, scheduling, color, encoding, or destinations.
+Авторитетный конвейер размещает ограниченную цепочку анализа между исходным
+полем, созданным планировщиком, и растеризацией. Пустая цепочка сохраняет
+исторический маршрут; `fractal.analyzer.passthrough` подтверждает работу
+реестра, сборки, владения, отмены, детерминированных метаданных и манифестов, не
+изменяя байты поля, пикселей или артефакта. Анализ может сохранять либо
+преобразовывать поля и выдавать типизированные записи, но не владеет
+рекуррентностью, арифметикой, планированием, цветом, кодированием или местом
+назначения.
 
-The first substantive instrument is the deterministic escape-and-classification summary analyzer. It conserves explicit classification counts, reports exact completed-iteration aggregates, emits one versioned record, and preserves the field and all raster/artifact identities. It does not elevate compact observations into mathematical proof.
+Первым содержательным инструментом служит детерминированный анализатор сводки
+выхода и классификации. Он сохраняет точный баланс категорий, сообщает точные
+агрегаты завершённых итераций, выдаёт одну версионированную запись и сохраняет
+поле и все идентификаторы растра и артефакта. Он не превращает компактные
+наблюдения в математическое доказательство.

@@ -58,7 +58,7 @@ static void test_memory(void) {
  CHECK(fractal_memory_scope_reset(&scope)==FRACTAL_OK);
  stats=fractal_memory_backend_get_statistics(&backend);
  CHECK(stats.active_bytes==0u && stats.active_allocations==0u && stats.released_bytes==20u);
- /* Reset invalidates all returned pointers; tests intentionally never dereference them. */
+ /* Сброс делает все возвращённые указатели недействительными; тесты намеренно их не разыменовывают. */
  a=fractal_memory_scope_alloc(&scope,5u,16u);
  CHECK(a!=NULL && ((uintptr_t)a % 16u)==0u);
  fractal_memory_scope_end(&scope); fractal_memory_backend_shutdown(&backend);
@@ -162,11 +162,11 @@ static void test_two_child_study(void) {
  CHECK(!fractal_cdc_two_child_multiset_descends(2u,2u,1u));
  CHECK(!fractal_cdc_two_child_multiset_descends(2u,1u,2u));
  CHECK(fractal_cdc_two_child_discharge(3u,1u,&obligations,&potential)==FRACTAL_OK);
- CHECK(obligations==2u && potential==1u); /* one child discharged */
+ CHECK(obligations==2u && potential==1u); /* одно дочернее обязательство снято */
  CHECK(fractal_cdc_two_child_discharge(3u,0u,&obligations,&potential)==FRACTAL_OK);
- CHECK(obligations==3u && potential==2u); /* unresolved guards make no progress */
+ CHECK(obligations==3u && potential==2u); /* неразрешённые условия не дают прогресса */
  CHECK(fractal_cdc_two_child_discharge(3u,3u,&obligations,&potential)==FRACTAL_OK);
- CHECK(obligations==0u && potential==0u); /* commuting batch discharge */
+ CHECK(obligations==0u && potential==0u); /* снятие коммутирующего набора */
  CHECK(fractal_cdc_two_child_discharge(4u,0u,&obligations,&potential)==FRACTAL_ERROR_INVALID_SPEC);
  bad_split=split; bad_split.split_value=2.0;
  CHECK(fractal_cdc_two_child_split_validate(&bad_split)==FRACTAL_ERROR_INVALID_SPEC);
@@ -217,9 +217,9 @@ static void test_depth_two_study(void) {
  CHECK(fractal_cdc_depth_two_tree_validate(&bad_tree)==FRACTAL_ERROR_INVALID_SPEC);
  bad_tree=tree; bad_tree.rank[FRACTAL_CDC_NODE_C]=1u;
  CHECK(fractal_cdc_depth_two_tree_validate(&bad_tree)==FRACTAL_ERROR_INVALID_SPEC);
- bad_tree=tree; bad_tree.rank[FRACTAL_CDC_NODE_A]=0u; /* no retrospective rewrite */
+ bad_tree=tree; bad_tree.rank[FRACTAL_CDC_NODE_A]=0u; /* ретроспективная перезапись запрещена */
  CHECK(fractal_cdc_depth_two_tree_validate(&bad_tree)==FRACTAL_ERROR_INVALID_SPEC);
- bad_tree=tree; bad_tree.region[FRACTAL_CDC_NODE_B].real_max=2.0; /* unchanged sibling */
+ bad_tree=tree; bad_tree.region[FRACTAL_CDC_NODE_B].real_max=2.0; /* соседний узел должен оставаться неизменным */
  CHECK(fractal_cdc_depth_two_tree_validate(&bad_tree)==FRACTAL_ERROR_INVALID_SPEC);
  CHECK(fractal_cdc_depth_two_certificate_create(&c)==FRACTAL_OK);
  CHECK(fractal_cdc_depth_two_certificate_validate(&c)==FRACTAL_OK);
@@ -234,7 +234,7 @@ static void test_depth_two_study(void) {
  CHECK(strstr(a,"SUPPORTED_ONE_LEVEL_BRANCHING_DESCENT")!=NULL && strstr(a,"NEGATIVE_RESULT")!=NULL);
  bad=c; bad.future_independent=false;
  CHECK(fractal_cdc_depth_two_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
- bad=c; bad.conventional_guards[0]=false; /* stalled is unresolved, never a false transition */
+ bad=c; bad.conventional_guards[0]=false; /* остановка означает unresolved, а не ложный переход */
  CHECK(fractal_cdc_depth_two_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
  bad=c; bad.tree.region[FRACTAL_CDC_NODE_D].real_min=2.0;
  CHECK(fractal_cdc_depth_two_certificate_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC);
@@ -249,9 +249,9 @@ static void test_refinement_contracts(void) {
  CHECK(fractal_cdc_contract_validate(&depth)==FRACTAL_OK);
  CHECK(fractal_cdc_contract_serialize(&depth,a,sizeof(a),&na)==FRACTAL_OK);
  CHECK(fractal_cdc_contract_serialize(&depth,b,sizeof(b),&nb)==FRACTAL_OK);
- CHECK(na==nb && memcmp(a,b,na)==0); /* replay determinism */
+ CHECK(na==nb && memcmp(a,b,na)==0); /* детерминизм повторного воспроизведения */
  old_identity=depth.identity; bad=depth; bad.maximum_refinement_depth=1u;
- CHECK(fractal_cdc_contract_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC); /* immutable canonical field */
+ CHECK(fractal_cdc_contract_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC); /* неизменяемое каноническое поле */
  CHECK(fractal_cdc_contract_derive_rank(&depth,&tree.region[0],0u,&rank)==FRACTAL_OK && rank==2u);
  CHECK(fractal_cdc_contract_derive_rank(&depth,&tree.region[1],1u,&rank)==FRACTAL_OK && rank==1u);
  CHECK(fractal_cdc_contract_derive_rank(&depth,&tree.region[2],1u,&rank)==FRACTAL_OK && rank==1u);
@@ -259,34 +259,34 @@ static void test_refinement_contracts(void) {
  CHECK(fractal_cdc_contract_derive_rank(&depth,&tree.region[4],2u,&rank)==FRACTAL_OK && rank==0u);
  CHECK(fractal_cdc_contract_derive_rank(&depth,&tree.region[0],3u,&rank)==FRACTAL_ERROR_INVALID_SPEC);
  CHECK(fractal_cdc_contract_create_min_real_width(&width,&tree.region[0],0.0625,FRACTAL_CDC_EXHAUST_FALLBACK_REQUIRED)==FRACTAL_OK);
- CHECK(width.identity!=depth.identity); /* same target under independent contracts */
+ CHECK(width.identity!=depth.identity); /* одна цель в независимых контрактах */
  CHECK(fractal_cdc_contract_derive_rank(&width,&tree.region[0],0u,&rank)==FRACTAL_OK && rank==2u);
  CHECK(fractal_cdc_contract_derive_rank(&width,&tree.region[1],1u,&rank)==FRACTAL_OK && rank==1u);
  CHECK(fractal_cdc_contract_derive_rank(&width,&tree.region[3],2u,&rank)==FRACTAL_OK && rank==0u);
  bad=width; bad.minimum_real_width=0.07; bad.identity=old_identity;
- CHECK(fractal_cdc_contract_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC); /* inexact/unregistered scale */
+ CHECK(fractal_cdc_contract_validate(&bad)==FRACTAL_ERROR_INVALID_SPEC); /* неточный или незарегистрированный масштаб */
  CHECK(fractal_cdc_contract_create_fixed_tokens(&tokens,&tree.region[0],2u,FRACTAL_CDC_EXHAUST_UNRESOLVED)==FRACTAL_OK);
  CHECK(tokens.identity!=depth.identity && tokens.identity!=width.identity);
- memset(&none,0,sizeof(none)); CHECK(fractal_cdc_contract_validate(&none)==FRACTAL_ERROR_INVALID_SPEC); /* no contract */
+ memset(&none,0,sizeof(none)); CHECK(fractal_cdc_contract_validate(&none)==FRACTAL_ERROR_INVALID_SPEC); /* контракт отсутствует */
  CHECK(fractal_cdc_obligation_create(&depth,&tree.region[0],0u,&root)==FRACTAL_OK);
  CHECK(root.creation_rank==2u && root.contract_identity==depth.identity);
  CHECK(fractal_cdc_obligation_can_split(&depth,&root,&allowed)==FRACTAL_OK && allowed);
  CHECK(fractal_cdc_obligation_create(&depth,&tree.region[3],2u,&leaf)==FRACTAL_OK);
- CHECK(fractal_cdc_obligation_can_split(&depth,&leaf,&allowed)==FRACTAL_OK && !allowed); /* zero rejects split */
- CHECK(fractal_cdc_obligation_finish(&depth,&leaf,true)==FRACTAL_OK && leaf.status==FRACTAL_CDC_OBLIGATION_DISCHARGED); /* zero can discharge */
+ CHECK(fractal_cdc_obligation_can_split(&depth,&leaf,&allowed)==FRACTAL_OK && !allowed); /* нулевой ранг запрещает разделение */
+ CHECK(fractal_cdc_obligation_finish(&depth,&leaf,true)==FRACTAL_OK && leaf.status==FRACTAL_CDC_OBLIGATION_DISCHARGED); /* нулевой ранг допускает снятие */
  CHECK(fractal_cdc_obligation_create(&depth,&tree.region[4],2u,&leaf)==FRACTAL_OK);
  CHECK(fractal_cdc_obligation_finish(&depth,&leaf,false)==FRACTAL_OK && leaf.status==FRACTAL_CDC_OBLIGATION_CONTRACT_EXHAUSTED);
  CHECK(fractal_cdc_obligation_create(&width,&tree.region[4],2u,&leaf)==FRACTAL_OK);
  CHECK(fractal_cdc_obligation_finish(&width,&leaf,false)==FRACTAL_OK && leaf.status==FRACTAL_CDC_OBLIGATION_FALLBACK_REQUIRED);
  CHECK(fractal_cdc_obligation_create(&tokens,&tree.region[4],2u,&leaf)==FRACTAL_OK);
  CHECK(fractal_cdc_obligation_finish(&tokens,&leaf,false)==FRACTAL_OK && leaf.status==FRACTAL_CDC_OBLIGATION_UNRESOLVED);
- mismatch=root; CHECK(fractal_cdc_obligation_can_split(&width,&mismatch,&allowed)==FRACTAL_ERROR_INVALID_SPEC); /* contract mismatch */
- mismatch=root; mismatch.creation_rank=1u; CHECK(fractal_cdc_obligation_can_split(&depth,&mismatch,&allowed)==FRACTAL_ERROR_INVALID_SPEC); /* no rank rewrite */
+ mismatch=root; CHECK(fractal_cdc_obligation_can_split(&width,&mismatch,&allowed)==FRACTAL_ERROR_INVALID_SPEC); /* несоответствие контракта */
+ mismatch=root; mismatch.creation_rank=1u; CHECK(fractal_cdc_obligation_can_split(&depth,&mismatch,&allowed)==FRACTAL_ERROR_INVALID_SPEC); /* перезапись ранга запрещена */
  CHECK(fractal_cdc_contract_extend(&depth,1u,&new_contract)==FRACTAL_ERROR_INVALID_SPEC);
  CHECK(fractal_cdc_contract_create_max_depth(&bad,&tree.region[0],1u,FRACTAL_CDC_EXHAUST_CONTRACT_EXHAUSTED)==FRACTAL_OK);
  CHECK(fractal_cdc_contract_extend(&bad,2u,&new_contract)==FRACTAL_OK && new_contract.identity==depth.identity && bad.identity!=new_contract.identity);
- CHECK(fractal_cdc_contract_extend(&depth,4u,&new_contract)==FRACTAL_ERROR_INVALID_SPEC); /* unregistered extension */
- CHECK(depth.identity==old_identity); /* extension never mutates old contract */
+ CHECK(fractal_cdc_contract_extend(&depth,4u,&new_contract)==FRACTAL_ERROR_INVALID_SPEC); /* незарегистрированное расширение */
+ CHECK(depth.identity==old_identity); /* расширение никогда не изменяет прежний контракт */
 }
 
 static void test_renderer_backends_and_manifest(void) {

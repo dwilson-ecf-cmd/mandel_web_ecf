@@ -1,41 +1,46 @@
-# Fixed-schema iteration histogram analyzer
+# Анализатор гистограммы итераций с фиксированной схемой
 
-`fractal.analyzer.iteration-histogram` version 1 emits one
-`fractal.analysis.iteration-histogram.v1` record containing exactly 64 unsigned
-integer counts. The fixed schema makes records comparable across image sizes and
-iteration budgets and avoids budget-dependent bin definitions.
+`fractal.analyzer.iteration-histogram` версии 1 выдаёт одну запись
+`fractal.analysis.iteration-histogram.v1`, содержащую ровно 64 беззнаковых
+целочисленных счётчика. Фиксированная схема делает записи сопоставимыми при
+разных размерах изображения и бюджетах итераций и исключает определения
+интервалов, зависящие от бюджета.
 
-## Exact v1 bins
+## Точные интервалы v1
 
-Bounds are inclusive. Bin 0 contains iteration 0, bin 1 iteration 1, and bin 2
-iteration 2. For every bin `b` from 3 through 62, the range is
-`2^(b-2) + 1` through `2^(b-1)`. Thus bin 3 is 3–4, bin 4 is 5–8, bin 5 is
-9–16, and the last ordinary bin (62) is `2^60 + 1`–`2^61`. Bin 63 is the
-overflow bin and contains every value greater than `2^61`. The public bucket
-function accepts a 64-bit iteration so the overflow rule remains testable even
-though the current compact field stores 32-bit iterations.
+Границы включительны. Интервал 0 содержит итерацию 0, интервал 1 — итерацию 1,
+а интервал 2 — итерацию 2. Для каждого `b` от 3 до 62 диапазон равен
+`2^(b-2) + 1` … `2^(b-1)`. Поэтому интервал 3 — 3–4, интервал 4 — 5–8,
+интервал 5 — 9–16, а последний обычный интервал 62 —
+`2^60 + 1` … `2^61`. Интервал 63 предназначен для переполнения и содержит все
+значения больше `2^61`. Публичная функция выбора интервала принимает 64-битное
+число итераций, чтобы правило переполнения оставалось проверяемым, хотя текущее
+компактное поле хранит 32-битные значения.
 
-Escaped samples contribute their stored one-based escape iteration. Bounded
-samples contribute their stored iteration, including zero. Unresolved samples
-contribute their stored consumed maximum-iteration budget. Cancelled and failed
-partial samples are excluded. Any unknown classification rejects the entire
-field, and no record is completed. The eligible and excluded counts conserve
-the total sample count. An empty eligible set has zero min, max, and sum and a
-false validity flag.
+Образцы escaped вносят сохранённую итерацию выхода с отсчётом от единицы.
+Образцы bounded вносят сохранённую итерацию, включая ноль. Образцы unresolved
+вносят сохранённый израсходованный максимальный бюджет. Частичные cancelled и
+failed исключаются. Неизвестная классификация отклоняет всё поле, и завершённая
+запись не создаётся. Число допустимых и исключённых образцов в сумме равно
+общему числу. Для пустого допустимого множества минимум, максимум и сумма равны
+нулю, а признак корректности ложен.
 
-Registration changes the authoritative installed-module registry identity to `be502d689109b3cb`.
+Регистрация на этом историческом этапе изменила идентичность авторитетного
+реестра установленных модулей на `be502d689109b3cb`.
 
-The analyzer reads in deterministic row-major order, checks cancellation before
-work and at every row boundary, borrows and preserves the original field, uses
-caller-owned fixed-capacity record storage, and performs no heap allocation.
-Canonical JSON uses a fixed field order and fixed bin order. The record stores
-integer counts, min/max/sum, and validity—not floating-point averages or
-percentages, which are losslessly derived presentation data.
+Анализатор читает данные в детерминированном порядке строк, проверяет отмену до
+работы и на каждой границе строки, заимствует и сохраняет исходное поле,
+использует принадлежащее вызывающей стороне хранилище записей фиксированной
+ёмкости и не выделяет память в куче. Канонический JSON имеет фиксированный
+порядок полей и интервалов. Запись хранит целые счётчики, минимум, максимум,
+сумму и признак корректности, но не средние с плавающей точкой или проценты:
+это представительные данные, выводимые без потерь.
 
-## Scope and non-goals
+## Область и исключения
 
-This analyzer is descriptive evidence only and does not influence scheduling.
-This milestone does not implement spatial workload maps, tile scheduling,
-thread pools, adaptive scheduling, connected components, orbit capture,
-periodicity detection, distance estimation, CDC evidence, Ouro integration, or
-Android UI. The pipeline remains zero-or-one analyzer.
+Этот анализатор предоставляет только описательные данные и не влияет на
+планирование. На его исходном этапе не реализовывались пространственные карты
+нагрузки, планирование плиток, пулы потоков, адаптивное планирование, связные
+компоненты, захват орбит, обнаружение периодичности, оценка расстояния,
+свидетельства CDC, интеграция Ouro или интерфейс Android. Тогда конвейер
+поддерживал ноль или один анализатор; текущая цепочка описана отдельно.

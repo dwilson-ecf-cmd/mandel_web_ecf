@@ -1,5 +1,17 @@
-# Next attack plan
+# План следующего этапа
 
-The next analyzer should be a **fixed-schema iteration histogram**. The compact field already contains exact completed iteration counts, and the new summary establishes eligibility, checked arithmetic, record versioning, canonical serialization, and independent-oracle practice. A separately reviewed bounded-bin schema can therefore add useful distribution detail without richer computation output or field mutation.
+Следующий этап должен **выделить подключаемый контракт формулы с соблюдением
+русскоязычной политики документации и английской отчётности для
+сопровождающего**.
 
-Spatial classification, connected regions, orbit statistics, periodicity, and CDC evidence remain later possibilities. Orbit and periodicity work require evidence absent from the compact field. No histogram or other candidate is implemented in this milestone.
+Сокет формулы должен отделить инициализацию состояния, шаг рекуррентности и
+классификацию Mandelbrot и Julia от `fractal.compute.scalar.v1`, сохранив
+числовой контракт `fractal.numeric.binary64.v1`, вычислительный ABI, порядок
+операций, границы отмены, назначения планировщиков и все зафиксированные
+идентичности полезной нагрузки. Машинные ID, публичные символы и ключи
+манифестов должны остаться на английском языке.
+
+Этап не должен добавлять новые формулы, произвольную точность, GPU, Android,
+Ouro или новые возможности CDC. Любые необходимые изменения идентичности
+контрактных метаданных должны быть заранее определены, а поле, пиксели и BMP
+обязаны остаться без изменений.

@@ -1,7 +1,25 @@
-# Artifact sinks
+# Приёмники артефактов
 
-An artifact sink owns destination behavior; an encoder owns bytes. The socket is a distinct `ARTIFACT_SINK` module kind with binary, commit/abort, memory, and file capability flags. Its lifecycle is `begin` → zero or more `write` calls → exactly one `commit`, or `abort`. A zero-length write is valid while active. Writes, commits, and begins in invalid phases are rejected, and byte arithmetic is overflow checked.
+Приёмник артефактов владеет поведением места назначения, а кодировщик —
+байтами. Сокет является отдельным видом модуля `ARTIFACT_SINK` с флагами
+возможностей двоичных данных, `commit`/`abort`, памяти и файла. Жизненный цикл:
+`begin` → ноль или несколько вызовов `write` → ровно один `commit` либо
+`abort`. Запись нулевой длины допустима в активном состоянии. Вызовы `write`,
+`commit` и `begin` в недопустимых фазах отклоняются; арифметика числа байтов
+проверяется на переполнение.
 
-The bounded memory sink never allocates. Its buffer remains caller-owned, overflow returns `BUFFER_TOO_SMALL`, and `required_size` records bytes requested through the failing call. Abort discards its logical length. The host-file sink accepts only caller-selected relative paths without `..`, writes `<target>.tmp`, flushes/closes, and renames on commit. Abort removes the temporary. Rename atomicity depends on the host filesystem; no cross-filesystem guarantee is claimed.
+Ограниченный приёмник памяти никогда не выделяет память. Его буфер принадлежит
+вызывающей стороне; переполнение возвращает `BUFFER_TOO_SMALL`, а
+`required_size` хранит число байтов, запрошенное с учётом неуспешного вызова.
+`abort` сбрасывает логическую длину. Файловый приёмник хоста принимает только
+выбранные вызывающей стороной относительные пути без `..`, записывает
+`<target>.tmp`, выполняет сброс и закрытие и переименовывает файл при `commit`.
+`abort` удаляет временный файл. Атомарность переименования зависит от файловой
+системы хоста; гарантия между файловыми системами не заявляется.
 
-Checksums are accumulated as bytes pass through the destination and independently by the runtime writer decorator. Memory and file destinations therefore require no reread and must agree. FNV-1a is used for reproducibility, not security. Future Android content/file-descriptor and stream sinks can implement this contract; neither exists today.
+Контрольные суммы накапливаются при прохождении байтов через место назначения и
+независимо — декоратором записи среды выполнения. Поэтому приёмники памяти и
+файла не требуют повторного чтения и обязаны совпадать. FNV-1a используется для
+воспроизводимости, а не для безопасности. Будущие приёмники Android для
+содержимого, файлового дескриптора или потока могут реализовать этот контракт;
+сейчас их нет.

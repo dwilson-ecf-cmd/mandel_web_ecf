@@ -1,19 +1,55 @@
-# Escape and classification summary Version 1
+# Сводка выхода и классификации версии 1
 
-`fractal.analyzer.escape-classification-summary` consumes an immutable `FRACTAL_FIELD_ITERATION_CLASSIFICATION_V1` view, returns that exact borrowed view, and emits one `fractal.analysis.escape-classification-summary.v1` record. It never allocates, mutates the field, rasterizes, encodes, or writes artifacts.
+`fractal.analyzer.escape-classification-summary` принимает неизменяемое
+представление `FRACTAL_FIELD_ITERATION_CLASSIFICATION_V1`, возвращает то же
+заимствованное представление и выдаёт одну запись
+`fractal.analysis.escape-classification-summary.v1`. Он никогда не выделяет
+память, не изменяет поле, не растеризует, не кодирует и не записывает артефакты.
 
-## Classification and iteration semantics
+## Семантика классификации и итераций
 
-Every sample must have one declared tag: escaped, bounded, unresolved, cancelled, or failed. Unknown tags reject the field. Conservation is `escaped + bounded + unresolved + cancelled + failed + other_classified == samples_total`; Version 1 always reports `other_classified` as zero. `maximum_iteration_samples` is a derived subset equal to unresolved samples, not an additional conservation category: under this field format a successfully unresolved conventional sample consumed its configured budget.
+Каждый образец должен иметь одну объявленную метку: escaped, bounded,
+unresolved, cancelled или failed. Неизвестная метка приводит к отклонению поля.
+Закон сохранения:
+`escaped + bounded + unresolved + cancelled + failed + other_classified == samples_total`;
+версия 1 всегда сообщает ноль в `other_classified`.
+`maximum_iteration_samples` — производное подмножество, равное unresolved, а не
+дополнительная категория: в этом формате поля успешно неразрешённый обычный
+образец исчерпал заданный бюджет.
 
-Escaped steps are the one-based iteration at which escape was detected. Unresolved steps are the consumed budget. Bounded is representable and its completed steps are eligible, although the current producer does not emit it. Escaped, bounded, and unresolved contribute to exact iteration count/min/max/sum. Cancelled and failed partial work do not. Iteration zero is representable and included without reinterpretation. If no eligible samples exist, count/min/max/sum are zero and `iteration_statistics_valid` is false. No floating-point average is stored because consumers can divide exact sum by exact count; Version 1 deliberately has no histogram.
+Число шагов escaped — номер итерации с единицы, на которой обнаружен выход.
+Число шагов unresolved — израсходованный бюджет. Категория bounded представима,
+и её завершённые шаги допустимы для статистики, хотя текущий производитель её
+не выдаёт. Escaped, bounded и unresolved входят в точные число, минимум,
+максимум и сумму итераций; частичная работа cancelled и failed не входит. Нулевая
+итерация представима и учитывается без переосмысления. Если допустимых образцов
+нет, число, минимум, максимум и сумма равны нулю, а
+`iteration_statistics_valid` ложно. Среднее с плавающей точкой не хранится:
+потребитель может разделить точную сумму на точное число; в версии 1 намеренно
+нет гистограммы.
 
-## Determinism, overflow, cancellation, and ownership
+## Детерминизм, переполнение, отмена и владение
 
-The analyzer checks cancellation before processing and once before each row, then scans each row left-to-right. Cancellation or any invalid/overflow condition produces no completed record and prevents rasterization. Width/height storage arithmetic, every counter, and iteration sum are checked; values never saturate. Record bytes use explicit little-endian fixed-width payload encoding, while identity is FNV-1a over canonical JSON. FNV-1a is a reproducibility hash, not a cryptographic digest. Serialization uses stable field order, decimal integers, explicit booleans, required-size reporting, and no heap allocation or struct padding.
+Анализатор проверяет отмену перед обработкой и перед каждой строкой, затем
+сканирует строку слева направо. Отмена, недопустимое значение или переполнение
+не создают завершённой записи и запрещают растеризацию. Арифметика хранилища
+ширины и высоты, каждый счётчик и сумма итераций проверяются; насыщение не
+используется. Полезная нагрузка записи кодируется явными значениями фиксированной
+ширины с порядком байтов little-endian, а идентичность вычисляется FNV-1a по
+каноническому JSON. FNV-1a — хеш воспроизводимости, а не криптографический
+дайджест. Сериализация использует устойчивый порядок полей, десятичные целые,
+явные логические значения, сообщение требуемого размера и не зависит от кучи
+или выравнивания структуры.
 
-The runtime owns source storage. The analyzer borrows it, returns the same address and descriptor, and guarantees source and analyzed checksums match. The result structure owns the bounded record value. Manifests retain a concise subset plus schema and record identity; callers can retrieve and canonically serialize the complete record from `fractal_analysis_result`.
+Среда выполнения владеет исходным хранилищем. Анализатор заимствует его,
+возвращает тот же адрес и дескриптор и гарантирует совпадение контрольных сумм
+исходного и проанализированного поля. Структура результата владеет ограниченным
+значением записи. Манифесты сохраняют компактное подмножество, схему и
+идентичность записи; полную запись можно получить из `fractal_analysis_result`
+и сериализовать канонически.
 
-## Limitations
+## Ограничения
 
-This is an aggregate instrument only. It proves no boundedness theorem and contains no histogram, spatial grouping, orbit, distance, periodicity, or CDC evidence.
+Это только агрегирующий инструмент. Он не доказывает теорему об ограниченности
+и не содержит гистограммы, пространственной группировки, орбиты, расстояния,
+периодичности или свидетельств CDC.

@@ -1,5 +1,5 @@
 #ifndef FRACTAL_CDC_MODEL_H
 #define FRACTAL_CDC_MODEL_H
-/* Transitional include: CDC research records moved out of the renderer layer. */
+/* Переходное включение: исследовательские записи CDC перенесены из слоя визуализатора. */
 #include "fractal_cdc_substrate.h"
 #endif

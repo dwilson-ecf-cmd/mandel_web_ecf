@@ -71,7 +71,7 @@ fractal_memory_statistics fractal_memory_backend_get_statistics(const fractal_me
  fractal_memory_statistics empty; memset(&empty,0,sizeof(empty)); return backend ? backend->statistics : empty;
 }
 void fractal_memory_backend_shutdown(fractal_memory_backend *backend) {
- /* Scopes are caller-owned and must end first; active bytes diagnose misuse. */
+ /* Области принадлежат вызывающей стороне и должны завершаться первыми; число активных байтов выявляет нарушение. */
  if (!backend) return;
  backend->initialized=false;
 }

@@ -52,8 +52,9 @@ typedef enum fractal_computation_execution_status {
  FRACTAL_COMPUTATION_CANCELLED,FRACTAL_COMPUTATION_FAILED
 } fractal_computation_execution_status;
 
-/* All pointers are borrowed for one synchronous invocation.  The destination
- * remains caller-owned and only the assignment's half-open row range is writable. */
+/* Все указатели заимствуются на один синхронный вызов. Место назначения остаётся
+ * принадлежащим вызывающей стороне; запись разрешена только в полуоткрытый
+ * диапазон строк назначения. */
 typedef struct fractal_computation_problem_v1 {
  uint32_t abi_version,contract_version;
  const fractal_formula_vtable *formula;

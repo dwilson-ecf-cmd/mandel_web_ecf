@@ -1,29 +1,49 @@
-# Module compatibility
+# Совместимость модулей
 
-Assembly first validates every descriptor's ABI, version, kind, stable ASCII ID, and
-lifetime-bearing pointers. It then validates the selected numeric ABI, contract,
-operation table, and exact capabilities required by formula and computation before
-resolving the remaining capability chain. Scalar computation consumes
-point-scalar formulas and validated contiguous assignments, borrows a caller-owned
-iteration field, and satisfies both scheduler contracts; scheduling produces an iteration field; native raster consumes that
-field and produces BGR8; BMP consumes BGR8; system memory supplies scopes.
+Сборка сначала проверяет ABI, версию, вид, устойчивый ASCII ID и указатели со
+сроком жизни каждого дескриптора. Затем до разрешения оставшейся цепочки
+возможностей она проверяет выбранные ABI и контракт числовой реализации,
+таблицу операций и точные возможности, требуемые формулой и вычислением.
+Скалярное вычисление принимает скалярные точечные формулы и проверенные
+непрерывные назначения, заимствует принадлежащее вызывающей стороне поле
+итераций и удовлетворяет обоим контрактам планировщика; планирование создаёт
+поле итераций, нативный растеризатор преобразует его в BGR8, BMP принимает BGR8,
+а системная память предоставляет области.
 
-Capability masks describe data contracts, not quality or mathematical truth. Formula
-parameters and selected IDs receive a second validation at job assembly. CDC
-refinement and Ouro memory have descriptors so selection fails explicitly with
-`NOT_IMPLEMENTED`; neither is silently replaced. The initial statically linked model
-does not perform dynamic discovery or negotiate versions.
+Маски возможностей описывают контракты данных, а не качество или
+математическую истинность. Параметры формулы и выбранные ID повторно проверяются
+при сборке задания. Уточнение CDC и память Ouro имеют дескрипторы, поэтому их
+выбор явно завершается `NOT_IMPLEMENTED`; скрытой замены нет. Начальная
+статически связанная модель не выполняет динамического обнаружения и не
+согласует версии.
 
-BGR8 means three consecutive bytes in blue, green, red order and has no machine-word
-endianness dependency. The raster buffer is top-down and tightly packed. The BMP
-encoder emits a bottom-up BMP v3 stream and adds deterministic zero row padding.
+BGR8 означает три последовательных байта в порядке blue, green, red и не
+зависит от порядка байтов машинного слова. Буфер растра плотно упакован и идёт
+сверху вниз. Кодировщик BMP выдаёт поток BMP v3 снизу вверх и добавляет
+детерминированное нулевое заполнение строк.
 
-## Registry and artifact output
+## Реестр и вывод артефактов
 
-Registry initialization rejects malformed IDs, null descriptors or implementations, unsupported ABI, invalid kinds, and duplicate IDs within a kind. Registry-driven assembly resolves every required typed selection and rejects unavailable entries before runtime validation. Stream BMP advertises `ENCODER_STREAM_OUTPUT`; sinks advertise binary bytes, commit/abort, and exactly the destination classes they implement. Artifact-sink compatibility is checked at the socket boundary rather than overloading encoder or platform identity.
+Инициализация реестра отклоняет неверные ID, нулевые дескрипторы или реализации,
+неподдерживаемый ABI, недопустимые виды и повторяющиеся ID внутри вида. Сборка
+через реестр разрешает каждый обязательный типизированный выбор и отклоняет
+недоступные записи до проверки среды. Потоковый BMP объявляет
+`ENCODER_STREAM_OUTPUT`; приёмники объявляют двоичные байты, `commit`/`abort` и
+ровно те классы мест назначения, которые реализуют. Совместимость приёмника
+артефактов проверяется на границе сокета, а не перегружает идентичность
+кодировщика или платформы.
 
-## Analyzer compatibility
+## Совместимость анализаторов
 
-`ANALYZER` is resolved independently by kind plus stable ID. The installed pass-through module advertises only compatible-field production, exact value preservation, and cancellation. Assembly rejects missing, wrong-kind, unavailable, ABI-invalid, or descriptor/implementation-mismatched analyzers. The concrete iteration/classification descriptor is validated before analysis and raster consumes only the final compatible view.
+`ANALYZER` разрешается независимо по виду и устойчивому ID. Установленный
+сквозной модуль объявляет только создание совместимого поля, точное сохранение
+значений и отмену. Сборка отклоняет отсутствующие, неверного вида, недоступные,
+несовместимые по ABI либо не согласованные между дескриптором и реализацией
+анализаторы. Конкретный дескриптор поля итераций и классификации проверяется до
+анализа; растеризатор принимает только итоговое совместимое представление.
 
-The escape-summary module additionally requires whole-field processing and one record slot, and advertises record production without claiming streaming rows. Its request rejects copy mode, missing preservation/record requirements, or zero capacity. Unknown field formats/versions and unknown classification tags are invalid.
+Модуль сводки выхода дополнительно требует обработки всего поля и одного места
+для записи и объявляет выдачу записи, не заявляя потоковой обработки строк. Его
+запрос отклоняет режим копирования, отсутствие требований сохранения или
+записи и нулевую ёмкость. Неизвестные форматы и версии поля, как и неизвестные
+метки классификации, недопустимы.

@@ -25,7 +25,7 @@ fractal_result fractal_cdc_region_validate(const fractal_cdc_region *r) {
 fractal_region_classification fractal_region_conventional_oracle(const fractal_cdc_region *r) {
  double lower;
  if(fractal_cdc_region_validate(r)!=FRACTAL_OK)return FRACTAL_REGION_NUMERICALLY_UNCERTAIN;
- /* This deliberately narrow oracle recognizes only the exact dyadic study box. */
+ /* Этот намеренно узкий оракул распознаёт только точную исследуемую диадическую область. */
  if(!selected(r) && !selected_child(r))return FRACTAL_REGION_UNRESOLVED;
  lower=r->real_min*r->real_min-r->imaginary_max*r->imaginary_max+r->real_min;
  return lower>2.0 ? FRACTAL_REGION_CERTIFIED_ESCAPED : FRACTAL_REGION_UNRESOLVED;

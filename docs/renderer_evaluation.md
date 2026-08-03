@@ -1,9 +1,29 @@
-# Renderer metrics, manifests, and evaluation
+# Метрики визуализатора, манифесты и оценка
 
-Backend-neutral metrics identify computation, renderer, and memory backends independently; pixels, tiles, frames; maximum per-point steps; escaped/bounded/unresolved/failed points; duration; precision; retries; cancellation latency; active/peak memory; and output/artifact checksums. Conventional iterations and CDC descent steps have distinct counters because they are not semantically equivalent.
+Независимые от реализаций метрики раздельно идентифицируют вычислительную,
+визуализирующую и память-управляющую реализации; пиксели, плитки и кадры;
+максимальное число шагов на точку; точки escaped, bounded, unresolved и failed;
+длительность, точность, повторные попытки, задержку отмены, активную и пиковую
+память и контрольные суммы вывода и артефакта. Обычные итерации и шаги спуска
+CDC имеют разные счётчики, поскольку они не равнозначны семантически.
 
-CDC counters are limited to defined experimental observations: states evaluated, certified descent steps, conditional branches, terminal/unresolved classifications, fallback count, and evidence depth. Trace reuse, pruning, and region decisions are excluded until defined and validated.
+Счётчики CDC ограничены определёнными экспериментальными наблюдениями:
+проверенными состояниями, сертифицированными шагами спуска, условными
+ветвлениями, конечными и неразрешёнными классификациями, числом переходов к
+резервному пути и глубиной свидетельств. Повторное использование трасс,
+отсечение и решения по областям исключены, пока не будут определены и проверены.
 
-A deterministic manifest carries RenderSpec, backend identities, app/renderer revision, compiler/target, dimensions/pixel format/precision/palette through RenderSpec, checksums, duration/metrics, equivalence expectation, and notes. Manifests with CDC computation capture the authoritative PDF SHA-256. Identity JSON uses a fixed key order.
+Детерминированный манифест содержит `RenderSpec`, идентичности реализаций,
+ревизии приложения и визуализатора, компилятор и целевую платформу, размеры,
+формат пикселей, точность и палитру через `RenderSpec`, контрольные суммы,
+длительность и метрики, ожидаемую эквивалентность и примечания. Манифесты с
+вычислением CDC фиксируют авторитетную SHA-256 PDF. JSON идентичности использует
+фиксированный порядок ключей.
 
-“Cheap” must be evaluated across CPU time, sustained throughput, memory/capacity/bandwidth, branch behavior, vectorization potential, battery, thermal throttling/device temperature, energy per pixel/classified point, output quality/correctness, and fallback rate. Wall clock alone is insufficient. Android energy/thermal data remains future work pending a real-device harness; no estimate is asserted.
+Понятие «дешёвый» следует оценивать по времени CPU, устойчивой пропускной
+способности, объёму, ёмкости и полосе памяти, поведению ветвлений, потенциалу
+векторизации, расходу батареи, тепловому ограничению и температуре устройства,
+энергии на пиксель или классифицированную точку, качеству и корректности вывода
+и доле резервного пути. Одного времени по настенным часам недостаточно. Данные
+энергии и температуры Android остаются будущей работой до появления стенда на
+реальном устройстве; оценка не заявляется.

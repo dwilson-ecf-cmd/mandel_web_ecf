@@ -1,5 +1,18 @@
-# Analysis records
+# Записи анализа
 
-Records are bounded, typed values with numeric type ID, schema version, explicit payload size, canonical identity, and at most 112 payload bytes. Result structures own returned record values. Pipeline order defines deterministic record order, and unknown types or versions are rejected rather than interpreted as an untyped property bag.
+Записи — ограниченные типизированные значения с числовым ID типа, версией
+схемы, явным размером полезной нагрузки, канонической идентичностью и не более
+112 байт полезной нагрузки. Структуры результата владеют возвращёнными
+значениями записей. Порядок конвейера задаёт детерминированный порядок записей;
+неизвестные типы или версии отклоняются, а не интерпретируются как
+нетипизированный набор свойств.
 
-The empty sequence serializes as `[]`. Escape-summary Version 1 emits exactly one `fractal.analysis.escape-classification-summary.v1` record with twelve fixed-width counters and an iteration-validity boolean. Its 97 meaningful payload bytes are explicitly encoded, zero-initialized, and decoded field-by-field, so padding and host struct layout cannot affect identity. Canonical JSON always emits every counter in stable order using decimal integers and deterministic booleans. Buffer-too-small calls report the required content length and allocate no memory.
+Пустая последовательность сериализуется как `[]`. Сводка выхода версии 1
+выдаёт ровно одну запись `fractal.analysis.escape-classification-summary.v1` с
+двенадцатью счётчиками фиксированной ширины и логическим признаком корректности
+статистики итераций. Её 97 значимых байтов полезной нагрузки кодируются явно,
+предварительно заполняются нулями и декодируются по полям, поэтому выравнивание
+и размещение структуры на хосте не влияют на идентичность. Канонический JSON
+всегда выводит все счётчики в устойчивом порядке, десятичные целые и
+детерминированные логические значения. При недостаточном буфере сообщается
+требуемая длина содержимого; память не выделяется.

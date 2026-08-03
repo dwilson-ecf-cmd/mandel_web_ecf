@@ -8,7 +8,7 @@ static bool same_region(const fractal_cdc_region *a,const fractal_cdc_region *b)
 }
 
 bool fractal_cdc_two_child_multiset_descends(uint64_t p,uint64_t l,uint64_t r) {
- /* Validated narrow encoding: area units 2 -> 1,1 and weights 3^rank: 3 -> 1+1. */
+ /* Проверенное узкое кодирование: единицы площади 2 -> 1,1 и веса 3^rank: 3 -> 1+1. */
  return p==2u && l==1u && r==1u;
 }
 
