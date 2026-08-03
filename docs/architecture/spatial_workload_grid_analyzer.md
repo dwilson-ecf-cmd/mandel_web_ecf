@@ -1,57 +1,63 @@
-# Fixed-schema spatial workload grid analyzer
+# Анализатор пространственной нагрузки с фиксированной сеткой
 
-`fractal.analyzer.spatial-workload-grid` version 1 is a read-only, descriptive
-analyzer. It emits one `fractal.analysis.spatial-workload-grid.v1` record. The
-schema is a compile-time **8 x 8** grid; cells are serialized in row-major order
-(`cell_y * 8 + cell_x`). It neither changes rasterization nor feeds the renderer
-or scheduler.
+`fractal.analyzer.spatial-workload-grid` версии 1 — анализатор только для
+чтения и описания. Он выдаёт одну запись
+`fractal.analysis.spatial-workload-grid.v1`. Схема представляет собой заданную
+при компиляции сетку **8 x 8**; ячейки сериализуются построчно
+(`cell_y * 8 + cell_x`). Анализатор не изменяет растеризацию и не передаёт
+обратную связь визуализатору или планировщику.
 
-## Mapping and semantics
+## Отображение и семантика
 
-For a non-empty source field, coordinates use integer-only inclusive cell ranges:
+Для непустого исходного поля координаты используют целочисленные включительные
+диапазоны ячеек:
 
 ```
 cell_x = floor(x * 8 / source_width)
 cell_y = floor(y * 8 / source_height)
 ```
 
-Multiplication is performed after promotion to `uint64_t`, dimensions and
-coordinates are validated, and the result is range checked. Thus every sample
-maps once, non-divisible and sub-grid dimensions are valid, boundaries are
-deterministic, and empty cells are permitted. Overflow or any failed checked
-counter/sum operation rejects the analysis rather than wrapping.
+Перед умножением значение повышается до `uint64_t`; размеры и координаты
+проверяются, как и диапазон результата. Поэтому каждый образец отображается
+ровно один раз, размеры без деления нацело и меньше сетки допустимы, границы
+детерминированы, пустые ячейки разрешены. Переполнение любого проверяемого
+счётчика или суммы отклоняет анализ вместо перехода по модулю.
 
-Each cell counts escaped, bounded, unresolved, cancelled, and failed samples.
-This exactly reuses the escape-summary interpretation: escaped, bounded, and
-unresolved samples are iteration eligible; cancelled and failed partial samples
-are excluded. An unresolved maximum-iteration sample has one classification and
-is counted once. Iteration zero is valid. Eligible cells contain count, minimum,
-maximum, and sum. An empty/non-eligible cell contains zeroes and a false validity
-flag. Cell classifications conserve cell samples, and cells conserve the global
-sample count. The record repeats the corresponding global eligible statistics,
-source dimensions, conservation flag, and result status. Averages are not stored.
+Каждая ячейка считает образцы escaped, bounded, unresolved, cancelled и failed.
+Это в точности повторяет интерпретацию сводки выхода: escaped, bounded и
+unresolved допустимы для статистики итераций; частичные cancelled и failed
+исключаются. Неразрешённый образец максимальной итерации имеет одну
+классификацию и учитывается один раз. Нулевая итерация допустима. Допустимые
+ячейки содержат число, минимум, максимум и сумму. Пустая либо не имеющая
+допустимых образцов ячейка содержит нули и ложный признак корректности.
+Классификации сохраняют число образцов ячейки, а ячейки — общее число образцов.
+Запись повторяет соответствующую глобальную статистику, размеры исходного поля,
+признак сохранения и статус результата. Средние не хранятся.
 
-## Ownership, lifecycle, and serialization
+## Владение, жизненный цикл и сериализация
 
-The analyzer borrows and returns the immutable compact field, allocates no heap
-memory, and requires exactly one caller-owned record slot. Compatibility and
-capacity are rejected during preflight. Cancellation is checked before work and
-at every source-row boundary; cancellation, unknown classifications, or failure
-produces no completed record. Finish remains single-use.
+Анализатор заимствует и возвращает неизменяемое компактное поле, не выделяет
+память в куче и требует ровно одно принадлежащее вызывающей стороне место для
+записи. Совместимость и ёмкость отклоняются при предварительной проверке.
+Отмена проверяется до работы и на каждой границе исходной строки; отмена,
+неизвестная классификация или отказ не создают завершённой записи. `finish`
+остаётся одноразовым.
 
-Canonical JSON writes all semantic fields in stable order as decimal integers
-and deterministic `true`/`false` values into a bounded caller buffer, reports the
-required size, and never serializes C padding. FNV-1a is computed over that
-canonical serialization only as a reproducibility identity, not a cryptographic
-digest. The typed record stays with the analysis result; render and artifact
-manifests retain generic analyzer/schema/result metadata rather than embedding
-all 64 cells. Memory and file artifact sinks require no special ownership.
+Канонический JSON записывает все семантические поля в устойчивом порядке как
+десятичные целые и детерминированные `true`/`false` в ограниченный буфер
+вызывающей стороны, сообщает требуемый размер и никогда не сериализует
+выравнивание C. FNV-1a вычисляется только по канонической сериализации как
+идентичность воспроизводимости, а не криптографический дайджест. Типизированная
+запись остаётся в результате анализа; манифесты визуализации и артефакта хранят
+общие метаданные анализатора, схемы и результата, не встраивая все 64 ячейки.
+Приёмникам артефактов памяти и файла не требуется особое владение.
 
-## Limitations
+## Ограничения
 
-This observational milestone does **not** implement adaptive scheduling, dynamic
-tiling, connected-component analysis, contour extraction, orbit analysis,
-distance estimation, periodicity detection, boundedness proofs, CDC evidence,
-renderer feedback, or multi-analyzer composition. The pipeline still selects
-zero or one analyzer. The grid describes where work occurred; it makes no claim
-of acceleration or performance benefit.
+Этот наблюдательный этап **не** реализует адаптивное планирование, динамические
+плитки, анализ связных компонентов, извлечение контуров, анализ орбит, оценку
+расстояния, обнаружение периодичности, доказательства ограниченности,
+свидетельства CDC, обратную связь визуализатору или композицию нескольких
+анализаторов. На том этапе конвейер ещё выбирал ноль или один анализатор. Сетка
+описывает место выполненной работы и не заявляет ускорения или выигрыша
+производительности.

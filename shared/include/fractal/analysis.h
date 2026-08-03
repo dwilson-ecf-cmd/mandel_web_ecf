@@ -67,8 +67,8 @@ typedef struct fractal_spatial_workload_cell_v1 {
  uint64_t eligible_samples,minimum_iteration,maximum_iteration,summed_iterations;
  bool iteration_statistics_valid;
 } fractal_spatial_workload_cell_v1;
-/* Cells are row-major.  A source coordinate maps inclusively with
- * floor(x * 8 / source_width), floor(y * 8 / source_height). */
+/* Ячейки расположены построчно. Исходная координата включительно отображается
+ * как floor(x * 8 / source_width), floor(y * 8 / source_height). */
 typedef struct fractal_spatial_workload_grid_v1 {
  uint32_t grid_width,grid_height,source_width,source_height;
  fractal_spatial_workload_cell_v1 cells[FRACTAL_SPATIAL_WORKLOAD_CELL_COUNT];
@@ -121,9 +121,9 @@ fractal_result fractal_analysis_result_serialize(const fractal_analysis_result*,
 fractal_result fractal_analysis_record_serialize(const fractal_analysis_record*,char*,size_t,size_t*);
 fractal_result fractal_analysis_records_serialize(const fractal_analysis_record*,size_t,char*,size_t,size_t*);
 fractal_result fractal_escape_summary_record_decode(const fractal_analysis_record*,fractal_escape_classification_summary_v1*);
-/* v1: 0, 1, and 2 have dedicated bins.  For 3 <= b <= 62, bin b is
- * [2^(b-2)+1, 2^(b-1)] (inclusive).  Bin 63 is the overflow bin for values
- * greater than 2^61. */
+/* v1: значения 0, 1 и 2 имеют отдельные интервалы. При 3 <= b <= 62 интервал b
+ * равен [2^(b-2)+1, 2^(b-1)] включительно. Интервал 63 предназначен для
+ * переполнения и содержит значения больше 2^61. */
 size_t fractal_iteration_histogram_bucket_v1(uint64_t iteration);
 fractal_result fractal_iteration_histogram_record_decode(const fractal_analysis_record*,fractal_iteration_histogram_v1*);
 fractal_result fractal_spatial_workload_cell_index_v1(uint32_t,uint32_t,uint32_t,uint32_t,size_t*);

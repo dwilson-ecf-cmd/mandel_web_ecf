@@ -1,16 +1,17 @@
-# Native job specification
+# Нативная спецификация задания
 
-The socketable path separates immutable mathematical intent (`problem`), coordinate
-mapping (`view`), field-to-pixel policy (`raster`), and artifact intent (`artifact`).
-Module selection belongs to the independently validated `fractal_runtime_modules`.
-Formula parameters carry a stable formula type ID, exact size, and bounded typed
-record. This permits deterministic validation and serialization without interpreting
-an untyped blob.
+Подключаемый путь разделяет неизменяемый математический замысел (`problem`),
+отображение координат (`view`), политику преобразования поля в пиксели
+(`raster`) и намерение создать артефакт (`artifact`). Выбор модулей относится к
+независимо проверяемому `fractal_runtime_modules`. Параметры формулы содержат
+устойчивый ID типа формулы, точный размер и ограниченную типизированную запись.
+Это обеспечивает детерминированную проверку и сериализацию без интерпретации
+нетипизированного блока данных.
 
-`fractal_render_spec` remains the compatibility model for legacy jobs. It is not an
-alias for the native job because animation, tiling, and presentation-era fields have
-no role in the first native vertical slice.
+`fractal_render_spec` остаётся моделью совместимости для унаследованных заданий.
+Она не является псевдонимом нативного задания, поскольку поля эпохи анимации,
+плиток и представления не входят в первый нативный вертикальный срез.
 
-The view maps pixel centers in row-major order. Positive imaginary coordinates are
-at the top. `scale` is vertical extent and horizontal extent is scale multiplied by
-the image aspect ratio.
+Представление отображает центры пикселей в порядке строк. Положительные мнимые
+координаты находятся сверху. `scale` — вертикальный размер области, а
+горизонтальный размер равен масштабу, умноженному на соотношение сторон.

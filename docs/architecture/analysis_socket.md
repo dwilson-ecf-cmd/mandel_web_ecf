@@ -1,5 +1,17 @@
-# Analysis socket
+# Сокет анализа
 
-Analysis is an independent registered module axis downstream of completed computation and upstream of rasterization. The runtime owns source and optional copied output storage; analyzers borrow immutable input views and never free fields. The reference `fractal.analyzer.passthrough` either borrows input or copies it, preserves descriptor and bytes exactly, emits zero records, supports boundary cancellation, and reports exact sample and checksum metadata.
+Анализ — независимая зарегистрированная ось модулей после завершённого
+вычисления и до растеризации. Среда выполнения владеет исходным хранилищем и
+необязательной копией результата; анализаторы заимствуют неизменяемые
+представления и никогда не освобождают поля. Эталонный
+`fractal.analyzer.passthrough` либо заимствует вход, либо копирует его, точно
+сохраняет дескриптор и байты, не выдаёт записей, поддерживает отмену на границе
+и сообщает точные метаданные числа образцов и контрольной суммы.
 
-The lifecycle is `validate -> begin -> process -> finish`; a failure invokes `abort` and prevents rasterization. A state may be used once. Descriptors and vtables have static lifetime. Empty dimensions are rejected. Input/output aliasing is allowed only for exact alias; partial overlap is rejected. Processing is deterministic row-major byte preservation. Future analyzers may accumulate whole-field statistics or emit records, but must state whether they preserve field semantics.
+Жизненный цикл: `validate -> begin -> process -> finish`; отказ вызывает
+`abort` и запрещает растеризацию. Состояние используется один раз. Дескрипторы
+и таблицы виртуальных функций имеют статический срок жизни. Пустые размеры
+отклоняются. Совпадение входа и выхода допустимо только при полном совпадении;
+частичное перекрытие запрещено. Обработка детерминированно сохраняет байты в
+порядке строк. Будущие анализаторы могут накапливать статистику всего поля или
+выдавать записи, но обязаны явно указывать, сохраняют ли они семантику поля.

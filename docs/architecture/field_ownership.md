@@ -1,7 +1,26 @@
-# Field ownership
+# Владение полем
 
-`fractal_field_descriptor` separates dimensions, byte stride, format, and flags from storage. `fractal_field_view` is immutable and `fractal_mutable_field_view` makes writes explicit. Validation rejects zero dimensions, unknown format, narrow stride, multiplication overflow, null storage, and insufficient backing size. The scheduler's legacy `fractal_field` remains an allocation-oriented compatibility object.
+`fractal_field_descriptor` отделяет размеры, шаг строки в байтах, формат и
+флаги от хранилища. `fractal_field_view` неизменяемо, а
+`fractal_mutable_field_view` делает запись явной. Проверка отклоняет нулевые
+размеры, неизвестный формат, слишком малый шаг, переполнение при умножении,
+нулевой указатель хранилища и недостаточный размер памяти. Унаследованный
+`fractal_field` планировщика остаётся объектом совместимости, ориентированным на
+выделение памяти.
 
-Runtime scope owns source, optional analysis copy, and pixels and releases each once after encoding or failure. The scheduler passes a caller-owned mutable field view plus a sealed disjoint assignment to the computation module; neither owns or releases storage. Analysis immutably borrows source and may borrow caller-owned output; raster immutably borrows the final analyzed view. Borrowed fields are never released by analyzers. Partial computation progress is represented only in assignment results until the scheduler finalizes `completed_rows`; analysis and raster accept only the successfully finalized source in orchestration.
+Область среды выполнения владеет исходным полем, необязательной копией анализа
+и пикселями и освобождает каждый ресурс ровно один раз после кодирования или
+отказа. Планировщик передаёт вычислительному модулю принадлежащее вызывающей
+стороне изменяемое представление поля и запечатанное непересекающееся
+назначение; ни планировщик, ни модуль не владеют хранилищем и не освобождают его.
+Анализ неизменяемо заимствует источник и может заимствовать принадлежащий
+вызывающей стороне выход; растеризатор неизменяемо заимствует итоговое
+проанализированное представление. Анализаторы никогда не освобождают
+заимствованные поля. Частичный прогресс вычисления представлен только в
+результатах назначений, пока планировщик не зафиксирует `completed_rows`;
+оркестрация допускает к анализу и растру только успешно завершённый источник.
 
-The escape-summary analyzer only borrows the immutable source view and returns it unchanged. Its fixed record is copied into caller-owned result storage; no field or record heap allocation occurs. Failed or cancelled processing exposes no completed record.
+Анализатор сводки выхода только заимствует неизменяемое исходное представление
+и возвращает его без изменений. Его фиксированная запись копируется в
+принадлежащее вызывающей стороне хранилище результата; память в куче для поля
+или записи не выделяется. Отказ или отмена не предоставляют завершённой записи.

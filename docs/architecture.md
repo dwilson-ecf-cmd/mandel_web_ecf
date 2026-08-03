@@ -1,6 +1,6 @@
-# Fractal Studio architecture
+# Архитектура Fractal Studio
 
-## Intended flow
+## Предусмотренный поток
 
 ```text
 Android application / future API
@@ -11,16 +11,48 @@ Android application / future API
         -> artifact storage or platform presentation
 ```
 
-The portable native side is C11. C++ is limited to the inherited-renderer adapter behind a C ABI. Python remains a preserved legacy launcher, not a production dependency. Computation owns formula transitions, classifications, work counters, and mathematical evidence. Rendering owns rasterization and presentation output, not fractal or CDC mathematics. Scheduling, artifact publication, application telemetry, renderer telemetry, computation evidence, and allocator diagnostics remain separate responsibilities.
+Переносимая нативная часть написана на C11. C++ ограничен адаптером
+унаследованного визуализатора за C ABI. Python остаётся сохранённым унаследованным
+средством запуска, а не производственной зависимостью. Вычисление владеет
+переходами формулы, классификациями, счётчиками работы и математическими
+свидетельствами. Визуализация владеет растеризацией и представлением результата,
+но не математикой фрактала или CDC. Планирование, публикация артефакта,
+телеметрия приложения, телеметрия визуализатора, вычислительные свидетельства и
+диагностика распределителя памяти остаются отдельными обязанностями.
 
-The current renderer vtable is a job/frame/tile/pixel lifecycle. The inherited adapter remains unavailable because whole BMP behavior has no validated mapping to caller-owned buffers. The transitional CDC renderer is also unavailable and owns no mathematics. See `computation_architecture.md` for the point substrate.
+Текущая таблица виртуальных функций визуализатора задаёт жизненный цикл задания,
+кадра, плитки и пикселя. Унаследованный адаптер недоступен, поскольку поведение
+целого BMP не имеет проверенного отображения в буферы вызывающей стороны.
+Переходный визуализатор CDC также недоступен и не владеет математикой. Точечная
+основа описана в `computation_architecture.md`.
 
-System memory remains the reference/default. Ouro is optional and unimplemented. Computation identity never selects memory, allocator behavior never proves computation correctness, and render output never proves allocator correctness.
+Системная память остаётся эталонной и используемой по умолчанию. Ouro
+необязательна и не реализована. Идентичность вычисления никогда не выбирает
+память, поведение распределителя не доказывает корректность вычисления, а вывод
+визуализации не доказывает корректность распределителя.
 
-## Reproducibility
+## Направление зависимостей и владение каталогами
 
-A manifest independently records computation, renderer, and memory identities, along with immutable RenderSpec and checksums. CDC reference checksum metadata appears only when CDC computation is selected. Generated data belongs under `runtime/artifacts/` or external storage and is never source.
+`shared/` не зависит от среды выполнения и содержит переносимые контракты.
+`runtime/` зависит от `shared/` и собирает установленные реализации.
+`server/computation/` владеет вычислительной и исследовательской основой,
+`server/renderer/` — границей визуализации, а `tests/` может зависеть от всех
+проверяемых слоёв. Веб-интерфейс и корневые унаследованные программы не входят
+в производственную нативную цепочку. Направление от представления к математике
+через обратную зависимость запрещено.
 
-## Platform direction
+## Воспроизводимость
 
-The future product is a dedicated Android application with Kotlin presentation, a narrow JNI adapter, and the host-testable portable native core. Termux is historical only; checked-in executables remain inert reference artifacts. No Android application or JNI implementation is part of this milestone.
+Манифест раздельно записывает идентичности вычисления, визуализатора и памяти,
+а также неизменяемый `RenderSpec` и контрольные суммы. Метаданные контрольной
+суммы ссылки CDC присутствуют только при выборе вычисления CDC. Сгенерированные
+данные размещаются в `runtime/artifacts/` либо во внешнем хранилище и не являются
+исходным кодом.
+
+## Направление платформы
+
+Будущий продукт — отдельное приложение Android с представлением Kotlin, узким
+адаптером JNI и переносимым нативным ядром, проверяемым на хосте. Termux имеет
+только историческое значение; сохранённые исполняемые файлы остаются инертными
+справочными артефактами. Приложение Android и реализация JNI не входят в этот
+этап.

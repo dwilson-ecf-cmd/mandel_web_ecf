@@ -1,5 +1,17 @@
-# Analysis pipeline
+# Первая версия конвейера анализа
 
-The bounded pipeline supports zero analyzers or one explicitly selected analyzer. Valid choices are no analysis, `fractal.analyzer.passthrough`, and `fractal.analyzer.escape-classification-summary`. Ordering is stored order and deterministic identity includes the canonical request, including record capacity.
+Этот документ фиксирует исторический этап до появления ограниченной цепочки
+анализаторов. На том этапе ограниченный конвейер поддерживал отсутствие
+анализаторов или один явно выбранный анализатор. Допустимыми вариантами были
+отсутствие анализа, `fractal.analyzer.passthrough` и
+`fractal.analyzer.escape-classification-summary`. Порядком был порядок хранения,
+а детерминированная идентичность включала канонический запрос и ёмкость записей.
 
-Zero analyzers return the source unchanged. Pass-through may borrow or copy. Escape summary requires borrowed output, preservation, record output, and capacity for exactly one record; assembly supplies those fixed requirements and concrete descriptor validation occurs before processing. Analysis failure or row-boundary cancellation prevents rasterization and encoding. Arbitrary lists, plugin graphs, histograms, and transformations remain out of scope.
+Пустой конвейер возвращал исходное поле без изменений. Сквозной анализатор мог
+заимствовать или копировать. Сводка выхода требовала заимствованного результата,
+сохранения поля, выдачи записей и ёмкости ровно на одну запись; сборка задавала
+эти фиксированные требования, а проверка конкретного дескриптора происходила до
+обработки. Отказ анализа или отмена на границе строки запрещали растеризацию и
+кодирование. Произвольные списки, графы плагинов, гистограммы и преобразования
+не входили в тот этап. Текущий контракт цепочки описан в
+`bounded_analyzer_chain.md`.

@@ -1,35 +1,100 @@
-# Deterministic bounded analyzer chain
+# Детерминированная ограниченная цепочка анализаторов
 
-## Baseline audit
+## Аудит исходного состояния
 
-The implementation started at commit `e06fc0a62f00a9dc3093d66ba5aa8ef19b70e95d` on branch `work`, with a clean tree. The analyzer lifecycle was `validate` → `begin` → `process` → `finish`, with `abort` after processing failure. Requests and results used fixed caller-visible structures, while each analyzer's state temporarily owned one embedded result. Registry assembly accepted one optional analyzer ID. Runtime validation, job preflight, execution, manifests, serializers, and record serializers all contained explicit zero-or-one assumptions (`count > 1`, index zero, and one-record limits).
+Реализация началась с коммита `e06fc0a62f00a9dc3093d66ba5aa8ef19b70e95d`
+на ветке `work` при чистом дереве. Жизненный цикл анализатора был
+`validate` → `begin` → `process` → `finish`, а после отказа обработки вызывался
+`abort`. Запросы и результаты использовали фиксированные структуры, видимые
+вызывающей стороне, а состояние каждого анализатора временно владело одним
+встроенным результатом. Сборка через реестр принимала один необязательный ID
+анализатора. Проверка среды, предварительная проверка задания, выполнение,
+манифесты и сериализаторы содержали явные предположения о нуле или одном
+анализаторе (`count > 1`, индекс ноль и предел в одну запись).
 
-The source field is scope-owned by the runtime until rasterization; analyzer state is stack-owned; result records are copied into the caller's `fractal_runtime_output`. The old capacity was one analyzer and one record. Ordering was trivial. Cancellation was checked by computation and within an analyzer, but there was no between-analyzer boundary. A failed analyzer was aborted and no later analyzer ran. The frozen Mandelbrot and Julia field, pixel, artifact, summary, histogram, and spatial fixtures were recorded by the existing native tests before this change and remain the compatibility oracle.
+Среда выполнения владеет исходным полем в своей области до растеризации;
+состояние анализатора принадлежит стеку; записи результата копируются в
+принадлежащий вызывающей стороне `fractal_runtime_output`. Прежняя ёмкость
+составляла один анализатор и одну запись, поэтому порядок был тривиален. Отмена
+проверялась вычислением и внутри анализатора, но отдельной границы между
+анализаторами не существовало. После отказа активный анализатор прерывался,
+последующие не запускались. Зафиксированные тестами идентичности полей,
+пикселей, артефактов, сводок, гистограмм и пространственных записей Mandelbrot
+и Julia были оракулом совместимости до изменения и остаются им после него.
 
-## Ownership and capacity
+## Владение и ёмкость
 
-`FRACTAL_ANALYZER_CHAIN_MAX` is eight. The chain, requests, analyzer state, aggregate result, and up to eight typed records use bounded caller or stack storage; chain execution performs no allocation and uses no mutable static result. Initialization checks the sum of requested record capacities, rejects `size_t` overflow, and rejects totals larger than the supplied/result bound. Each analyzer receives a deterministic contiguous portion of the aggregate record sequence. Aggregate output is assigned to the caller only after every analyzer succeeds, so failure cannot publish a shorter successful chain.
+`FRACTAL_ANALYZER_CHAIN_MAX` равен восьми. Цепочка, запросы, состояние
+анализатора, агрегированный результат и до восьми типизированных записей
+используют ограниченное хранилище вызывающей стороны или стека; выполнение
+цепочки не выделяет память и не использует изменяемый статический результат.
+Инициализация проверяет сумму запрошенных ёмкостей записей, отклоняет
+переполнение `size_t` и значения больше предоставленного предела результата.
+Каждый анализатор получает детерминированный непрерывный участок общей
+последовательности записей. Агрегированный результат присваивается вызывающей
+стороне только после успеха всех анализаторов, поэтому отказ не может
+опубликовать укороченную успешную цепочку.
 
-## Ordering and identity
+## Порядок и идентичность
 
-Selections are resolved by module kind and exact module ID through the installed registry. Declaration order is execution and record order. Duplicate IDs, missing IDs, over-capacity chains, unavailable modules, and incompatible field descriptors are rejected. Identity is FNV-1a over canonical semantic text containing chain ABI, count, ordered module IDs and versions, ordered schema IDs and versions, output modes, and record requirements. It never hashes pointers, padding, or raw structures. Canonical serialization uses stable JSON field order, decimal integers, lowercase booleans, explicit identity, and required-size reporting.
+Выбор разрешается через установленный реестр по виду модуля и точному ID.
+Порядок объявления является порядком выполнения и записей. Повторяющиеся,
+отсутствующие или недоступные ID, слишком длинные цепочки и несовместимые
+дескрипторы поля отклоняются. Идентичность вычисляется FNV-1a по каноническому
+семантическому тексту, содержащему ABI цепочки, число, упорядоченные ID и версии
+модулей, упорядоченные ID и версии схем, режимы выхода и требования к записям.
+Указатели, выравнивание и необработанные структуры никогда не хешируются.
+Каноническая сериализация использует устойчивый порядок полей JSON, десятичные
+целые, логические значения в нижнем регистре, явную идентичность и сообщение
+требуемого размера.
 
-## Lifecycle, cancellation, and failure
+## Жизненный цикл, отмена и отказ
 
-The complete chain is preflighted before computation via the actual job field descriptor and again before analysis. An empty chain succeeds as an identity-bearing field-preserving observation. One and maximum-size chains follow the same path. Before every analyzer, cancellation is checked. An active analyzer is aborted when processing fails or cancels. Finished analyzers need no cleanup; no analyzers are eagerly prepared, so there are no prepared-but-unfinished later analyzers to abort. Begin, process, finish, preservation, checksum, or capacity failure terminates the chain; later analyzers never run and the caller's previous result remains unchanged. No synthetic record is created.
+Полная цепочка предварительно проверяется до вычисления по фактическому
+дескриптору поля задания и повторно — до анализа. Пустая цепочка успешно
+выполняется как имеющее идентичность наблюдение, сохраняющее поле. Цепочки из
+одного и максимального числа анализаторов проходят тем же путём. Отмена
+проверяется перед каждым анализатором. Активный анализатор получает `abort`,
+если обработка завершается отказом или отменой. Завершённым анализаторам очистка
+не нужна; последующие анализаторы заранее не подготавливаются, поэтому нет
+подготовленных, но незавершённых состояний для прерывания. Отказ `begin`,
+`process`, `finish`, сохранения, контрольной суммы или ёмкости прекращает
+цепочку; последующие анализаторы не выполняются, прежний результат вызывающей
+стороны не меняется. Синтетическая запись не создаётся.
 
-## Immutable field fan-out
+## Разветвление неизменяемого поля
 
-Every analyzer receives the identical `const fractal_field_view`. Copy/transformation output is not supported by a multi-analyzer observational chain. Each returned view must alias the source with the same extent, and every successful analyzer must report the source checksum as its output checksum. Rasterization always receives the original source view. Thus `source_field_checksum == analyzed_field_checksum` is mandatory for every successful supported chain.
+Каждый анализатор получает одно и то же `const fractal_field_view`. Цепочка
+наблюдений из нескольких анализаторов не поддерживает копирование или
+преобразование выхода. Каждое возвращённое представление должно указывать на
+тот же источник с тем же диапазоном, а каждый успешный анализатор обязан
+сообщить контрольную сумму источника как контрольную сумму выхода.
+Растеризатор всегда получает исходное представление. Поэтому для любой
+успешной поддерживаемой цепочки обязательно
+`source_field_checksum == analyzed_field_checksum`.
 
-## Result and manifest representation
+## Представление результата и манифеста
 
-Each aggregate record carries module ID/version, schema ID/version, chain ordinal, payload size, semantic record identity, and explicit status. The aggregate carries chain identity/version, analyzer count, required/produced record counts, accumulated samples examined, source/output checksums, preservation and cancellation flags, and overall status. Runtime and artifact manifests retain concise identity, count, status, checksums, preservation, and typed-record summary fields rather than copying large payloads. Typed payloads remain authoritative in the caller-owned analysis result.
+Каждая агрегированная запись содержит ID и версию модуля, ID и версию схемы,
+порядковый номер в цепочке, размер полезной нагрузки, семантическую идентичность
+записи и явный статус. Агрегат содержит идентичность и версию цепочки, число
+анализаторов, требуемое и созданное число записей, накопленное число
+проверенных образцов, контрольные суммы входа и выхода, признаки сохранения и
+отмены и общий статус. Манифесты среды и артефакта хранят компактные поля
+идентичности, числа, статуса, контрольных сумм, сохранения и сводки
+типизированных записей, а не копируют крупную полезную нагрузку. Авторитетная
+типизированная нагрузка остаётся в принадлежащем вызывающей стороне результате
+анализа.
 
-## Limitations and next milestone
+## Ограничения и последующий этап
 
-Execution is sequential and observational. There is no analyzer parallelism, dynamic loading/allocation, field transformation, scheduling feedback, refinement influence, or formula/raster/palette change. Cancellation uses the shared atomic request token, but a deterministic test hook between analyzers is not exposed publicly.
+Выполнение последовательное и наблюдательное. Нет параллелизма анализаторов,
+динамической загрузки или выделения памяти, преобразования поля, обратной связи
+планировщику, влияния на уточнение либо изменения формулы, растра или палитры.
+Отмена использует общий атомарный токен запроса, но публичный детерминированный
+тестовый перехват между анализаторами отсутствует.
 
-The scheduler and computation contracts now exist. The recommended next
-milestone is extraction of the numeric socket from the scalar computation
-implementation while preserving the computation contract and all frozen outputs.
+Контракты планировщика и вычисления теперь существуют. Исторически следующим
+этапом после этой цепочки было выделение числового сокета; оно завершено и
+описано в `binary64_numeric_socket.md`. Текущий следующий этап указан в
+`docs/roadmap/next_attack_plan.md`.

@@ -1,48 +1,47 @@
-# Repository hygiene audit
+# Аудит гигиены репозитория
 
-Audit date: 2026-08-01 (UTC)
+Дата аудита: 2026-08-01 (UTC)
 
-This document records the checkout as it existed before the hygiene change. It
-is an inventory and safety policy, not a request to remove collaborator-authored
-material. Paths and counts below are derived from Git rather than from a prior
-task summary.
+Документ фиксирует рабочую копию до изменения правил гигиены. Это
+инвентаризация и политика безопасности, а не запрос на удаление материалов,
+созданных участником проекта. Пути и числа ниже получены из Git, а не из сводки
+предыдущей задачи.
 
-## Mandatory baseline
+## Обязательное исходное состояние
 
-- Starting commit: `97f73056102f98c4fa98e5a2430080d85d83050f`
+- Стартовый коммит: `97f73056102f98c4fa98e5a2430080d85d83050f`
   (`Merge pull request #8 from
   dwilson-ecf-cmd/codex/establish-socketable-fractal-runtime`).
-- Branch/state: `work`, with `git status --short --branch` reporting only
-  `## work`; the index and working tree were clean.
-- Branches: the checkout exposed only the local `work` branch.
-- Remotes: none were configured; `git remote -v` produced no entries.
-- The 20-commit baseline history ran from `97f7305` through `a12b0ca` and was
-  inspected before any edit.
+- Ветка и состояние: `work`; `git status --short --branch` выводил только
+  `## work`, индекс и рабочее дерево были чистыми.
+- Ветки: рабочая копия показывала только локальную ветку `work`.
+- Удалённые репозитории не были настроены; `git remote -v` ничего не выводил.
+- История из 20 коммитов от `97f7305` до `a12b0ca` была проверена до правок.
 
-## Runtime determination
+## Определение среды выполнения
 
 `SOCKETABLE_RUNTIME_PRESENT`
 
-This is based on implementation and tests in the checkout, not merely on the
-merge title or architecture notes. The repository contains module descriptors
-and assembly validation, a binary64 numeric backend, Mandelbrot and Julia
-formula modules, a conventional point-computation backend, a serial scheduler,
-an iteration field, a BGR8 rasterizer, a BMP encoder, scoped system memory, no-op
-telemetry, and a host platform adapter. The implementations are assembled in
-`runtime/src/socketable_runtime.c`, their public contracts are in
-`shared/include/fractal/socketable_runtime.h`, and end-to-end coverage is in
+Вывод основан на реализации и тестах рабочей копии, а не только на названии
+слияния или архитектурных заметках. Репозиторий содержит дескрипторы модулей и
+проверку сборки, числовую реализацию Binary64, модули формул Mandelbrot и Julia,
+обычное точечное вычисление, последовательный планировщик, поле итераций,
+растеризатор BGR8, кодировщик BMP, системную память с областями, телеметрию без
+операций и адаптер платформы хоста. Реализации собираются в
+`runtime/src/socketable_runtime.c`, публичные контракты находятся в
+`shared/include/fractal/socketable_runtime.h`, а сквозная проверка — в
 `tests/native/test_socketable_runtime.c`.
 
-The descriptors named `refinement.cdc.unavailable` and
-`memory.ouro.unavailable` are explicit unavailable sentinels, not working
-backends. They do not make the conventional socketable runtime partial: runtime
-validation rejects either choice and the supported assembly uses no refinement
-and system memory. No unavailable module was filled in during this milestone.
+Дескрипторы `refinement.cdc.unavailable` и `memory.ouro.unavailable` — явные
+недоступные обозначения, а не работающие реализации. Они не делают обычную
+подключаемую среду частичной: проверка среды отклоняет оба варианта, а
+поддерживаемая сборка использует отсутствие уточнения и системную память. На
+этом этапе ни один недоступный модуль не был реализован.
 
-## Deterministic inventory method
+## Детерминированный метод инвентаризации
 
-Run these commands from the repository root. `LC_ALL=C` makes ordering stable;
-the NUL-delimited variants preserve unusual path names.
+Команды выполняются из корня репозитория. `LC_ALL=C` стабилизирует порядок;
+варианты с NUL сохраняют необычные имена путей.
 
 ```sh
 LC_ALL=C git ls-files
@@ -55,68 +54,69 @@ du -ah --exclude=.git . | LC_ALL=C sort -h
 git ls-files -z | xargs -0 stat --printf='%s\t%n\n' | LC_ALL=C sort -nr
 ```
 
-At the baseline, every worktree file outside `.git` was tracked: there were no
-untracked or ignored files, and no symbolic links. Git recorded 901 paths and
-935,110,328 bytes. Top-level distribution was 750 paths under `frames/`, 61
-under `docs/`, 31 each under `server/` and `shared/`, five under `web/`, four
-under `runtime/`, three under `tests/`, and 16 repository-root paths.
+В исходном состоянии каждый файл рабочего дерева вне `.git` отслеживался:
+неотслеживаемых и игнорируемых файлов и символических ссылок не было. Git
+учитывал 901 путь и 935 110 328 байт. В корне находилось 16 путей, под
+`frames/` — 750, под `docs/` — 61, под `server/` и `shared/` — по 31, под
+`web/` — пять, под `runtime/` — четыре и под `tests/` — три.
 
-## Classified tracked content
+## Классификация отслеживаемого содержимого
 
-| Class | Deterministic identification | Baseline result and disposition |
-| --- | --- | --- |
-| Source | `git ls-files '*.c' '*.cpp' '*.py' '*.html' '*.css'` | 32 implementation files: 25 C, four C++, one Python, one HTML, and one CSS. Active native sources live in `shared/`, `runtime/`, and `server/`; root application sources are preserved. |
-| Public headers | `git ls-files 'shared/include/*.h' 'shared/include/**/*.h'` | 23 headers under `shared/include/fractal/`; these are the public native contracts. |
-| Component/private headers | `git ls-files 'runtime/include/**/*.h' 'server/**/include/*.h' 'server/**/include/**/*.h'` | 14 headers: one runtime memory header and 13 server computation/renderer headers. Their narrower locations define their current component scope. |
-| Tests | `git ls-files 'tests/**'` | Three files: `tests/native/test_core.c`, `tests/native/test_socketable_runtime.c`, and `tests/cmake/validate_milestone.cmake`. |
-| CMake | `git ls-files 'CMakeLists.txt' '*.cmake'` | Root `CMakeLists.txt` plus the milestone validation script (two files). |
-| Documentation | `git ls-files '*.md'` | 72 Markdown files: 61 under `docs/`, five under `web/`, and six elsewhere. |
-| PDF references | `git ls-files '*.pdf'` | One tracked reference, `CDC.pdf` (589,882 bytes). It is source/reference material, not disposable build output. |
-| Legacy/root application material | Explicit root paths | `server.cpp`, `server.py`, `render.cpp`, `render_engine.cpp`, `index.html`, and `style.css` are preserved. Their location/history may be legacy, but this audit does not make an authorship or retirement decision. |
-| Compiled binaries | Git executable mode plus ELF magic inspection | `app_server` (56,008 bytes), `render` (911,856), and `render_engine` (888,264) are tracked mode `100755`, 64-bit little-endian AArch64 ELF files. They were inspected as data and **not executed**. |
-| Generated images | `git ls-files '*.bmp'` | 752 tracked BMPs: `render.bmp`, `render_hd.bmp`, and exactly `frames/frame_0000.bmp` through `frames/frame_0749.bmp`. These collaborator-authored tracked artifacts remain tracked. |
-| Frame sequences | `git ls-files 'frames/frame_[0-9][0-9][0-9][0-9].bmp'` | One complete tracked 750-frame sequence, approximately 882 MiB on disk; each frame is 1,230,774 bytes. |
-| Videos | `git ls-files '*.mp4' '*.webm'` | One tracked video, `render.mp4` (1,610,086 bytes). |
-| Runtime output | Explicit runtime paths | `runtime/artifacts/README.md` is tracked; no generated runtime artifact or job directory existed. Root renders and frames are historical tracked outputs, not current dirty-state symptoms. |
-| Build output | Known build paths and CMake products | No untracked build tree existed. The three tracked ELF files are historical artifacts and are not reclassified as safe host tools. |
-| Editor metadata | `.vscode`, `.idea`, swap/backup-name inspection | None present. |
-| Platform metadata | Android/Gradle/Termux manifest and project-name inspection | None present. The AArch64 executables are the only platform-specific binary artifacts identified. |
-| Temporary files | names ending `~`, `.tmp`, `.temp`, `.swp`, `.swo`, `.bak` | None present. |
-| Large files | tracked byte-size sort | 753 paths exceed 1 MiB: 750 frames, the two root BMPs, and the MP4. `render_hd.bmp` is largest at 6,220,854 bytes; total tracked content is about 892 MiB. |
-| Executable files | `git ls-files -s | awk '$1 == 100755'` | Only the three AArch64 ELF files above. No script was executable. |
-| Symbolic links | filesystem scan and Git mode `120000` | None. |
-| Suspicious names/permissions | portable-character scan and mode scan | No tracked path contains whitespace/control characters, and files use only `0644` or the three intentional Git `0755`/`100755` modes. The extensionless executable names are conspicuous and are documented above. |
+| Класс | Детерминированное определение | Исходный результат и решение |
+|---|---|---|
+| Исходный код | `git ls-files '*.c' '*.cpp' '*.py' '*.html' '*.css'` | 32 файла реализации: 25 C, четыре C++, один Python, один HTML и один CSS. Активный нативный код находится в `shared/`, `runtime/` и `server/`; корневые приложения сохранены. |
+| Публичные заголовки | `git ls-files 'shared/include/*.h' 'shared/include/**/*.h'` | 23 заголовка под `shared/include/fractal/`; это публичные нативные контракты. |
+| Компонентные и закрытые заголовки | `git ls-files 'runtime/include/**/*.h' 'server/**/include/*.h' 'server/**/include/**/*.h'` | 14 заголовков: один заголовок памяти среды и 13 заголовков вычисления и визуализации сервера. Их более узкое расположение задаёт область компонентов. |
+| Тесты | `git ls-files 'tests/**'` | Три файла: `tests/native/test_core.c`, `tests/native/test_socketable_runtime.c` и `tests/cmake/validate_milestone.cmake`. |
+| CMake | `git ls-files 'CMakeLists.txt' '*.cmake'` | Корневой `CMakeLists.txt` и сценарий проверки этапа — два файла. |
+| Документация | `git ls-files '*.md'` | 72 файла Markdown: 61 под `docs/`, пять под `web/` и шесть в других местах. |
+| Ссылки PDF | `git ls-files '*.pdf'` | Одна отслеживаемая ссылка `CDC.pdf` (589 882 байта). Это исходный справочный материал, а не удаляемый вывод сборки. |
+| Унаследованные корневые приложения | Явные корневые пути | `server.cpp`, `server.py`, `render.cpp`, `render_engine.cpp`, `index.html` и `style.css` сохранены. Их расположение или история могут быть унаследованными, но аудит не принимает решения об авторстве или снятии с эксплуатации. |
+| Скомпилированные двоичные файлы | Исполняемый режим Git и проверка сигнатуры ELF | `app_server` (56 008 байт), `render` (911 856) и `render_engine` (888 264) — отслеживаемые 64-битные little-endian AArch64 ELF-файлы с режимом `100755`. Они проверялись как данные и **не запускались**. |
+| Сгенерированные изображения | `git ls-files '*.bmp'` | 752 BMP: `render.bmp`, `render_hd.bmp` и ровно `frames/frame_0000.bmp` … `frames/frame_0749.bmp`. Эти отслеживаемые артефакты участника проекта сохранены. |
+| Последовательности кадров | `git ls-files 'frames/frame_[0-9][0-9][0-9][0-9].bmp'` | Одна полная последовательность из 750 кадров размером около 882 MiB; каждый кадр занимает 1 230 774 байта. |
+| Видео | `git ls-files '*.mp4' '*.webm'` | Одно отслеживаемое видео `render.mp4` (1 610 086 байт). |
+| Вывод среды | Явные пути среды | `runtime/artifacts/README.md` отслеживается; сгенерированных артефактов среды или каталогов заданий не было. Корневые изображения и кадры — исторический вывод, а не признак загрязнения. |
+| Вывод сборки | Известные пути сборки и продукты CMake | Неотслеживаемого дерева сборки не было. Три отслеживаемых ELF-файла являются историческими артефактами и не считаются безопасными инструментами хоста. |
+| Метаданные редакторов | Проверка `.vscode`, `.idea`, имён swap и резервных копий | Отсутствовали. |
+| Метаданные платформ | Проверка имён Android, Gradle и Termux | Отсутствовали. Единственные выявленные платформенные двоичные артефакты — AArch64-файлы. |
+| Временные файлы | Имена с окончаниями `~`, `.tmp`, `.temp`, `.swp`, `.swo`, `.bak` | Отсутствовали. |
+| Крупные файлы | Сортировка отслеживаемых размеров | 753 пути больше 1 MiB: 750 кадров, два корневых BMP и MP4. Крупнейший `render_hd.bmp` занимает 6 220 854 байта; всего отслеживалось около 892 MiB. |
+| Исполняемые файлы | `git ls-files -s | awk '$1 == 100755'` | Только три указанных AArch64 ELF-файла. Ни один сценарий не имел исполняемого режима. |
+| Символические ссылки | Проверка файловой системы и режима Git `120000` | Отсутствовали. |
+| Подозрительные имена и права | Проверка переносимых символов и режимов | Пути не содержали пробельных или управляющих символов; файлы имели только `0644` или три намеренных режима Git `0755`/`100755`. Имена исполняемых файлов без расширения отмечены выше. |
 
-Extension totals provide a compact completeness cross-check: 752 `.bmp`, 72
-`.md`, 37 `.h`, 25 `.c`, four `.cpp`, three extensionless files, and one each
-of `.cmake`, `.css`, `.gitignore`, `.html`, `.mp4`, `.pdf`, `.py`, and `.txt`.
+Число расширений даёт компактную перекрёстную проверку полноты: 752 `.bmp`,
+72 `.md`, 37 `.h`, 25 `.c`, четыре `.cpp`, три файла без расширения и по одному
+`.cmake`, `.css`, `.gitignore`, `.html`, `.mp4`, `.pdf`, `.py` и `.txt`.
 
-## Artifact and ignore policy
+## Политика артефактов и игнорирования
 
-Tracked artifacts remain tracked regardless of ignore matching. In particular,
-the existing frame sequence and root renders are not removed, and adding an
-ignore rule cannot conceal modifications to them. The current `.gitignore`
-uses intentionally narrow rules:
+Отслеживаемые артефакты остаются отслеживаемыми независимо от правил
+игнорирования. В частности, существующая последовательность кадров и корневые
+изображения не удаляются; правило игнорирования не скрывает их изменения.
+Текущий `.gitignore` намеренно использует узкие правила:
 
-- `/runtime/artifacts/*.bmp`, `/runtime/artifacts/*.mp4`, and
-  `/runtime/jobs/` cover runtime products in their designated location;
-- `/frames/frame_[0-9][0-9][0-9][0-9].bmp` prevents recreation of this exact
-  numbered output family without hiding other images or fixtures;
-- `__pycache__/` and `*.py[cod]` cover Python interpreter caches; and
-- `/build/` covers only the repository-root out-of-source native build tree.
+- `/runtime/artifacts/*.bmp`, `/runtime/artifacts/*.mp4` и `/runtime/jobs/`
+  покрывают продукты среды в назначенном каталоге;
+- `/frames/frame_[0-9][0-9][0-9][0-9].bmp` предотвращает повторное добавление
+  именно этого семейства нумерованного вывода, не скрывая другие изображения;
+- `__pycache__/` и `*.py[cod]` покрывают кэши интерпретатора Python;
+- `/build/` покрывает только корневое внешнее дерево нативной сборки.
 
-There is deliberately no repository-wide `*.bmp`, `*.mp4`, executable, PDF,
-Android, editor, `tmp`, or generic binary ignore. Such patterns could conceal
-legitimate fixtures, references, or collaborator files. Before adding any new
-rule, first use `git status --ignored --short` to confirm the dirty-state cause,
-then document the producer and choose the narrowest stable path/name pattern.
+Намеренно отсутствуют глобальные правила для `*.bmp`, `*.mp4`, исполняемых
+файлов, PDF, Android, редакторов, `tmp` или произвольных двоичных файлов: они
+могли бы скрыть допустимые фикстуры, ссылки или материалы участника проекта.
+Перед добавлением правила следует выполнить `git status --ignored --short`,
+определить источник загрязнения, задокументировать производителя и выбрать
+самый узкий устойчивый шаблон пути или имени.
 
-## Safety and reproducibility conclusions
+## Выводы о безопасности и воспроизводимости
 
-The checked-in AArch64 executables must never be invoked during inspection,
-build, or test. Native validation must instead compile sources into an
-out-of-source `build/` directory and run only those newly produced host test
-programs through CTest. A clean-checkout validation sequence is:
+Сохранённые AArch64-файлы нельзя запускать при инспекции, сборке или тестах.
+Нативная проверка должна компилировать исходный код во внешнем каталоге
+`build/` и запускать через CTest только новые тестовые программы хоста.
+Последовательность проверки чистой рабочей копии:
 
 ```sh
 cmake -S . -B build
@@ -125,7 +125,8 @@ ctest --test-dir build --output-on-failure
 git status --short
 ```
 
-The build has no download step or generated source dependency. Historical
-tracked renders are unnecessary to compile the native libraries and tests but
-remain part of the checkout. This audit changes no public API, directory
-architecture, mathematical behavior, runtime feature, or tracked artifact.
+Сборка не скачивает зависимости и не требует сгенерированного исходного кода.
+Исторические изображения не нужны для компиляции нативных библиотек и тестов,
+но остаются частью рабочей копии. Этот аудит не меняет публичный API,
+архитектуру каталогов, математическое поведение, возможности среды или
+отслеживаемые артефакты.

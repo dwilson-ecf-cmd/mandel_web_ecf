@@ -4,8 +4,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* Creates a non-owning stub adapter. Rendering remains unavailable until the
- * inherited full-frame renderer has a verified tile/pixel-layout mapping. */
+/* Создаёт невладеющий адаптер-заглушку. Визуализация остаётся недоступной, пока
+ * унаследованный полноэкранный визуализатор не получит проверенное отображение плиток и пикселей. */
 fractal_result fractal_cpp_adapter_create(fractal_renderer *renderer);
 #ifdef __cplusplus
 }

@@ -1,130 +1,100 @@
-# Mandelbrot Studio / Fractal Studio spine
+# Fractal Studio: нативная вычислительная основа
 
-This repository preserves a collaborator's Mandelbrot Studio: C++ fractal renderers,
-a small legacy Python HTTP launcher, a browser UI, prebuilt Android/Termux executables,
-and example/generated render output. The Fractal Studio production spine is native
-C11, with inherited rendering isolated behind a C ABI implemented in C++ where
-necessary. It does **not** replace the renderer or change its pixels.
+Fractal Studio сохраняет исходную Mandelbrot Studio участника проекта и
+развивает рядом с ней переносимую нативную основу на C11. Русский язык является
+авторитетным для актуальной технической документации и комментариев. Правила
+заданы в `docs/architecture/language_policy.md`, а утверждённые термины — в
+`docs/architecture/terminology_glossary.md`.
 
-## Verified repository contents
+**English-speaking maintainer:** see
+[docs/maintainer_guide.en.md](docs/maintainer_guide.en.md) for the repository
+layout, Windows/MSYS2 build and test commands, architecture summary, frozen
+identities, and guidance for reviewing Russian documentation.
 
-The original commit contains no build file or dependency manifest. Its executable
-source is `render.cpp` (a CLI BMP renderer), `render_engine.cpp` (image, HD, and video
-modes), and `server.cpp` (a minimal HTTP server). `server.py` is a separate static-file
-server whose `/api/render` handler invokes `./render_engine`. `index.html` and
-`style.css` provide the Russian-language Mandelbrot Studio UI.
+## Что реализовано
 
-The tracked `app_server`, `render`, and `render_engine` files are compiled 64-bit,
-little-endian AArch64 Android position-independent ELF executables. They are
-dynamically linked and request Android/Termux libraries, including
-`libc++_shared.so`, `libdl.so`, `libm.so`, and `libc.so`; they are not portable Linux
-x86-64 executables. Static symbols and strings associate `app_server` with
-`server.cpp`, but no reproducible build recipe is present, so source/binary identity
-is not asserted. `app_server` has SHA-256
-`3258c1c944adaee9cf60de606b9629f29b04f15b259e3df3556ec6862bdcf749`.
+Авторитетный статический реестр собирает завершённую исполняемую цепочку:
 
-`server.cpp` binds all interfaces on port 8080, returns a newly generated 600x400 BMP
-for request text containing `GET /render`, and otherwise serves `index.html`.
-It has no command-line options. By contrast, the browser calls `/api/render`; that
-route is implemented by `server.py`, which binds `127.0.0.1:8080`, shells out to
-`render_engine`, and relies on Python 3 plus the platform-compatible renderer. This
-original launcher is preserved as legacy/reference functionality; it is not part of
-the native production spine.
-Video mode also requires `ffmpeg`. The Python handler interpolates request values
-into a shell command without quoting, so it must not be exposed to untrusted clients.
+```text
+formula selection
+    -> fractal.numeric.binary64.v1
+    -> fractal.compute.scalar.v1
+    -> serial or deterministic bounded thread-pool scheduler
+    -> bounded analyzer chain
+    -> raster.native.iteration-bgr8
+    -> encoder.bmp.v3
+    -> transactional artifact sink
+```
 
-The root `render.bmp` (800x600), `render_hd.bmp` (1920x1080), and `render.mp4` are
-render products. All 750 tracked `frames/frame_0000.bmp` through
-`frames/frame_0749.bmp` are 854x480, uncompressed 24-bit BMPs. Their exact name and
-dimensions match `render_engine.cpp` video generation, which deletes/recreates
-`frames/` and feeds the sequence to `ffmpeg`. They are therefore confirmed generated
-outputs retained as collaborator artifacts, not source inputs. New job output belongs
-under `runtime/artifacts/`; precise ignore rules prevent accidental additions while
-leaving tracked files intact.
+Реестр содержит 22 модуля и имеет идентичность `d73d9e545afa7735`.
+Поддерживаются формулы Mandelbrot и Julia, единственная числовая реализация
+Binary64, последовательный планировщик и детерминированный ограниченный пул
+потоков, цепочка не более чем из восьми анализаторов, BGR8, BMP v3, системная
+память и транзакционные приёмники памяти и файла. Цепочка анализаторов может
+включать сквозной анализатор, сводку выхода и классификации, гистограмму
+итераций и пространственную сетку нагрузки.
 
-Git discovery found one local branch and one root commit, no configured remote, no
-remote branches or tags, no submodule declaration, no ignored source, and no
-unreachable Git objects. Consequently this checkout provides no evidence about an
-upstream repository, releases, other branches, or older source.
+Вычисление должно успешно завершить всё поле до анализа. Анализ выполняется
+последовательно; растеризация и кодирование начинаются только после его успеха.
+Артефакт публикуется только после успешного `commit`; при отмене или отказе
+активный приёмник получает `abort` и частичный результат не публикуется.
 
-## Safe development and validation
+Зафиксированные результаты 32 × 24 с бюджетом 64:
 
-Static inspection (`readelf`, `strings`, checksums, and BMP header parsing) is safe.
-Do not run the checked-in binaries unless using a suitable, isolated AArch64 Android/
-Termux environment with the required libraries and after reviewing their source.
-Native tests open the three checked-in executables only to verify their ELF magic;
-they never create a process from `app_server` or either renderer binary.
+| Формула | Поле | Пиксели | BMP | Байты |
+|---|---|---|---|---:|
+| Mandelbrot | `99ec88c2a0f8bac3` | `4866aacc38290b5f` | `fb1a83bd5ca28e5f` | 2358 |
+| Julia (-0.8, 0.156) | `0fb4458e08bad6e1` | `b272f08b0bbdca2b` | `4d4aa95bd137ec87` | 2358 |
 
-The native spine requires a C11 compiler, a C++17 compiler for the inherited-renderer
-adapter boundary, and CMake 3.16 or newer. It does not require Python. Configure,
-build, and run its tests from the repository root:
+Идентичность цепочки из трёх анализаторов — `0116ac94c4b64d99`, идентичность
+выполнения Binary64 — `2f300bf0f7ea5244`. Полные архитектурные сведения
+находятся в `docs/architecture/`.
+
+## Сборка и проверка в Windows/MSYS2 MinGW64
+
+Из корня репозитория в оболочке MSYS2 MinGW64:
 
 ```sh
-cmake -S . -B build
+rm -rf build
+cmake -S . -B build -G Ninja
 cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-These commands build only new native source. They neither compile nor execute the
-checked-in Android binaries. No supported build command for those inherited binaries
-can be documented until the original author supplies compiler/linker flags and target
-environment.
+Сборка требует CMake 3.16 или новее, компилятор C11, компилятор C++17 для
+границы унаследованного адаптера и нативные потоки. Python не является
+производственной зависимостью. Проверка не запускает сохранённые AArch64
+Android/Termux файлы.
 
-## Existing versus planned functionality
+## Происхождение Mandelbrot Studio
 
-**Existing:** synchronous local BMP rendering, an `ffmpeg` video path, a static UI,
-and two simple HTTP implementations. There is no demonstrated job queue, progressive
-tile transport, manifest, durable storage, worker pool, telemetry system, or Ouro
-integration.
+Репозиторий сохраняет приложение Mandelbrot Studio участника проекта:
+`render.cpp`, `render_engine.cpp`, `server.cpp`, отдельный сервер
+`server.py`, русскоязычный браузерный интерфейс `index.html` и `style.css`,
+собранные файлы `app_server`, `render` и `render_engine`, изображения, 750
+кадров и видео. Исходный русский текст и исторические артефакты не переводятся
+и не удаляются.
 
-**New production spine:** C headers and implementations under `shared/` define the
-neutral model; `server/renderer/` defines a C renderer contract and C++ adapter stub;
-and `runtime/` supplies explicit native memory scopes. The system allocator is the
-functional reference/default backend. Ouro returns `FRACTAL_ERROR_NOT_IMPLEMENTED`
-and remains a future optional adapter. The inherited renderer is not yet mapped into
-the tile contract, so the C++ adapter deliberately returns the same result rather than
-inventing a behavior-changing translation.
+Сохранённые исполняемые файлы — 64-битные little-endian AArch64 Android/Termux
+ELF, а не программы Windows или Linux x86-64. При сборке и тестах их нельзя
+запускать. Воспроизводимого рецепта их исходной сборки в репозитории нет.
+`server.py` остаётся унаследованным средством запуска и не входит в нативную
+производственную основу. Корневые BMP, `render.mp4` и `frames/` являются
+историческим сгенерированным выводом участника проекта; новые продукты должны
+размещаться в `runtime/artifacts/` или во внешнем хранилище.
 
-**Planned:** native API/server and scheduler implementations, a verified C++ renderer
-mapping, artifact manifests, telemetry, and UI expansion. Any future Ouro-backed
-render must preserve pixel-checksum parity with the system backend.
+## Явные ограничения
 
-Current limitations and open provenance questions are recorded in
-`docs/repository_discovery.md`; model semantics are in
-`docs/fractal_studio_model.md`.
+В репозитории пока нет выделенного сокета формулы, новых формул в нативной
+основе, произвольной точности, GPU, SIMD, приложения Android, JNI, активной
+памяти Ouro или работающего уточнения CDC. Исчерпание бюджета остаётся
+классификацией unresolved и не является доказательством ограниченности. Никакая
+из этих незавершённых возможностей не заявляется как поддерживаемая.
 
-## Socketable native runtime
+`CDC.pdf` и исследовательские материалы CDC сохраняются без изменения; его
+авторитетная SHA-256:
+`5e838e88022696fbc99deec0b67be122f9cc74770153b710d7666abf0b066e7c`.
 
-The native vertical slice now assembles formula, numeric, compute, refinement,
-scheduler, raster, encoder, memory, telemetry, and platform sockets before work
-begins. Mandelbrot and Julia share the same binary64 scalar compute, row-major
-scheduler, formula-independent rasterizer, and deterministic BMP encoder. The
-legacy APIs remain compatibility boundaries. Architecture, module identities, and
-golden checksums are recorded in `docs/architecture/socketable_runtime.md`.
-
-Scalar arithmetic is now owned by the versioned
-`fractal.numeric.binary64.v1` contract. Computation retains recurrence order,
-field writes, assignments, and cancellation but routes every real and complex
-operation through that numeric socket. The Binary64 contract, replay metadata,
-and frozen identities are recorded in
-`docs/architecture/binary64_numeric_socket.md`.
-
-## Current product direction
-
-The future target is a dedicated Android application, not Termux. Existing Android/Termux
-executables are preserved as historical, inert reference artifacts. The portable core has
-explicit, independent renderer and memory backend identities: the inherited C++ behavior
-remains the renderer reference, CDC is registered but unavailable, system memory remains
-the default, and Ouro remains optional and unavailable. See `docs/android_architecture.md`
-and the CDC traceability documents. Native configure/build/test does not invoke Python or
-checked-in foreign executables.
-
-
-## Computation substrate
-
-Fractal mathematics now has a portable point-computation boundary independent of
-rasterization and memory selection. `conventional-c` is the narrow binary64 oracle for
-Experiment 0; `cdc-experimental` returns a traceable unresolved result and requests
-fallback without asserting a CDC Mandelbrot method. Manifests identify computation,
-renderer, and memory separately. The former CDC renderer identity remains only as an
-unavailable transitional compatibility name. See `docs/computation_architecture.md`.
+Текущий следующий этап описан в `docs/roadmap/next_attack_plan.md`: выделение
+сокета формулы с сохранением русскоязычной документации, английской отчётности
+для сопровождающего и всех идентичностей полезной нагрузки.

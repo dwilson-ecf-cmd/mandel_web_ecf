@@ -1,144 +1,155 @@
-# Deterministic bounded thread-pool scheduler
+# Детерминированный ограниченный планировщик пула потоков
 
-## Baseline audit
+## Аудит исходного состояния
 
-This milestone started from commit `c4e6839c0a656db14989faa0e937358ce877fe00`
-on branch `main` with a clean worktree. The installed scheduler was
-`scheduler.serial.row-major`: its vtable accepted an immutable job, a mutable
-scope-owned field, a cancellation token, and an optional progress callback. It
-walked the field in row-major order and delegated each point to the conventional
-compute vtable. Partial progress was represented by `completed_rows`; a field
-became consumable only after the scheduler returned success.
+Этап начался с коммита `c4e6839c0a656db14989faa0e937358ce877fe00` на
+ветке `main` с чистым рабочим деревом. Установленным планировщиком был
+`scheduler.serial.row-major`: его таблица виртуальных функций принимала
+неизменяемое задание, изменяемое поле из области памяти, токен отмены и
+необязательный обратный вызов прогресса. Планировщик обходил поле построчно и
+передавал каждую точку обычной вычислительной таблице. Частичный прогресс
+представлялся `completed_rows`; поле становилось доступным потребителям только
+после успешного возврата планировщика.
 
-There was no checked-in sealed work-unit representation. The authoritative
-pipeline allocated field and pixel storage from a short system-memory scope,
-computed the complete field, ran the bounded analyzer chain sequentially,
-rasterized, encoded, and released the scope. Transactional artifact rendering
-began a caller-selected sink before that pipeline, committed only after a fully
-successful encode, and aborted computation or analysis failures. Registry
-assembly selected scheduler vtables by exact module ID. Runtime and artifact
-manifests recorded mathematical and artifact identities but no scheduler
-execution metadata.
+Запечатанного представления единицы работы в репозитории не было. Авторитетный
+конвейер выделял поле и пиксели в короткой области системной памяти, вычислял
+полное поле, последовательно запускал ограниченную цепочку анализаторов,
+растеризовал, кодировал и освобождал область. Транзакционная визуализация
+артефакта открывала выбранный вызывающей стороной приёмник до конвейера,
+фиксировала его только после полностью успешного кодирования и прерывала при
+отказе вычисления или анализа. Сборка через реестр выбирала таблицы
+планировщика по точному ID модуля. Манифесты среды и артефакта записывали
+математические идентичности и идентичности артефакта, но не метаданные
+выполнения планировщика.
 
-Cancellation was a plain boolean checked inside conventional point iteration
-and within analyzers. The analyzer chain used at most eight analyzers and eight
-records in declaration order. Registry capacity was 32 modules. Jobs were
-limited to 4096 by 4096 samples. The active memory backend was system scoped;
-CDC refinement and Ouro memory were registered as unavailable. Frozen 32 by 24
-Mandelbrot and Julia identities were:
+Отмена была обычным логическим значением, проверяемым внутри точечной итерации
+и анализаторов. Цепочка анализаторов содержала не более восьми анализаторов и
+восьми записей в порядке объявления. Ёмкость реестра составляла 32 модуля.
+Задания ограничивались 4096 × 4096 образцами. Активной реализацией памяти была
+системная память с областями; уточнение CDC и память Ouro были зарегистрированы
+как недоступные. Зафиксированные идентичности Mandelbrot и Julia 32 × 24:
 
-| Formula | Field | Pixels | BMP | Bytes |
+| Формула | Поле | Пиксели | BMP | Байты |
 |---|---|---|---|---:|
 | Mandelbrot | `99ec88c2a0f8bac3` | `4866aacc38290b5f` | `fb1a83bd5ca28e5f` | 2358 |
 | Julia (-0.8, 0.156) | `0fb4458e08bad6e1` | `b272f08b0bbdca2b` | `4d4aa95bd137ec87` | 2358 |
 
-`CDC.pdf` remained authoritative with SHA-256
+`CDC.pdf` оставался авторитетным с SHA-256
 `5e838e88022696fbc99deec0b67be122f9cc74770153b710d7666abf0b066e7c`.
 
-## Socket, ownership, and lifecycle
+## Сокет, владение и жизненный цикл
 
-`fractal.scheduler.thread-pool.v1` is a second scheduler vtable. The original
-`fractal_scheduler_serial` object, implementation, and compatibility ID remain
-unchanged. `fractal.scheduler.serial.v1` is a registry alias that delegates to
-that exact reference implementation. Registry selection carries the requested
-worker count into fixed runtime scheduler options; thread-pool assembly rejects
-zero or more than 16 workers before computation.
+`fractal.scheduler.thread-pool.v1` — вторая таблица виртуальных функций
+планировщика. Исходный объект `fractal_scheduler_serial`, его реализация и ID
+совместимости не изменены. `fractal.scheduler.serial.v1` — псевдоним реестра,
+передающий выполнение той же эталонной реализации. Выбор через реестр переносит
+запрошенное число работников в фиксированные параметры среды; сборка пула
+потоков отклоняет ноль и значения больше 16 до вычисления.
 
-The caller owns the immutable job, cancellation token, output field, module
-assembly, and artifact sink. The runtime owns field and pixel allocations for
-the render scope. A thread-pool invocation owns fixed stack arrays for at most
-16 sealed assignments, 16 worker contexts, and 16 native thread handles. It has
-no queue and performs no `malloc`, scoped allocation, or other language-level
-heap allocation. Native thread creation necessarily consumes opaque host OS
-resources. Each worker borrows its job and module pointers and mutably borrows
-only its prevalidated field rows. All threads join before the invocation
-returns, so no worker retains borrowed state.
+Вызывающая сторона владеет неизменяемым заданием, токеном отмены, выходным
+полем, сборкой модулей и приёмником артефакта. Среда выполнения владеет
+выделениями поля и пикселей в области визуализации. Один вызов пула потоков
+владеет фиксированными массивами на стеке: не более 16 запечатанных назначений,
+16 контекстов работников и 16 нативных дескрипторов потоков. Очереди нет;
+`malloc`, выделение в области и иное выделение кучи на уровне языка не
+выполняются. Создание нативного потока неизбежно использует непрозрачные ресурсы
+ОС хоста. Каждый работник заимствует указатели задания и модулей и изменяемо
+заимствует только предварительно проверенные строки поля. Все потоки
+присоединяются до возврата вызова, поэтому заимствованное состояние не
+сохраняется работником.
 
-The pipeline order is unchanged:
+Порядок конвейера неизменен:
 
-1. compute the complete field and join every assignment;
-2. run the bounded analyzer chain sequentially in declaration order;
-3. rasterize the immutable field;
-4. encode through the selected sink;
-5. commit publication.
+1. вычислить полное поле и присоединить все назначения;
+2. последовательно выполнить ограниченную цепочку анализаторов в порядке объявления;
+3. растеризовать неизменяемое поле;
+4. кодировать через выбранный приёмник;
+5. зафиксировать публикацию.
 
-Analysis is not parallelized and does not influence assignment construction.
+Анализ не распараллеливается и не влияет на построение назначений.
 
-## Sealed work units and decomposition
+## Запечатанные единицы работы и декомпозиция
 
-The narrowly necessary backward-compatible contract addition is
-`fractal_sealed_work_unit_v1`. It contains only canonical dimensions, worker
-count, stable sequence, contiguous row and sample bounds, ABI version, and an
-identity seal. It contains no mutable output pointer. Recomputing the identity
-after changing a field does not make an assignment valid: validation also
-recomputes the one exact decomposition and checks ordered coverage.
+Минимально необходимое обратно совместимое дополнение контракта —
+`fractal_sealed_work_unit_v1`. Структура содержит только канонические размеры,
+число работников, устойчивую последовательность, границы непрерывных строк и
+образцов, версию ABI и печать идентичности. Изменяемого указателя выхода в ней
+нет. Повторное вычисление идентичности после изменения поля не делает
+назначение допустимым: проверка также восстанавливает единственную точную
+декомпозицию и проверяет упорядоченное полное покрытие.
 
-For height `H`, requested worker count `W`, and sequence `i` where
-`0 <= i < W`, assignment `i` owns the half-open row interval
+Для высоты `H`, запрошенного числа работников `W` и последовательности `i`, где
+`0 <= i < W`, назначение `i` владеет полуоткрытым интервалом строк
 
 `[ floor(i * H / W), floor((i + 1) * H / W) )`.
 
-Its sample interval is the row interval multiplied by width. This rule depends
-only on immutable dimensions and worker count. Sequence identifiers are assigned
-before native threads exist. When `H < W`, empty intervals are retained as
-stable assignments; requested worker count, effective worker count, and
-assignment count therefore all equal `W` after successful admission.
+Интервал образцов равен интервалу строк, умноженному на ширину. Правило зависит
+только от неизменяемых размеров и числа работников. Идентификаторы
+последовательности назначаются до создания нативных потоков. При `H < W`
+пустые интервалы сохраняются как устойчивые назначения; после успешного
+допуска запрошенное и фактическое число работников и число назначений равны
+`W`.
 
-Validation rejects a changed seal, wrong ABI/sequence/count/dimensions, the
-wrong formula-derived row bounds, gaps, overlap, out-of-range rows or samples,
-or insufficient field stride before the launch gate opens. Workers derive row
-pointers from field stride and can write only within their interval.
+До открытия шлюза запуска проверка отклоняет изменённую печать, неверные ABI,
+последовательность, число или размеры, неверные вычисленные формулой границы
+строк, пробелы, перекрытия, строки или образцы вне диапазона и недостаточный шаг
+поля. Работники выводят указатели строк из шага поля и могут записывать только
+в свой интервал.
 
-Each unit identity is FNV-1a-64 over canonical semantic text containing the
-work-unit ID and every work-unit field except the identity itself. The sealed
-work-unit-set identity is FNV-1a-64 over ordered little-endian unit identities.
-These are reproducibility identities, not cryptographic hashes.
+Идентичность каждой единицы — FNV-1a-64 канонического семантического текста с ID
+единицы и всеми полями, кроме самой идентичности. Идентичность набора
+запечатанных единиц — FNV-1a-64 упорядоченных идентичностей единиц в формате
+little-endian. Это идентичности воспроизводимости, а не криптографические хеши.
 
-## Determinism, cancellation, and failure
+## Детерминизм, отмена и отказ
 
-Workers invoke the same region-level scalar computation module as the serial
-reference. Field layout, whole-field
-analysis, typed-record order, raster traversal, BMP serialization, checksums,
-artifact bytes, and committed identity therefore depend on stable row-major
-locations, never thread completion order. Progress callbacks are replayed in
-row order only after a successful join. Runtime and artifact manifests add only
-concise scheduler metadata: scheduler ID/version, work-unit contract and set
-identity, requested/effective worker count, assignment count, decomposition
-ID/version, execution result/status, and publication status.
+Работники вызывают тот же региональный модуль скалярных вычислений, что и
+последовательный эталон. Размещение поля, анализ всего поля, порядок
+типизированных записей, обход растра, сериализация BMP, контрольные суммы,
+байты артефакта и зафиксированная идентичность поэтому зависят от устойчивых
+позиций в порядке строк, а не от порядка завершения потоков. Обратные вызовы
+прогресса воспроизводятся в порядке строк только после успешного присоединения.
+Манифесты среды и артефакта добавляют только компактные метаданные
+планировщика: ID и версию планировщика, контракт и идентичность набора единиц
+работы, запрошенное и фактическое число работников, число назначений, ID и
+версию декомпозиции, результат и статус выполнения и статус публикации.
 
-Cancellation is cooperative, not instantaneous. The thread-pool checks the
-atomic token at four defined boundaries:
+Отмена кооперативная, а не мгновенная. Пул потоков проверяет атомарный токен на
+четырёх определённых границах:
 
-- before scheduler admission;
-- after decomposition and ownership validation, before worker launch;
-- before an assignment starts and before each row work unit;
-- after all workers join and before analysis, rasterization, encoding, or
-  publication.
+- до допуска планировщиком;
+- после декомпозиции и проверки владения, до запуска работников;
+- до начала назначения и перед каждой строковой единицей работы;
+- после присоединения всех работников и до анализа, растеризации, кодирования или публикации.
 
-Once a row starts, it finishes without another thread-pool cancellation check.
-The sealed assignment selects row-boundary cancellation, so the shared scalar
-computation module does not pass the token into point iteration on this path.
-This keeps the documented row boundary exact. On cancellation or failure, the
-field is incomplete, analysis and encoding do not run, and an active artifact
-sink is aborted exactly once. No partial artifact is committed.
+После начала строки она завершается без дополнительной проверки отмены пулом.
+Запечатанное назначение выбирает отмену на границе строки, поэтому общий модуль
+скалярных вычислений не передаёт токен внутрь точечной итерации на этом пути.
+Так сохраняется точная документированная граница строки. При отмене или отказе
+поле остаётся незавершённым, анализ и кодирование не выполняются, активный
+приёмник артефакта получает `abort` ровно один раз. Частичный артефакт не
+фиксируется.
 
-Every worker stores its result in its stable assignment slot. After joining,
-the scheduler scans slots in increasing sequence order and returns the first
-non-success result. Thus simultaneous failures select the lowest assignment
-sequence rather than the fastest reporter. Thread-creation failure keeps the
-launch gate closed, releases already-created workers without computation, joins
-them, and fails the invocation.
+Каждый работник сохраняет результат в устойчивом месте назначения. После
+присоединения планировщик просматривает места по возрастанию последовательности
+и возвращает первый неуспешный результат. Поэтому при одновременных отказах
+выбирается наименьшая последовательность назначения, а не самый быстрый
+источник сообщения. Если поток не создан, шлюз запуска остаётся закрытым,
+созданные работники освобождаются без вычисления, присоединяются, и вызов
+завершается отказом.
 
-## Limitations
+## Ограничения
 
-The maximum worker count is fixed at 16. There is no work stealing, adaptive
-sizing, retry, priority, NUMA policy, GPU execution, analyzer parallelism,
-benchmark claim, scheduling feedback, CDC refinement, or Ouro memory. Native
-thread creation is per invocation rather than a persistent service pool. The
-serial compatibility ID remains installed, so catalogs contain both the legacy
-ID and the exact v1 reference ID.
+Максимальное число работников фиксировано и равно 16. Нет кражи работы,
+адаптивного выбора размера, повторов, приоритетов, политики NUMA, выполнения на
+GPU, параллелизма анализаторов, заявлений производительности, обратной связи
+планирования, уточнения CDC или памяти Ouro. Нативные потоки создаются для
+каждого вызова, а не образуют постоянный служебный пул. ID последовательной
+совместимости остаётся установленным, поэтому каталог содержит и унаследованный
+ID, и точный эталонный ID v1.
 
-## Successor architecture
+## Последующая архитектура
 
-The completed computation and numeric extractions are recorded in
-`computation_socket.md` and `binary64_numeric_socket.md`.
+Завершённые выделения вычислительного и числового контрактов описаны в
+`computation_socket.md` и `binary64_numeric_socket.md`. Текущая следующая
+граница — сокет формулы; он ещё не реализован.

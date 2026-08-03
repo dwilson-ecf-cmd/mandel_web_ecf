@@ -22,9 +22,9 @@ static bool identifier_valid(const char *text, size_t capacity) {
     return true;
 }
 
-/* Canonical decimal grammar: -?(0|[1-9][0-9]*)(\.[0-9]*[1-9])?.
- * Requiring canonical input makes numeric equivalence unambiguous without silently
- * changing precision or depending on the process locale. */
+/* Каноническая десятичная грамматика: -?(0|[1-9][0-9]*)(\.[0-9]*[1-9])?.
+ * Требование канонического ввода однозначно задаёт числовую эквивалентность без
+ * скрытого изменения точности и зависимости от локали процесса. */
 static bool decimal_valid(const char *text, bool positive) {
     const unsigned char *p = (const unsigned char *)text;
     const unsigned char *fraction;

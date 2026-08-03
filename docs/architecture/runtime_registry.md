@@ -1,9 +1,38 @@
-# Runtime registry
+# Реестр среды выполнения
 
-`fractal_module_registry` is caller-owned, bounded state initialized from module-owned descriptors and implementation contracts. Initialization validates every descriptor, ABI, kind, identifier, implementation pointer, and kind-local ID uniqueness, then copies registrations and sorts by `(kind, module_id)`. Thus input pointer order and addresses do not affect lookup, iteration, serialization, or identity. The same ID in different kinds is legal and unambiguous.
+`fractal_module_registry` — ограниченное состояние, принадлежащее вызывающей
+стороне и инициализируемое дескрипторами и контрактами реализаций, которыми
+владеют модули. Инициализация проверяет каждый дескриптор, ABI, вид,
+идентификатор, указатель реализации и уникальность ID внутри вида, затем
+копирует регистрации и сортирует их по `(kind, module_id)`. Поэтому порядок и
+адреса входных указателей не влияют на поиск, обход, сериализацию или
+идентичность. Один ID в разных видах допустим и однозначен.
 
-`fractal_installed_modules_registry` is the one authoritative static catalog. It registers Mandelbrot and Julia formulas, the sole `fractal.numeric.binary64.v1` numeric backend, the authoritative `fractal.compute.scalar.v1` region computation and retained conventional point compatibility surface, none and unavailable CDC refinement, the unchanged serial compatibility scheduler, the exact serial-v1 alias, the deterministic bounded thread-pool scheduler, native BGR8 rasterization, BMP v3, system and unavailable Ouro memory, no-op telemetry, host platform, bounded-memory and host-file sinks, and the bounded analyzer modules. It claims no dynamic discovery or plugin loading.
+`fractal_installed_modules_registry` — единственный авторитетный статический
+каталог. Он регистрирует формулы Mandelbrot и Julia; единственную числовую
+реализацию `fractal.numeric.binary64.v1`; авторитетное региональное вычисление
+`fractal.compute.scalar.v1` и сохранённый интерфейс совместимости обычного
+точечного вычисления; отсутствие уточнения и недоступное уточнение CDC;
+неизменённый последовательный планировщик совместимости, точный псевдоним
+serial-v1 и детерминированный ограниченный планировщик пула потоков; нативную
+растеризацию BGR8; BMP v3; системную и недоступную память Ouro; телеметрию без
+операций; платформу хоста; ограниченный приёмник памяти, файловый приёмник хоста
+и ограниченные модули анализаторов. Каталог не заявляет динамического
+обнаружения или загрузки плагинов.
 
-Registry identity is FNV-1a over canonical kind, ID, ABI, implementation version, availability, and capability metadata. It is a deterministic reproducibility identifier, **not** a cryptographic digest. Inspection APIs expose totals, kind counts, indexed descriptors, typed lookup, availability/capabilities through descriptors, implementation resolution, identity, and deterministic JSON without exposing the internal array.
+Идентичность реестра вычисляется FNV-1a по каноническим метаданным вида, ID,
+ABI, версии реализации, доступности и возможностей. Это детерминированный
+идентификатор воспроизводимости, **а не** криптографический дайджест. API
+инспекции предоставляет общее число, число по видам, индексированные
+дескрипторы, типизированный поиск, доступность и возможности через дескрипторы,
+разрешение реализаций, идентичность и детерминированный JSON, не раскрывая
+внутренний массив.
 
-The authoritative assembly API accepts typed IDs and resolves implementation contracts through a supplied registry. The source-compatible `compute` field is the explicit computation-module selection and new assemblies use `fractal.compute.scalar.v1`. Scheduler selection also fixes the requested worker count; the thread-pool rejects zero or counts beyond its fixed capacity during assembly. Missing and unavailable selections fail before execution. Direct-pointer and conventional point validation remain documented low-level compatibility surfaces.
+Авторитетный API сборки принимает типизированные ID и разрешает контракты
+реализаций через переданный реестр. Совместимое с исходным кодом поле `compute`
+явно выбирает вычислительный модуль, а новые сборки используют
+`fractal.compute.scalar.v1`. Выбор планировщика также фиксирует запрошенное
+число работников; при сборке пул потоков отклоняет ноль и значения выше своей
+фиксированной ёмкости. Отсутствующие и недоступные варианты отклоняются до
+выполнения. Проверка прямых указателей и обычных точечных вычислений остаётся
+документированным низкоуровневым интерфейсом совместимости.

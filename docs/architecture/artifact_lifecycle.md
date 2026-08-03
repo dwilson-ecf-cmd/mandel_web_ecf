@@ -1,5 +1,15 @@
-# Artifact lifecycle
+# Жизненный цикл артефакта
 
-The runtime validates and computes field data, rasterizes pixels, begins the caller-selected sink, and streams BMP header, bottom-up rows, and deterministic zero padding. Successful encoding is not an artifact until sink commit succeeds. Any encoding failure invokes abort. A failed commit sets no valid committed result and the file sink removes its temporary file.
+Среда выполнения проверяет и вычисляет данные поля, растеризует пиксели,
+открывает выбранный вызывающей стороной приёмник и передаёт поток заголовка
+BMP, строк снизу вверх и детерминированного нулевого заполнения. Успешное
+кодирование не образует артефакт, пока `commit` приёмника не завершится успешно.
+Любой отказ кодирования вызывает `abort`. Неуспешный `commit` не создаёт
+допустимого зафиксированного результата, а файловый приёмник удаляет временный
+файл.
 
-`fractal_artifact_result` separates encoder identity, sink identity, logical name, media identity, byte count, content checksum, pixel checksum, committed state, destination class, optional file path, and result code. Paths never enter field models and do not contribute to content identity.
+`fractal_artifact_result` раздельно хранит идентичности кодировщика и приёмника,
+логическое имя, идентичность медиатипа, число байтов, контрольную сумму
+содержимого, контрольную сумму пикселей, состояние фиксации, класс места
+назначения, необязательный путь к файлу и код результата. Пути не входят в
+модели поля и не участвуют в идентичности содержимого.

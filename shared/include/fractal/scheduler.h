@@ -26,9 +26,9 @@ typedef struct fractal_scheduler_options {
  uint32_t requested_worker_count;
 } fractal_scheduler_options;
 
-/* Immutable after construction.  The identity is a seal over every other
- * field and validation rejects any changed, overlapping, or out-of-range
- * assignment before workers are launched. */
+/* Неизменяемо после построения. Идентичность служит печатью всех остальных
+ * полей; до запуска работников проверка отклоняет изменённые, перекрывающиеся
+ * и выходящие за диапазон назначения. */
 typedef struct fractal_sealed_work_unit_v1 {
  uint64_t identity;
  uint64_t work_unit_identity,computation_identity,numeric_identity,formula_identity;
