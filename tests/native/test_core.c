@@ -13,6 +13,7 @@
 #include "fractal/render_failure.h"
 #include "fractal/render_job.h"
 #include "fractal/render_manifest.h"
+#include "fractal/numeric.h"
 #include "fractal_cdc_renderer.h"
 #include "fractal/worker_status.h"
 #include "fractal_cpp_adapter.h"
@@ -301,14 +302,22 @@ static void test_renderer_backends_and_manifest(void) {
  CHECK(fractal_render_manifest_init(&conventional,&spec,FRACTAL_COMPUTATION_BACKEND_CONVENTIONAL_C,FRACTAL_RENDERER_BACKEND_LEGACY_CPP,FRACTAL_MEMORY_BACKEND_SYSTEM)==FRACTAL_OK);
  CHECK(fractal_render_manifest_set_computation(&conventional,"fractal.compute.scalar.v1",
   1,1,"succeeded",UINT64_C(0x1234))==FRACTAL_OK);
+ CHECK(fractal_render_manifest_set_numeric(&conventional,FRACTAL_NUMERIC_BINARY64_V1_ID,
+  1,FRACTAL_NUMERIC_ABI_VERSION,"compatible",
+  fractal_numeric_execution_identity_v1(&fractal_numeric_binary64_v1))==FRACTAL_OK);
  CHECK(fractal_render_manifest_serialize_identity_json(&conventional,ja,sizeof(ja),&na)==FRACTAL_OK&&
   strstr(ja,"\"computation_module\":\"fractal.compute.scalar.v1\"")!=NULL&&
-  strstr(ja,"\"computation_assignment_count\":1")!=NULL);
+  strstr(ja,"\"computation_assignment_count\":1")!=NULL&&
+  strstr(ja,"\"numeric_module\":\"fractal.numeric.binary64.v1\"")!=NULL&&
+  strstr(ja,"\"numeric_compatibility_status\":\"compatible\"")!=NULL);
  CHECK(conventional.cdc_reference_sha256[0]=='\0');
  CHECK(fractal_render_manifest_init(&transitional_renderer,&spec,FRACTAL_COMPUTATION_BACKEND_CONVENTIONAL_C,FRACTAL_RENDERER_BACKEND_CDC_EXPERIMENTAL,FRACTAL_MEMORY_BACKEND_SYSTEM)==FRACTAL_OK);
  CHECK(transitional_renderer.cdc_reference_sha256[0]=='\0');
  CHECK(conventional.metrics.computation_backend==FRACTAL_COMPUTATION_BACKEND_CONVENTIONAL_C);
  CHECK(fractal_render_manifest_init(&cdc,&spec,FRACTAL_COMPUTATION_BACKEND_CDC_EXPERIMENTAL,FRACTAL_RENDERER_BACKEND_LEGACY_CPP,FRACTAL_MEMORY_BACKEND_SYSTEM)==FRACTAL_OK);
+ CHECK(fractal_render_manifest_set_numeric(&cdc,FRACTAL_NUMERIC_BINARY64_V1_ID,1,
+  FRACTAL_NUMERIC_ABI_VERSION,"compatible",
+  fractal_numeric_execution_identity_v1(&fractal_numeric_binary64_v1))==FRACTAL_OK);
  CHECK(strcmp(cdc.cdc_reference_sha256,FRACTAL_CDC_PDF_SHA256)==0);
  CHECK(cdc.metrics.renderer_backend==conventional.metrics.renderer_backend && cdc.metrics.memory_backend==conventional.metrics.memory_backend && cdc.metrics.computation_backend!=conventional.metrics.computation_backend);
  CHECK(fractal_render_manifest_init(&ouro,&spec,FRACTAL_COMPUTATION_BACKEND_CDC_EXPERIMENTAL,FRACTAL_RENDERER_BACKEND_LEGACY_CPP,FRACTAL_MEMORY_BACKEND_OURO)==FRACTAL_OK);

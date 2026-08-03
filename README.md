@@ -102,6 +102,13 @@ scheduler, formula-independent rasterizer, and deterministic BMP encoder. The
 legacy APIs remain compatibility boundaries. Architecture, module identities, and
 golden checksums are recorded in `docs/architecture/socketable_runtime.md`.
 
+Scalar arithmetic is now owned by the versioned
+`fractal.numeric.binary64.v1` contract. Computation retains recurrence order,
+field writes, assignments, and cancellation but routes every real and complex
+operation through that numeric socket. The Binary64 contract, replay metadata,
+and frozen identities are recorded in
+`docs/architecture/binary64_numeric_socket.md`.
+
 ## Current product direction
 
 The future target is a dedicated Android application, not Termux. Existing Android/Termux

@@ -19,6 +19,10 @@ typedef struct fractal_render_manifest {
  char computation_execution_status[FRACTAL_REVISION_CAPACITY];
  uint32_t computation_module_version,computation_assignment_count;
  uint64_t computation_execution_identity;
+ char numeric_module[FRACTAL_IDENTIFIER_CAPACITY];
+ char numeric_compatibility_status[FRACTAL_REVISION_CAPACITY];
+ uint32_t numeric_module_version,numeric_abi_version;
+ uint64_t numeric_execution_identity;
  char notes[FRACTAL_NOTES_CAPACITY];
 } fractal_render_manifest;
 fractal_result fractal_render_manifest_init(fractal_render_manifest *manifest,
@@ -29,4 +33,7 @@ fractal_result fractal_render_manifest_serialize_identity_json(const fractal_ren
 fractal_result fractal_render_manifest_set_computation(fractal_render_manifest *manifest,
  const char *module_id,uint32_t module_version,uint32_t assignment_count,
  const char *execution_status,uint64_t execution_identity);
+fractal_result fractal_render_manifest_set_numeric(fractal_render_manifest *manifest,
+ const char *module_id,uint32_t module_version,uint32_t abi_version,
+ const char *compatibility_status,uint64_t execution_identity);
 #endif

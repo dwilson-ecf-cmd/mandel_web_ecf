@@ -31,7 +31,7 @@ static fractal_job_spec mandelbrot_job(fractal_formula_parameters parameters,
 static fractal_runtime_selection selection(const char *computation){
  fractal_runtime_selection selected={0};
  selected.formula="formula.mandelbrot.quadratic";
- selected.numeric="numeric.binary64";selected.compute=computation;
+ selected.numeric=FRACTAL_NUMERIC_BINARY64_V1_ID;selected.compute=computation;
  selected.refinement="refinement.none";selected.scheduler=FRACTAL_SCHEDULER_SERIAL_V1_ID;
  selected.raster="raster.native.iteration-bgr8";selected.encoder="encoder.bmp.v3";
  selected.memory="memory.system.scoped";selected.telemetry="telemetry.noop";
@@ -48,7 +48,7 @@ static void registry_and_assembly(void){
  fractal_compute_vtable unavailable=fractal_compute_scalar_v1;size_t i;
  CHECK(fractal_installed_modules_registry(&installed)==FRACTAL_OK);
  CHECK(installed.count==22&&fractal_module_registry_count(&installed,FRACTAL_MODULE_COMPUTE)==2);
- CHECK(installed.identity==UINT64_C(0x3c99a301df6359d7));
+ CHECK(installed.identity==UINT64_C(0xd73d9e545afa7735));
  CHECK(fractal_module_registry_find(&installed,FRACTAL_MODULE_COMPUTE,
   FRACTAL_COMPUTATION_SCALAR_V1_ID)==fractal_compute_scalar_v1.descriptor);
  CHECK(fractal_module_registry_implementation(&installed,FRACTAL_MODULE_COMPUTE,
@@ -56,6 +56,9 @@ static void registry_and_assembly(void){
  CHECK(fractal_memory_backend_init_system(&memory)==FRACTAL_OK);
  CHECK(fractal_runtime_assemble(&installed,&selected,&memory,&runtime)==FRACTAL_OK);
  CHECK(runtime.compute==&fractal_compute_scalar_v1);
+ selected.numeric="fractal.numeric.unknown.v1";
+ CHECK(fractal_runtime_assemble(&installed,&selected,&memory,&runtime)==FRACTAL_ERROR_NOT_IMPLEMENTED);
+ selected.numeric=FRACTAL_NUMERIC_BINARY64_V1_ID;
  selected.compute="fractal.compute.unknown";
  CHECK(fractal_runtime_assemble(&installed,&selected,&memory,&runtime)==FRACTAL_ERROR_NOT_IMPLEMENTED);
  for(i=0;i<installed.count;i++)entries[i]=installed.entries[i];
@@ -73,33 +76,13 @@ static void registry_and_assembly(void){
 
 static fractal_cancellation *mid_cancellation;
 static unsigned mid_operations;
-static fractal_result mid_from(double value,fractal_scalar *output){
- return fractal_numeric_binary64.from_double(value,output);
-}
-static fractal_result mid_to(const fractal_scalar *value,double *output){
- return fractal_numeric_binary64.to_double(value,output);
-}
 static fractal_result mid_add(const fractal_scalar *a,const fractal_scalar *b,fractal_scalar *out){
  if(++mid_operations==8u)fractal_cancellation_request(mid_cancellation);
- return fractal_numeric_binary64.add(a,b,out);
-}
-static fractal_result mid_subtract(const fractal_scalar *a,const fractal_scalar *b,fractal_scalar *out){
- return fractal_numeric_binary64.subtract(a,b,out);
-}
-static fractal_result mid_multiply(const fractal_scalar *a,const fractal_scalar *b,fractal_scalar *out){
- return fractal_numeric_binary64.multiply(a,b,out);
-}
-static bool mid_finite(const fractal_scalar *value){return fractal_numeric_binary64.finite(value);}
-static fractal_result mid_serialize(const fractal_scalar *value,char *text,size_t capacity,size_t *length){
- return fractal_numeric_binary64.serialize(value,text,capacity,length);
+ return fractal_numeric_binary64_v1.real_add(a,b,out);
 }
 static const fractal_module_descriptor mid_numeric_descriptor={
- 1,1,"numeric.test.cancelling-binary64","Cancelling binary64 test numeric",
+ 1,1,"fractal.numeric.test.cancelling-binary64.v1","Cancelling binary64 test numeric",
  FRACTAL_MODULE_NUMERIC,FRACTAL_CAP_SCALAR_ARITHMETIC,true
-};
-static const fractal_numeric_vtable mid_numeric={
- &mid_numeric_descriptor,53,8,8,mid_from,mid_to,mid_add,mid_subtract,mid_multiply,
- mid_finite,mid_serialize
 };
 
 static void computation_contract(void){
@@ -107,14 +90,16 @@ static void computation_contract(void){
  fractal_formula_parameters parameters={"formula.mandelbrot.quadratic",&mandelbrot,sizeof(mandelbrot)};
  fractal_job_spec job=mandelbrot_job(parameters,4,4);
  fractal_runtime_modules runtime=direct_runtime(&fractal_formula_mandelbrot,
-  &fractal_numeric_binary64,&fractal_compute_scalar_v1,&fractal_scheduler_serial_v1,1);
+  &fractal_numeric_binary64_v1,&fractal_compute_scalar_v1,&fractal_scheduler_serial_v1,1);
  fractal_field_descriptor descriptor={4,4,5*sizeof(fractal_point_result_compact),
   FRACTAL_FIELD_ITERATION_CLASSIFICATION_V1,0};
  fractal_computation_problem_v1 problem,compatibility_problem;
  fractal_sealed_work_unit_v1 assignments[2],repeat[2],bad;
  fractal_point_result_compact samples[20];fractal_mutable_field_view destination;
  fractal_computation_request_v1 request;fractal_computation_result_v1 result;
+ fractal_numeric_vtable mid_numeric=fractal_numeric_binary64_v1;
  fractal_cancellation cancelled={true},mid={false};size_t count=0,repeat_count=0;unsigned i;
+ mid_numeric.descriptor=&mid_numeric_descriptor;mid_numeric.real_add=mid_add;
  CHECK(fractal_computation_problem_init_v1(&runtime,&job,&descriptor,&problem)==FRACTAL_OK);
  CHECK(fractal_computation_problem_validate_v1(&fractal_compute_scalar_v1,&problem)==FRACTAL_OK);
  CHECK(fractal_scheduler_decompose_computation_v1(&fractal_compute_scalar_v1,&problem,2,
@@ -128,10 +113,10 @@ static void computation_contract(void){
   !memcmp(assignments,repeat,sizeof(assignments)));
  CHECK(fractal_scheduler_work_unit_set_identity_v1(assignments,count)==
   fractal_scheduler_work_unit_set_identity_v1(repeat,repeat_count));
- CHECK(problem.identity==UINT64_C(0x19eb35bcead3ca1c));
- CHECK(assignments[0].identity==UINT64_C(0x3981f76e91eafa2e));
- CHECK(assignments[1].identity==UINT64_C(0x2f6022387a83e9f4));
- CHECK(fractal_scheduler_work_unit_set_identity_v1(assignments,count)==UINT64_C(0xf5b2ed79a24b438e));
+ CHECK(problem.identity==UINT64_C(0x2ba1bf582aa6ea82));
+ CHECK(assignments[0].identity==UINT64_C(0x380b6409f268c139));
+ CHECK(assignments[1].identity==UINT64_C(0x13bb870b5cc81b51));
+ CHECK(fractal_scheduler_work_unit_set_identity_v1(assignments,count)==UINT64_C(0x8b3dca5188141c05));
  printf("COMPUTATION assignments=%016llx,%016llx set=%016llx\n",
   (unsigned long long)assignments[0].identity,(unsigned long long)assignments[1].identity,
   (unsigned long long)fractal_scheduler_work_unit_set_identity_v1(assignments,count));
@@ -201,7 +186,7 @@ static void computation_contract(void){
  CHECK(fractal_computation_problem_init_v1(&runtime,&job,&descriptor,&problem)==FRACTAL_ERROR_INVALID_SPEC);
 
  descriptor=(fractal_field_descriptor){4,4,5*sizeof(fractal_point_result_compact),
-  FRACTAL_FIELD_ITERATION_CLASSIFICATION_V1,0};runtime.numeric=&fractal_numeric_binary64;
+  FRACTAL_FIELD_ITERATION_CLASSIFICATION_V1,0};runtime.numeric=&fractal_numeric_binary64_v1;
  CHECK(fractal_computation_problem_init_v1(&runtime,&job,&descriptor,&problem)==FRACTAL_OK);
  runtime.compute=&fractal_compute_conventional;
  CHECK(fractal_computation_problem_init_v1(&runtime,&job,&descriptor,&compatibility_problem)==FRACTAL_OK);
@@ -219,13 +204,13 @@ static void computation_contract(void){
 static void compatibility_and_metadata_validation(void){
  fractal_memory_backend memory;fractal_runtime_modules runtime;
  fractal_module_descriptor bad_descriptor=*fractal_compute_scalar_v1.descriptor;
- fractal_module_descriptor bad_numeric_descriptor=*fractal_numeric_binary64.descriptor;
+ fractal_module_descriptor bad_numeric_descriptor=*fractal_numeric_binary64_v1.descriptor;
  fractal_module_descriptor bad_formula_descriptor=*fractal_formula_mandelbrot.descriptor;
  fractal_compute_vtable bad_compute=fractal_compute_scalar_v1;
- fractal_numeric_vtable bad_numeric=fractal_numeric_binary64;
+ fractal_numeric_vtable bad_numeric=fractal_numeric_binary64_v1;
  fractal_formula_vtable bad_formula=fractal_formula_mandelbrot;
  CHECK(fractal_memory_backend_init_system(&memory)==FRACTAL_OK);
- runtime=direct_runtime(&fractal_formula_mandelbrot,&fractal_numeric_binary64,
+ runtime=direct_runtime(&fractal_formula_mandelbrot,&fractal_numeric_binary64_v1,
   &fractal_compute_scalar_v1,&fractal_scheduler_serial_v1,1);runtime.memory=&memory;
  CHECK(fractal_runtime_validate(&runtime)==FRACTAL_OK);
  bad_descriptor.abi_version=2;bad_compute.descriptor=&bad_descriptor;runtime.compute=&bad_compute;
@@ -239,14 +224,19 @@ static void compatibility_and_metadata_validation(void){
  runtime.compute=&fractal_compute_scalar_v1;bad_numeric_descriptor.capability_flags=0;
  bad_numeric.descriptor=&bad_numeric_descriptor;runtime.numeric=&bad_numeric;
  CHECK(fractal_runtime_validate(&runtime)==FRACTAL_ERROR_INVALID_SPEC);
- runtime.numeric=&fractal_numeric_binary64;bad_formula_descriptor.capability_flags=0;
+ bad_numeric=fractal_numeric_binary64_v1;bad_numeric.abi_version=2;runtime.numeric=&bad_numeric;
+ CHECK(fractal_runtime_validate(&runtime)==FRACTAL_ERROR_INVALID_SPEC);
+ bad_numeric=fractal_numeric_binary64_v1;
+ bad_numeric.capability_flags&=~FRACTAL_NUMERIC_CAP_REAL_DIVIDE;runtime.numeric=&bad_numeric;
+ CHECK(fractal_runtime_validate(&runtime)==FRACTAL_ERROR_INVALID_SPEC);
+ runtime.numeric=&fractal_numeric_binary64_v1;bad_formula_descriptor.capability_flags=0;
  bad_formula.descriptor=&bad_formula_descriptor;runtime.formula=&bad_formula;
  CHECK(fractal_runtime_validate(&runtime)==FRACTAL_ERROR_INVALID_SPEC);
  runtime.formula=&fractal_formula_mandelbrot;bad_compute=fractal_compute_scalar_v1;
  bad_compute.required_field_capabilities=FRACTAL_CAP_BGR8;runtime.compute=&bad_compute;
  CHECK(fractal_runtime_validate(&runtime)==FRACTAL_ERROR_INVALID_SPEC);
  CHECK(fractal_compute_conventional.point(&fractal_formula_mandelbrot,
-  &fractal_numeric_binary64,NULL,0.0,0.0,64,NULL,NULL)==FRACTAL_ERROR_INVALID_ARGUMENT);
+  &fractal_numeric_binary64_v1,NULL,0.0,0.0,64,NULL,NULL)==FRACTAL_ERROR_INVALID_ARGUMENT);
  fractal_memory_backend_shutdown(&memory);
 }
 
