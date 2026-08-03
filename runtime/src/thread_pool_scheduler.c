@@ -20,16 +20,21 @@ static const fractal_module_descriptor thread_pool_v1_descriptor={
 };
 
 static uint64_t identity_from_values(const fractal_sealed_work_unit_v1 *u){
- char text[768];
+ char text[1024];
  int n;
  if(!u)return 0;
  n=snprintf(text,sizeof(text),
-  "%s|abi=%u|contract=%u|work=%016llx|compute=%016llx@%u|numeric=%016llx@%u|numeric-abi=%u|numeric-caps=%016llx|formula=%016llx@%u|field=%u|cancel=%u|sequence=%u|workers=%u|width=%u|height=%u|rows=%u:%u|samples=%llu:%llu",
+  "%s|abi=%u|contract=%u|work=%016llx|compute=%016llx@%u|numeric=%016llx@%u|numeric-abi=%u|numeric-caps=%016llx|formula=%.*s:%016llx@%u|formula-interface=%u|formula-contract=%u|formula-parameters=%016llx|formula-execution=%016llx|field=%u|cancel=%u|sequence=%u|workers=%u|width=%u|height=%u|rows=%u:%u|samples=%llu:%llu",
   FRACTAL_SCHEDULER_WORK_UNIT_V1_ID,u->abi_version,u->contract_version,
   (unsigned long long)u->work_unit_identity,(unsigned long long)u->computation_identity,
   u->computation_version,(unsigned long long)u->numeric_identity,u->numeric_version,
   u->numeric_abi_version,(unsigned long long)u->numeric_capability_flags,
-  (unsigned long long)u->formula_identity,u->formula_version,u->field_format,u->cancellation_mode,u->sequence,u->worker_count,
+  (int)FRACTAL_WORK_UNIT_FORMULA_ID_CAPACITY,u->formula_id,
+  (unsigned long long)u->formula_identity,u->formula_version,
+  u->formula_interface_version,u->formula_contract_version,
+  (unsigned long long)u->formula_parameter_identity,
+  (unsigned long long)u->formula_execution_identity,u->field_format,
+  u->cancellation_mode,u->sequence,u->worker_count,
   u->width,u->height,u->row_begin,u->row_end,
   (unsigned long long)u->sample_begin,(unsigned long long)u->sample_end);
  if(n<0||(size_t)n>=sizeof(text))return 0;
@@ -85,6 +90,7 @@ fractal_result fractal_scheduler_decompose_computation_v1(
  fractal_sealed_work_unit_v1 *units,size_t capacity,size_t *count){
  size_t i;fractal_result result;
  if(fractal_computation_problem_validate_v1(compute,problem)!=FRACTAL_OK||
+    strlen(problem->formula->descriptor->module_id)>=FRACTAL_WORK_UNIT_FORMULA_ID_CAPACITY||
     (cancellation_mode!=FRACTAL_COMPUTATION_CANCEL_POINT_ITERATION&&
      cancellation_mode!=FRACTAL_COMPUTATION_CANCEL_ROW_BOUNDARY))return FRACTAL_ERROR_INVALID_SPEC;
  result=fractal_scheduler_decompose_contiguous_rows_v1(problem->field.width,problem->field.height,
@@ -96,11 +102,16 @@ fractal_result fractal_scheduler_decompose_computation_v1(
   units[i].computation_identity=fractal_module_identity_v1(compute->descriptor);
   units[i].numeric_identity=fractal_module_identity_v1(problem->numeric->descriptor);
   units[i].formula_identity=fractal_module_identity_v1(problem->formula->descriptor);
+  units[i].formula_parameter_identity=problem->formula_parameter_identity;
+  units[i].formula_execution_identity=problem->formula_execution_identity;
   units[i].computation_version=compute->descriptor->module_version;
   units[i].numeric_version=problem->numeric->descriptor->module_version;
   units[i].numeric_abi_version=problem->numeric->abi_version;
   units[i].numeric_capability_flags=problem->numeric->capability_flags;
   units[i].formula_version=problem->formula->descriptor->module_version;
+  units[i].formula_interface_version=problem->formula->interface_version;
+  units[i].formula_contract_version=problem->formula->contract_version;
+  strcpy(units[i].formula_id,problem->formula->descriptor->module_id);
   units[i].field_format=(uint32_t)problem->field.format;
   units[i].cancellation_mode=(uint32_t)cancellation_mode;
   units[i].identity=identity_from_values(&units[i]);
@@ -143,11 +154,17 @@ fractal_result fractal_scheduler_validate_computation_v1(
     units[i].computation_identity!=fractal_module_identity_v1(compute->descriptor)||
     units[i].numeric_identity!=fractal_module_identity_v1(problem->numeric->descriptor)||
     units[i].formula_identity!=fractal_module_identity_v1(problem->formula->descriptor)||
+    !memchr(units[i].formula_id,'\0',sizeof(units[i].formula_id))||
+    strcmp(units[i].formula_id,problem->formula->descriptor->module_id)||
+    units[i].formula_parameter_identity!=problem->formula_parameter_identity||
+    units[i].formula_execution_identity!=problem->formula_execution_identity||
     units[i].computation_version!=compute->descriptor->module_version||
     units[i].numeric_version!=problem->numeric->descriptor->module_version||
     units[i].numeric_abi_version!=problem->numeric->abi_version||
     units[i].numeric_capability_flags!=problem->numeric->capability_flags||
     units[i].formula_version!=problem->formula->descriptor->module_version||
+    units[i].formula_interface_version!=problem->formula->interface_version||
+    units[i].formula_contract_version!=problem->formula->contract_version||
     units[i].field_format!=(uint32_t)problem->field.format||
     (units[i].cancellation_mode!=FRACTAL_COMPUTATION_CANCEL_POINT_ITERATION&&
      units[i].cancellation_mode!=FRACTAL_COMPUTATION_CANCEL_ROW_BOUNDARY))return FRACTAL_ERROR_INVALID_SPEC;

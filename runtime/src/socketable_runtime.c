@@ -59,7 +59,8 @@ fractal_result fractal_runtime_validate(const fractal_runtime_modules*r){
     !r->compute->execute||!r->compute->point)return FRACTAL_ERROR_INVALID_SPEC;
  required_numeric=r->formula->required_numeric_capabilities|
   r->compute->required_numeric_capabilities;
- if(fractal_numeric_validate_v1(r->numeric,required_numeric)!=FRACTAL_OK)
+ if(fractal_numeric_validate_v1(r->numeric,required_numeric)!=FRACTAL_OK||
+    fractal_formula_validate_v1(r->formula,r->numeric)!=FRACTAL_OK)
   return FRACTAL_ERROR_INVALID_SPEC;
  if(!strcmp(r->scheduler->descriptor->module_id,FRACTAL_SCHEDULER_THREAD_POOL_V1_ID)&&
     (!r->scheduler_options.requested_worker_count||
@@ -89,7 +90,7 @@ fractal_result fractal_job_spec_validate(const fractal_runtime_modules*r,
  fractal_scalar value,zero;
  fractal_numeric_order_v1 order;
  if(fractal_runtime_validate(r)!=FRACTAL_OK||!j||!j->problem.formula_id||
-    strcmp(j->problem.formula_id,r->formula->descriptor->module_id)||
+    !fractal_formula_id_matches_v1(r->formula,j->problem.formula_id)||
     !j->artifact.encoder_id||strcmp(j->artifact.encoder_id,r->encoder->descriptor->module_id)||
     !j->raster.palette_id||strcmp(j->raster.palette_id,"palette.socket-v1")||
     j->raster.pixel_format!=FRACTAL_PIXEL_BGR8||!j->view.width||!j->view.height||
@@ -108,7 +109,8 @@ fractal_result fractal_job_spec_validate(const fractal_runtime_modules*r,
   if(fractal_analysis_pipeline_validate(&r->analysis,&d,FRACTAL_ANALYSIS_MAX_RECORDS)!=
      FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;
  }
- return r->formula->validate_parameters(r->numeric,&j->problem.parameters);
+ return fractal_formula_parameters_validate_v1(r->formula,r->numeric,
+  &j->problem.parameters);
 }
 typedef struct counting_sink {fractal_write_sink *next;uint64_t hash;size_t bytes;} counting_sink;static fractal_result count_write(void*c,const void*d,size_t n){counting_sink*x=c;const unsigned char*p=d;x->bytes+=n;while(n--){x->hash^=*p++;x->hash*=UINT64_C(1099511628211);}return x->next->write(x->next->context,d,(size_t)(p-(const unsigned char*)d));}
 static void scheduler_execution_prepare(const fractal_runtime_modules*r,const fractal_job_spec*j,fractal_scheduler_execution*e){
@@ -130,12 +132,16 @@ fractal_result fractal_runtime_manifest(const fractal_runtime_modules*r,
  char params[192];size_t pl;int n;
  fractal_escape_classification_summary_v1 v={0};
  const char*schema="";uint32_t schema_version=0;uint64_t record_identity=0;
- uint64_t numeric_identity;
+ uint64_t numeric_identity,formula_identity,parameter_identity;
  if(!l||!o||fractal_job_spec_validate(r,j)!=FRACTAL_OK||
     r->formula->serialize_parameters(r->numeric,&j->problem.parameters,params,
      sizeof(params),&pl)!=FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;
  numeric_identity=fractal_numeric_execution_identity_v1(r->numeric);
- if(!numeric_identity)return FRACTAL_ERROR_INVALID_SPEC;
+ formula_identity=fractal_formula_execution_identity_v1(r->formula);
+ if(!numeric_identity||!formula_identity||
+    fractal_formula_parameter_identity_v1(r->formula,r->numeric,
+     &j->problem.parameters,&parameter_identity)!=FRACTAL_OK)
+  return FRACTAL_ERROR_INVALID_SPEC;
  if(o->analysis_result.records_produced==1&&
     fractal_escape_summary_record_decode(&o->analysis_result.records[0],&v)==FRACTAL_OK){
   schema=FRACTAL_ESCAPE_SUMMARY_SCHEMA_ID;schema_version=FRACTAL_ESCAPE_SUMMARY_SCHEMA_VERSION;
@@ -149,7 +155,7 @@ fractal_result fractal_runtime_manifest(const fractal_runtime_modules*r,
   schema=FRACTAL_SPATIAL_WORKLOAD_SCHEMA_ID;schema_version=FRACTAL_SPATIAL_WORKLOAD_SCHEMA_VERSION;
   record_identity=o->analysis_result.records[0].identity;
  }
- n=snprintf(b,c,"{\"abi\":1,\"analysis_pipeline_identity\":\"%016llx\",\"analysis_record_count\":%zu,\"analysis_record_identity\":\"%016llx\",\"analysis_result\":%u,\"analysis_samples_examined\":%llu,\"analyzed_field_checksum\":\"%016llx\",\"analyzer\":\"%s\",\"analyzer_count\":%zu,\"analyzer_version\":%u,\"artifact_checksum\":\"%016llx\",\"computation\":\"%s\",\"computation_identity\":\"%016llx\",\"computation_status\":\"%s\",\"computation_version\":%u,\"assignment_count\":%u,\"bounded_samples\":%llu,\"cancelled_samples\":%llu,\"decomposition\":\"%s\",\"decomposition_version\":%u,\"effective_worker_count\":%u,\"escaped_samples\":%llu,\"execution_result\":%u,\"execution_status\":\"%s\",\"failed_samples\":%llu,\"field_checksum\":\"%016llx\",\"field_preserved\":%s,\"formula\":\"%s@1\",\"formula_parameters\":%s,\"iteration_samples\":%llu,\"iteration_statistics_valid\":%s,\"maximum_iteration_samples\":%llu,\"numeric\":\"%s\",\"numeric_abi_version\":%u,\"numeric_compatibility\":\"compatible\",\"numeric_execution_identity\":\"%016llx\",\"numeric_version\":%u,\"pixel_checksum\":\"%016llx\",\"publication_status\":\"%s\",\"record_schema\":\"%s\",\"record_schema_version\":%u,\"requested_worker_count\":%u,\"scheduler\":\"%s\",\"scheduler_version\":%u,\"sealed_work_unit\":\"%s\",\"sealed_work_unit_identity\":\"%016llx\",\"source_field_checksum\":\"%016llx\",\"unresolved_samples\":%llu}",
+ n=snprintf(b,c,"{\"abi\":1,\"analysis_pipeline_identity\":\"%016llx\",\"analysis_record_count\":%zu,\"analysis_record_identity\":\"%016llx\",\"analysis_result\":%u,\"analysis_samples_examined\":%llu,\"analyzed_field_checksum\":\"%016llx\",\"analyzer\":\"%s\",\"analyzer_count\":%zu,\"analyzer_version\":%u,\"artifact_checksum\":\"%016llx\",\"computation\":\"%s\",\"computation_identity\":\"%016llx\",\"computation_status\":\"%s\",\"computation_version\":%u,\"assignment_count\":%u,\"bounded_samples\":%llu,\"cancelled_samples\":%llu,\"decomposition\":\"%s\",\"decomposition_version\":%u,\"effective_worker_count\":%u,\"escaped_samples\":%llu,\"execution_result\":%u,\"execution_status\":\"%s\",\"failed_samples\":%llu,\"field_checksum\":\"%016llx\",\"field_preserved\":%s,\"formula\":\"%s\",\"formula_compatibility\":\"compatible\",\"formula_contract_version\":%u,\"formula_execution_identity\":\"%016llx\",\"formula_interface_version\":%u,\"formula_parameter_identity\":\"%016llx\",\"formula_version\":%u,\"formula_parameters\":%s,\"iteration_samples\":%llu,\"iteration_statistics_valid\":%s,\"maximum_iteration_samples\":%llu,\"numeric\":\"%s\",\"numeric_abi_version\":%u,\"numeric_compatibility\":\"compatible\",\"numeric_execution_identity\":\"%016llx\",\"numeric_version\":%u,\"pixel_checksum\":\"%016llx\",\"publication_status\":\"%s\",\"record_schema\":\"%s\",\"record_schema_version\":%u,\"requested_worker_count\":%u,\"scheduler\":\"%s\",\"scheduler_version\":%u,\"sealed_work_unit\":\"%s\",\"sealed_work_unit_identity\":\"%016llx\",\"source_field_checksum\":\"%016llx\",\"unresolved_samples\":%llu}",
   (unsigned long long)o->analysis_pipeline_identity,o->analysis_result.records_produced,
   (unsigned long long)record_identity,(unsigned)o->analysis_result.result,
   (unsigned long long)o->analysis_result.samples_examined,
@@ -166,7 +172,10 @@ fractal_result fractal_runtime_manifest(const fractal_runtime_modules*r,
   fractal_scheduler_execution_status_string(o->scheduler_execution.status),
   (unsigned long long)v.failed_samples,(unsigned long long)o->field_checksum,
   o->analyzer_count?(o->analysis_result.field_preserved?"true":"false"):"true",
-  r->formula->descriptor->module_id,params,(unsigned long long)v.iteration_samples,
+  r->formula->descriptor->module_id,r->formula->contract_version,
+  (unsigned long long)formula_identity,r->formula->interface_version,
+  (unsigned long long)parameter_identity,r->formula->descriptor->module_version,params,
+  (unsigned long long)v.iteration_samples,
   v.iteration_statistics_valid?"true":"false",
   (unsigned long long)v.maximum_iteration_samples,r->numeric->descriptor->module_id,
   r->numeric->abi_version,(unsigned long long)numeric_identity,
@@ -183,11 +192,16 @@ fractal_result fractal_runtime_manifest(const fractal_runtime_modules*r,
 fractal_result fractal_runtime_artifact_manifest(const fractal_module_registry*g,
  const fractal_runtime_modules*r,const fractal_job_spec*j,const fractal_runtime_output*o,
  const fractal_artifact_result*a,char*b,size_t c,size_t*l){
- int n;const char*schema="";uint32_t sv=0;uint64_t ri=0,numeric_identity;
+ int n;const char*schema="";uint32_t sv=0;
+ uint64_t ri=0,numeric_identity,formula_identity,parameter_identity;
  if(!g||!r||!j||!o||!a||!l||!a->committed||fractal_job_spec_validate(r,j)!=FRACTAL_OK)
   return FRACTAL_ERROR_INVALID_ARGUMENT;
  numeric_identity=fractal_numeric_execution_identity_v1(r->numeric);
- if(!numeric_identity)return FRACTAL_ERROR_INVALID_SPEC;
+ formula_identity=fractal_formula_execution_identity_v1(r->formula);
+ if(!numeric_identity||!formula_identity||
+    fractal_formula_parameter_identity_v1(r->formula,r->numeric,
+     &j->problem.parameters,&parameter_identity)!=FRACTAL_OK)
+  return FRACTAL_ERROR_INVALID_SPEC;
  if(o->analysis_result.records_produced==1){
   const fractal_analysis_record*record=&o->analysis_result.records[0];
   ri=record->identity;
@@ -199,7 +213,7 @@ fractal_result fractal_runtime_artifact_manifest(const fractal_module_registry*g
    schema=FRACTAL_SPATIAL_WORKLOAD_SCHEMA_ID;sv=1;
   }
  }
- n=snprintf(b,c,"{\"analysis_pipeline_identity\":\"%016llx\",\"analysis_record_count\":%zu,\"analysis_record_identity\":\"%016llx\",\"analysis_result\":%u,\"analysis_samples_examined\":%llu,\"analyzed_field_checksum\":\"%016llx\",\"analyzer\":\"%s\",\"analyzer_count\":%zu,\"artifact_bytes\":%zu,\"artifact_checksum\":\"%016llx\",\"computation\":\"%s\",\"computation_identity\":\"%016llx\",\"computation_status\":\"%s\",\"computation_version\":%u,\"assignment_count\":%u,\"decomposition\":\"%s\",\"decomposition_version\":%u,\"destination\":\"%s\",\"effective_worker_count\":%u,\"execution_result\":%u,\"execution_status\":\"%s\",\"field_preserved\":%s,\"numeric\":\"%s\",\"numeric_abi_version\":%u,\"numeric_compatibility\":\"compatible\",\"numeric_execution_identity\":\"%016llx\",\"numeric_version\":%u,\"pixel_checksum\":\"%016llx\",\"publication_status\":\"%s\",\"record_schema\":\"%s\",\"record_schema_version\":%u,\"registry_identity\":\"%016llx\",\"requested_worker_count\":%u,\"scheduler\":\"%s\",\"scheduler_version\":%u,\"sealed_work_unit\":\"%s\",\"sealed_work_unit_identity\":\"%016llx\",\"sink\":\"%s\",\"source_field_checksum\":\"%016llx\"}",
+ n=snprintf(b,c,"{\"analysis_pipeline_identity\":\"%016llx\",\"analysis_record_count\":%zu,\"analysis_record_identity\":\"%016llx\",\"analysis_result\":%u,\"analysis_samples_examined\":%llu,\"analyzed_field_checksum\":\"%016llx\",\"analyzer\":\"%s\",\"analyzer_count\":%zu,\"artifact_bytes\":%zu,\"artifact_checksum\":\"%016llx\",\"computation\":\"%s\",\"computation_identity\":\"%016llx\",\"computation_status\":\"%s\",\"computation_version\":%u,\"assignment_count\":%u,\"decomposition\":\"%s\",\"decomposition_version\":%u,\"destination\":\"%s\",\"effective_worker_count\":%u,\"execution_result\":%u,\"execution_status\":\"%s\",\"field_preserved\":%s,\"formula\":\"%s\",\"formula_compatibility\":\"compatible\",\"formula_contract_version\":%u,\"formula_execution_identity\":\"%016llx\",\"formula_interface_version\":%u,\"formula_parameter_identity\":\"%016llx\",\"formula_version\":%u,\"numeric\":\"%s\",\"numeric_abi_version\":%u,\"numeric_compatibility\":\"compatible\",\"numeric_execution_identity\":\"%016llx\",\"numeric_version\":%u,\"pixel_checksum\":\"%016llx\",\"publication_status\":\"%s\",\"record_schema\":\"%s\",\"record_schema_version\":%u,\"registry_identity\":\"%016llx\",\"requested_worker_count\":%u,\"scheduler\":\"%s\",\"scheduler_version\":%u,\"sealed_work_unit\":\"%s\",\"sealed_work_unit_identity\":\"%016llx\",\"sink\":\"%s\",\"source_field_checksum\":\"%016llx\"}",
   (unsigned long long)o->analysis_pipeline_identity,o->analysis_result.records_produced,
   (unsigned long long)ri,(unsigned)o->analysis_result.result,
   (unsigned long long)o->analysis_result.samples_examined,
@@ -214,6 +228,9 @@ fractal_result fractal_runtime_artifact_manifest(const fractal_module_registry*g
   o->scheduler_execution.effective_worker_count,(unsigned)o->scheduler_execution.result,
   fractal_scheduler_execution_status_string(o->scheduler_execution.status),
   o->analyzer_count?(o->analysis_result.field_preserved?"true":"false"):"true",
+  r->formula->descriptor->module_id,r->formula->contract_version,
+  (unsigned long long)formula_identity,r->formula->interface_version,
+  (unsigned long long)parameter_identity,r->formula->descriptor->module_version,
   r->numeric->descriptor->module_id,r->numeric->abi_version,
   (unsigned long long)numeric_identity,r->numeric->descriptor->module_version,
   (unsigned long long)o->pixel_checksum,

@@ -3,14 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 
-static const fractal_module_descriptor mandelbrot_descriptor={
- 1u,1u,"formula.mandelbrot.quadratic","Mandelbrot quadratic",
- FRACTAL_MODULE_FORMULA,FRACTAL_CAP_POINT_SCALAR,true
-};
-static const fractal_module_descriptor julia_descriptor={
- 1u,1u,"formula.julia.quadratic","Julia quadratic",
- FRACTAL_MODULE_FORMULA,FRACTAL_CAP_POINT_SCALAR,true
-};
 static const fractal_module_descriptor scalar_compute_descriptor={
  1u,1u,FRACTAL_COMPUTATION_SCALAR_V1_ID,"Scalar computation v1",
  FRACTAL_MODULE_COMPUTE,FRACTAL_CAP_POINT_SCALAR|FRACTAL_CAP_ITERATION_FIELD|
@@ -25,171 +17,14 @@ static const fractal_module_descriptor compatibility_compute_descriptor={
  FRACTAL_CAP_COMPUTE_CANCELLATION,true
 };
 
-static fractal_result validate_parameter_shape(const fractal_formula_parameters *parameters,
- const char *type_id,size_t size){
- if(!parameters||!parameters->type_id||strcmp(parameters->type_id,type_id)||
-    !parameters->data||parameters->size!=size)return FRACTAL_ERROR_INVALID_SPEC;
- return FRACTAL_OK;
-}
-
-static fractal_result positive_binary64(const fractal_numeric_vtable *numeric,
- double value){
- fractal_scalar converted,zero;
- fractal_numeric_order_v1 order;
- if(fractal_numeric_validate_v1(numeric,FRACTAL_NUMERIC_SCALAR_V1_REQUIRED_CAPABILITIES)!=
-     FRACTAL_OK||numeric->from_binary64(value,&converted)!=FRACTAL_OK||
-    numeric->constant(FRACTAL_NUMERIC_CONSTANT_ZERO,&zero)!=FRACTAL_OK||
-    numeric->real_compare(&converted,&zero,&order)!=FRACTAL_OK)
-  return FRACTAL_ERROR_INVALID_SPEC;
- return order==FRACTAL_NUMERIC_ORDER_GREATER?FRACTAL_OK:FRACTAL_ERROR_INVALID_SPEC;
-}
-
-static fractal_result validate_mandelbrot(const fractal_numeric_vtable *numeric,
- const fractal_formula_parameters *parameters){
- const fractal_mandelbrot_parameters *value;
- if(validate_parameter_shape(parameters,mandelbrot_descriptor.module_id,sizeof(*value))!=
-    FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;
- value=parameters->data;
- return positive_binary64(numeric,value->escape_radius);
-}
-
-static fractal_result validate_julia(const fractal_numeric_vtable *numeric,
- const fractal_formula_parameters *parameters){
- const fractal_julia_parameters *value;
- fractal_scalar converted;
- if(validate_parameter_shape(parameters,julia_descriptor.module_id,sizeof(*value))!=
-    FRACTAL_OK)return FRACTAL_ERROR_INVALID_SPEC;
- value=parameters->data;
- if(fractal_numeric_validate_v1(numeric,FRACTAL_NUMERIC_SCALAR_V1_REQUIRED_CAPABILITIES)!=
-     FRACTAL_OK||numeric->from_binary64(value->constant_real,&converted)!=FRACTAL_OK||
-    numeric->from_binary64(value->constant_imaginary,&converted)!=FRACTAL_OK)
-  return FRACTAL_ERROR_INVALID_SPEC;
- return positive_binary64(numeric,value->escape_radius);
-}
-
-static size_t formula_state_size(void){return sizeof(fractal_complex_state);}
-static size_t formula_state_alignment(void){return _Alignof(fractal_complex_state);}
-
-static fractal_result initialize_radius(const fractal_numeric_vtable *numeric,
- double radius,fractal_scalar *radius_squared){
- fractal_scalar converted;
- if(numeric->from_binary64(radius,&converted)!=FRACTAL_OK||
-    numeric->real_multiply(&converted,&converted,radius_squared)!=FRACTAL_OK)
-  return FRACTAL_ERROR_INVALID_SPEC;
- return FRACTAL_OK;
-}
-
-static fractal_result initialize_mandelbrot(const fractal_numeric_vtable *numeric,
- const fractal_formula_parameters *parameters,const fractal_numeric_complex *coordinate,
- void *output){
- const fractal_mandelbrot_parameters *value;
- fractal_complex_state *state=output;
- fractal_scalar zero;
- if(!coordinate||!state||validate_mandelbrot(numeric,parameters)!=FRACTAL_OK)
-  return FRACTAL_ERROR_INVALID_SPEC;
- value=parameters->data;
- if(numeric->constant(FRACTAL_NUMERIC_CONSTANT_ZERO,&zero)!=FRACTAL_OK||
-    numeric->complex_construct(&zero,&zero,&state->z)!=FRACTAL_OK||
-    initialize_radius(numeric,value->escape_radius,&state->radius_squared)!=FRACTAL_OK)
-  return FRACTAL_ERROR_INVALID_SPEC;
- state->c=*coordinate;
- return FRACTAL_OK;
-}
-
-static fractal_result initialize_julia(const fractal_numeric_vtable *numeric,
- const fractal_formula_parameters *parameters,const fractal_numeric_complex *coordinate,
- void *output){
- const fractal_julia_parameters *value;
- fractal_complex_state *state=output;
- fractal_scalar real,imaginary;
- if(!coordinate||!state||validate_julia(numeric,parameters)!=FRACTAL_OK)
-  return FRACTAL_ERROR_INVALID_SPEC;
- value=parameters->data;
- if(numeric->from_binary64(value->constant_real,&real)!=FRACTAL_OK||
-    numeric->from_binary64(value->constant_imaginary,&imaginary)!=FRACTAL_OK||
-    numeric->complex_construct(&real,&imaginary,&state->c)!=FRACTAL_OK||
-    initialize_radius(numeric,value->escape_radius,&state->radius_squared)!=FRACTAL_OK)
-  return FRACTAL_ERROR_INVALID_SPEC;
- state->z=*coordinate;
- return FRACTAL_OK;
-}
-
-static fractal_result formula_step(const fractal_numeric_vtable *numeric,void *value){
- fractal_complex_state *state=value;
- fractal_numeric_complex squared,next;
- if(!numeric||!state)return FRACTAL_ERROR_INVALID_ARGUMENT;
- if(numeric->complex_square(&state->z,&squared)!=FRACTAL_OK||
-    numeric->complex_add(&squared,&state->c,&next)!=FRACTAL_OK)
-  return FRACTAL_ERROR_INVALID_SPEC;
- state->z=next;
- return FRACTAL_OK;
-}
-
-static fractal_result formula_classify(const fractal_numeric_vtable *numeric,
- const void *value,fractal_point_class *classification){
- const fractal_complex_state *state=value;
- fractal_scalar magnitude_squared;
- bool escaped;
- if(!numeric||!state||!classification)return FRACTAL_ERROR_INVALID_ARGUMENT;
- if(numeric->squared_magnitude(&state->z,&magnitude_squared)!=FRACTAL_OK||
-    numeric->bailout_exceeded(&magnitude_squared,&state->radius_squared,&escaped)!=FRACTAL_OK){
-  *classification=FRACTAL_CLASS_FAILED;
-  return FRACTAL_OK;
- }
- *classification=escaped?FRACTAL_CLASS_ESCAPED:FRACTAL_CLASS_UNRESOLVED;
- return FRACTAL_OK;
-}
-
-static fractal_result serialize_mandelbrot(const fractal_numeric_vtable *numeric,
- const fractal_formula_parameters *parameters,char *output,size_t capacity,
- size_t *length){
- const fractal_mandelbrot_parameters *value;
- int count;
- if(validate_mandelbrot(numeric,parameters)!=FRACTAL_OK||!length)
-  return FRACTAL_ERROR_INVALID_SPEC;
- value=parameters->data;
- count=snprintf(output,capacity,"{\"escape_radius\":%.17g}",value->escape_radius);
- *length=count<0?0u:(size_t)count;
- return count<0||!output||capacity<=(size_t)count?
-  FRACTAL_ERROR_BUFFER_TOO_SMALL:FRACTAL_OK;
-}
-
-static fractal_result serialize_julia(const fractal_numeric_vtable *numeric,
- const fractal_formula_parameters *parameters,char *output,size_t capacity,
- size_t *length){
- const fractal_julia_parameters *value;
- int count;
- if(validate_julia(numeric,parameters)!=FRACTAL_OK||!length)
-  return FRACTAL_ERROR_INVALID_SPEC;
- value=parameters->data;
- count=snprintf(output,capacity,
-  "{\"constant_imaginary\":%.17g,\"constant_real\":%.17g,\"escape_radius\":%.17g}",
-  value->constant_imaginary,value->constant_real,value->escape_radius);
- *length=count<0?0u:(size_t)count;
- return count<0||!output||capacity<=(size_t)count?
-  FRACTAL_ERROR_BUFFER_TOO_SMALL:FRACTAL_OK;
-}
-
-const fractal_formula_vtable fractal_formula_mandelbrot={
- &mandelbrot_descriptor,FRACTAL_NUMERIC_SCALAR_V1_REQUIRED_CAPABILITIES,
- validate_mandelbrot,formula_state_size,formula_state_alignment,initialize_mandelbrot,
- formula_step,formula_classify,serialize_mandelbrot
-};
-const fractal_formula_vtable fractal_formula_julia={
- &julia_descriptor,FRACTAL_NUMERIC_SCALAR_V1_REQUIRED_CAPABILITIES,
- validate_julia,formula_state_size,formula_state_alignment,initialize_julia,
- formula_step,formula_classify,serialize_julia
-};
-
 static fractal_result point_numeric(const fractal_formula_vtable *formula,
  const fractal_numeric_vtable *numeric,const fractal_formula_parameters *parameters,
  const fractal_numeric_complex *coordinate,uint32_t budget,
  const fractal_cancellation *cancellation,fractal_point_result_compact *output){
- fractal_complex_state state;
+ fractal_formula_state_v1 state;
  uint32_t iteration;
  if(!formula||!numeric||!coordinate||!output||!budget||
-    formula->state_size()>sizeof(state)||
-    formula->validate_parameters(numeric,parameters)!=FRACTAL_OK)
+    fractal_formula_parameters_validate_v1(formula,numeric,parameters)!=FRACTAL_OK)
   return FRACTAL_ERROR_INVALID_ARGUMENT;
  memset(output,0,sizeof(*output));
  output->classification=FRACTAL_CLASS_UNRESOLVED;
@@ -201,17 +36,32 @@ static fractal_result point_numeric(const fractal_formula_vtable *formula,
    output->classification=FRACTAL_CLASS_CANCELLED;
    return FRACTAL_ERROR_CANCELLED;
   }
-  if(formula->step(numeric,&state)!=FRACTAL_OK){
+  bool terminated=false;
+  if(formula->recurrence(numeric,&state)!=FRACTAL_OK){
    output->classification=FRACTAL_CLASS_FAILED;
    return FRACTAL_OK;
   }
   output->steps=iteration;
-  if(formula->classify(numeric,&state,&classification)!=FRACTAL_OK)
+  if(formula->terminate(numeric,&state,&terminated)!=FRACTAL_OK){
+   output->classification=FRACTAL_CLASS_FAILED;
    return FRACTAL_ERROR_INVALID_SPEC;
-  if(classification==FRACTAL_CLASS_ESCAPED){
+  }
+  if(terminated&&formula->classify(numeric,&state,false,&classification)!=FRACTAL_OK){
+   output->classification=FRACTAL_CLASS_FAILED;
+   return FRACTAL_ERROR_INVALID_SPEC;
+  }
+  if(terminated){
    output->classification=(uint8_t)classification;
    return FRACTAL_OK;
   }
+ }
+ {
+  fractal_point_class classification;
+  if(formula->classify(numeric,&state,true,&classification)!=FRACTAL_OK){
+   output->classification=FRACTAL_CLASS_FAILED;
+   return FRACTAL_ERROR_INVALID_SPEC;
+  }
+  output->classification=(uint8_t)classification;
  }
  return FRACTAL_OK;
 }
@@ -232,24 +82,25 @@ static fractal_result point(const fractal_formula_vtable *formula,
 
 static uint64_t computation_problem_identity(const fractal_compute_vtable *compute,
  const fractal_computation_problem_v1 *problem){
- char parameters[256],text[1280];
- size_t length=0;
+ char text[1280];
  int count;
- uint64_t numeric_execution_identity;
- if(!compute||!problem||!problem->formula||!problem->numeric||
-    !problem->formula->serialize_parameters||
-    problem->formula->serialize_parameters(problem->numeric,&problem->parameters,
-     parameters,sizeof(parameters),&length)!=FRACTAL_OK)return 0;
+ uint64_t numeric_execution_identity,formula_execution_identity,parameter_identity;
+ if(!compute||!problem||!problem->formula||!problem->numeric)return 0;
  numeric_execution_identity=fractal_numeric_execution_identity_v1(problem->numeric);
- if(!numeric_execution_identity)return 0;
+ formula_execution_identity=fractal_formula_execution_identity_v1(problem->formula);
+ if(fractal_formula_parameter_identity_v1(problem->formula,problem->numeric,
+    &problem->parameters,&parameter_identity)!=FRACTAL_OK||!numeric_execution_identity||
+    !formula_execution_identity)return 0;
  count=snprintf(text,sizeof(text),
-  "compute-work-unit|abi=%u|contract=%u|compute=%s@%u|numeric=%s@%u|numeric-abi=%u|numeric-caps=%016llx|numeric-execution=%016llx|formula=%s@%u|parameters=%.*s|max=%u|center=%.17g,%.17g|scale=%.17g|field=%u,%u,%zu,%u,%u",
+  "compute-work-unit|abi=%u|contract=%u|compute=%s@%u|numeric=%s@%u|numeric-abi=%u|numeric-caps=%016llx|numeric-execution=%016llx|formula=%s@%u|formula-interface=%u|formula-contract=%u|formula-execution=%016llx|parameters=%016llx|max=%u|center=%.17g,%.17g|scale=%.17g|field=%u,%u,%zu,%u,%u",
   problem->abi_version,problem->contract_version,compute->descriptor->module_id,
   compute->descriptor->module_version,problem->numeric->descriptor->module_id,
   problem->numeric->descriptor->module_version,problem->numeric->abi_version,
   (unsigned long long)problem->numeric->capability_flags,
   (unsigned long long)numeric_execution_identity,problem->formula->descriptor->module_id,
-  problem->formula->descriptor->module_version,(int)length,parameters,
+  problem->formula->descriptor->module_version,problem->formula->interface_version,
+  problem->formula->contract_version,(unsigned long long)formula_execution_identity,
+  (unsigned long long)parameter_identity,
   problem->maximum_steps,problem->center_real,problem->center_imaginary,problem->scale,
   problem->field.width,problem->field.height,problem->field.stride,
   (unsigned)problem->field.format,problem->field.flags);
@@ -273,18 +124,14 @@ static fractal_result validate_view(const fractal_numeric_vtable *numeric,
 fractal_result fractal_computation_problem_validate_v1(const fractal_compute_vtable *compute,
  const fractal_computation_problem_v1 *problem){
  size_t bytes;
- uint64_t identity,required_numeric;
+ uint64_t identity,required_numeric,parameter_identity,formula_execution_identity;
  if(!compute||!problem||!compute->descriptor||!problem->formula||!problem->numeric||
-    !problem->formula->descriptor||!problem->formula->validate_parameters||
-    !problem->formula->state_size||!problem->formula->state_alignment||
-    !problem->formula->initialize_state||!problem->formula->step||
-    !problem->formula->classify||!problem->formula->serialize_parameters||
+    !problem->formula->descriptor||
     problem->abi_version!=FRACTAL_COMPUTATION_ABI_VERSION||
     problem->contract_version!=FRACTAL_COMPUTATION_CONTRACT_VERSION||
     compute->contract_version!=FRACTAL_COMPUTATION_CONTRACT_VERSION||
     !compute->execute||!compute->point||
     fractal_module_descriptor_validate(compute->descriptor,FRACTAL_MODULE_COMPUTE)!=FRACTAL_OK||
-    fractal_module_descriptor_validate(problem->formula->descriptor,FRACTAL_MODULE_FORMULA)!=FRACTAL_OK||
     !problem->maximum_steps||
     fractal_field_descriptor_validate(&problem->field,sizeof(fractal_point_result_compact),
      &bytes)!=FRACTAL_OK||
@@ -301,8 +148,14 @@ fractal_result fractal_computation_problem_validate_v1(const fractal_compute_vta
  required_numeric=compute->required_numeric_capabilities|
   problem->formula->required_numeric_capabilities;
  if(fractal_numeric_validate_v1(problem->numeric,required_numeric)!=FRACTAL_OK||
+    fractal_formula_validate_v1(problem->formula,problem->numeric)!=FRACTAL_OK||
     validate_view(problem->numeric,problem)!=FRACTAL_OK||
-    problem->formula->validate_parameters(problem->numeric,&problem->parameters)!=FRACTAL_OK)
+    fractal_formula_parameter_identity_v1(problem->formula,problem->numeric,
+     &problem->parameters,&parameter_identity)!=FRACTAL_OK)
+  return FRACTAL_ERROR_INVALID_SPEC;
+ formula_execution_identity=fractal_formula_execution_identity_v1(problem->formula);
+ if(!formula_execution_identity||problem->formula_parameter_identity!=parameter_identity||
+    problem->formula_execution_identity!=formula_execution_identity)
   return FRACTAL_ERROR_INVALID_SPEC;
  identity=computation_problem_identity(compute,problem);
  return identity&&identity==problem->identity?FRACTAL_OK:FRACTAL_ERROR_INVALID_SPEC;
@@ -313,11 +166,21 @@ fractal_result fractal_computation_problem_init_v1(const fractal_runtime_modules
  fractal_computation_problem_v1 *output){
  if(!runtime||!job||!descriptor||!output||!runtime->compute||!runtime->formula||
     !runtime->numeric)return FRACTAL_ERROR_INVALID_ARGUMENT;
- *output=(fractal_computation_problem_v1){
-  FRACTAL_COMPUTATION_ABI_VERSION,FRACTAL_COMPUTATION_CONTRACT_VERSION,
-  runtime->formula,runtime->numeric,job->problem.parameters,job->problem.maximum_steps,
-  job->view.center_real,job->view.center_imaginary,job->view.scale,*descriptor,0
- };
+ memset(output,0,sizeof(*output));
+ output->abi_version=FRACTAL_COMPUTATION_ABI_VERSION;
+ output->contract_version=FRACTAL_COMPUTATION_CONTRACT_VERSION;
+ output->formula=runtime->formula;
+ output->numeric=runtime->numeric;
+ output->parameters=job->problem.parameters;
+ output->maximum_steps=job->problem.maximum_steps;
+ output->center_real=job->view.center_real;
+ output->center_imaginary=job->view.center_imaginary;
+ output->scale=job->view.scale;
+ output->field=*descriptor;
+ if(fractal_formula_parameter_identity_v1(output->formula,output->numeric,
+    &output->parameters,&output->formula_parameter_identity)!=FRACTAL_OK)
+  return FRACTAL_ERROR_INVALID_SPEC;
+ output->formula_execution_identity=fractal_formula_execution_identity_v1(output->formula);
  output->identity=computation_problem_identity(runtime->compute,output);
  return fractal_computation_problem_validate_v1(runtime->compute,output);
 }
@@ -379,9 +242,15 @@ static fractal_result computation_execute(const fractal_compute_vtable *compute,
     assignment->numeric_abi_version!=problem->numeric->abi_version||
     assignment->numeric_capability_flags!=problem->numeric->capability_flags||
     assignment->formula_identity!=fractal_module_identity_v1(problem->formula->descriptor)||
+    !memchr(assignment->formula_id,'\0',sizeof(assignment->formula_id))||
+    strcmp(assignment->formula_id,problem->formula->descriptor->module_id)||
+    assignment->formula_parameter_identity!=problem->formula_parameter_identity||
+    assignment->formula_execution_identity!=problem->formula_execution_identity||
     assignment->computation_version!=compute->descriptor->module_version||
     assignment->numeric_version!=problem->numeric->descriptor->module_version||
     assignment->formula_version!=problem->formula->descriptor->module_version||
+    assignment->formula_interface_version!=problem->formula->interface_version||
+    assignment->formula_contract_version!=problem->formula->contract_version||
     assignment->field_format!=(uint32_t)problem->field.format||
     (assignment->cancellation_mode!=FRACTAL_COMPUTATION_CANCEL_POINT_ITERATION&&
      assignment->cancellation_mode!=FRACTAL_COMPUTATION_CANCEL_ROW_BOUNDARY)||

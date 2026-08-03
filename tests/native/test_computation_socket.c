@@ -22,7 +22,7 @@ static fractal_runtime_modules direct_runtime(const fractal_formula_vtable *form
 
 static fractal_job_spec mandelbrot_job(fractal_formula_parameters parameters,
  uint32_t width,uint32_t height){
- fractal_job_spec job={{"formula.mandelbrot.quadratic",parameters,64},
+ fractal_job_spec job={{FRACTAL_FORMULA_MANDELBROT_V1_ID,parameters,64},
   {-0.5,0.0,3.0,width,height},{"palette.socket-v1",FRACTAL_PIXEL_BGR8},
   {"encoder.bmp.v3","computation-socket.bmp"}};
  return job;
@@ -30,7 +30,7 @@ static fractal_job_spec mandelbrot_job(fractal_formula_parameters parameters,
 
 static fractal_runtime_selection selection(const char *computation){
  fractal_runtime_selection selected={0};
- selected.formula="formula.mandelbrot.quadratic";
+ selected.formula=FRACTAL_FORMULA_MANDELBROT_V1_ID;
  selected.numeric=FRACTAL_NUMERIC_BINARY64_V1_ID;selected.compute=computation;
  selected.refinement="refinement.none";selected.scheduler=FRACTAL_SCHEDULER_SERIAL_V1_ID;
  selected.raster="raster.native.iteration-bgr8";selected.encoder="encoder.bmp.v3";
@@ -48,7 +48,7 @@ static void registry_and_assembly(void){
  fractal_compute_vtable unavailable=fractal_compute_scalar_v1;size_t i;
  CHECK(fractal_installed_modules_registry(&installed)==FRACTAL_OK);
  CHECK(installed.count==22&&fractal_module_registry_count(&installed,FRACTAL_MODULE_COMPUTE)==2);
- CHECK(installed.identity==UINT64_C(0xd73d9e545afa7735));
+ CHECK(installed.identity==UINT64_C(0x616b9a3b92e787e5));
  CHECK(fractal_module_registry_find(&installed,FRACTAL_MODULE_COMPUTE,
   FRACTAL_COMPUTATION_SCALAR_V1_ID)==fractal_compute_scalar_v1.descriptor);
  CHECK(fractal_module_registry_implementation(&installed,FRACTAL_MODULE_COMPUTE,
@@ -87,7 +87,8 @@ static const fractal_module_descriptor mid_numeric_descriptor={
 
 static void computation_contract(void){
  fractal_mandelbrot_parameters mandelbrot={2.0};
- fractal_formula_parameters parameters={"formula.mandelbrot.quadratic",&mandelbrot,sizeof(mandelbrot)};
+ fractal_formula_parameters parameters={FRACTAL_FORMULA_MANDELBROT_V1_ID,
+  &mandelbrot,sizeof(mandelbrot)};
  fractal_job_spec job=mandelbrot_job(parameters,4,4);
  fractal_runtime_modules runtime=direct_runtime(&fractal_formula_mandelbrot,
   &fractal_numeric_binary64_v1,&fractal_compute_scalar_v1,&fractal_scheduler_serial_v1,1);
@@ -113,10 +114,16 @@ static void computation_contract(void){
   !memcmp(assignments,repeat,sizeof(assignments)));
  CHECK(fractal_scheduler_work_unit_set_identity_v1(assignments,count)==
   fractal_scheduler_work_unit_set_identity_v1(repeat,repeat_count));
- CHECK(problem.identity==UINT64_C(0x2ba1bf582aa6ea82));
- CHECK(assignments[0].identity==UINT64_C(0x380b6409f268c139));
- CHECK(assignments[1].identity==UINT64_C(0x13bb870b5cc81b51));
- CHECK(fractal_scheduler_work_unit_set_identity_v1(assignments,count)==UINT64_C(0x8b3dca5188141c05));
+ CHECK(problem.identity==UINT64_C(0xfb9753daaa2d3f03));
+ CHECK(assignments[0].identity==UINT64_C(0x54362a852c2f28e5));
+ CHECK(assignments[1].identity==UINT64_C(0x199f3d7f9d2b3995));
+ CHECK(fractal_scheduler_work_unit_set_identity_v1(assignments,count)==
+  UINT64_C(0xcbcbb95fbe126292));
+ CHECK(!strcmp(assignments[0].formula_id,FRACTAL_FORMULA_MANDELBROT_V1_ID)&&
+  assignments[0].formula_interface_version==FRACTAL_FORMULA_INTERFACE_VERSION&&
+  assignments[0].formula_contract_version==FRACTAL_FORMULA_CONTRACT_VERSION&&
+  assignments[0].formula_parameter_identity==problem.formula_parameter_identity&&
+  assignments[0].formula_execution_identity==problem.formula_execution_identity);
  printf("COMPUTATION assignments=%016llx,%016llx set=%016llx\n",
   (unsigned long long)assignments[0].identity,(unsigned long long)assignments[1].identity,
   (unsigned long long)fractal_scheduler_work_unit_set_identity_v1(assignments,count));
@@ -148,10 +155,16 @@ static void computation_contract(void){
  bad=assignments[1];bad.formula_identity^=1u;
  bad.identity=fractal_scheduler_work_unit_identity_v1(&bad);request.assignment=&bad;
  CHECK(fractal_compute_scalar_v1.execute(&request,&result)==FRACTAL_ERROR_INVALID_SPEC);
+ bad=assignments[1];bad.formula_parameter_identity^=1u;
+ bad.identity=fractal_scheduler_work_unit_identity_v1(&bad);request.assignment=&bad;
+ CHECK(fractal_compute_scalar_v1.execute(&request,&result)==FRACTAL_ERROR_INVALID_SPEC);
+ bad=assignments[1];bad.formula_execution_identity^=1u;
+ bad.identity=fractal_scheduler_work_unit_identity_v1(&bad);request.assignment=&bad;
+ CHECK(fractal_compute_scalar_v1.execute(&request,&result)==FRACTAL_ERROR_INVALID_SPEC);
  bad=assignments[1];bad.cancellation_mode=99;
  bad.identity=fractal_scheduler_work_unit_identity_v1(&bad);request.assignment=&bad;
  CHECK(fractal_compute_scalar_v1.execute(&request,&result)==FRACTAL_ERROR_INVALID_SPEC);
- problem.parameters.type_id="formula.julia.quadratic";request.assignment=&assignments[1];
+ problem.parameters.type_id=FRACTAL_FORMULA_JULIA_V1_ID;request.assignment=&assignments[1];
  CHECK(fractal_compute_scalar_v1.execute(&request,&result)==FRACTAL_ERROR_INVALID_SPEC);
  problem.parameters=parameters;
 

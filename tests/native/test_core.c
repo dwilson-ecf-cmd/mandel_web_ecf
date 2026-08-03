@@ -14,6 +14,7 @@
 #include "fractal/render_job.h"
 #include "fractal/render_manifest.h"
 #include "fractal/numeric.h"
+#include "fractal/formula.h"
 #include "fractal_cdc_renderer.h"
 #include "fractal/worker_status.h"
 #include "fractal_cpp_adapter.h"
@@ -291,7 +292,12 @@ static void test_refinement_contracts(void) {
 
 static void test_renderer_backends_and_manifest(void) {
  fractal_renderer legacy,cdc_renderer,invalid={0}; fractal_render_spec spec;
- fractal_render_manifest conventional,transitional_renderer,cdc,ouro; char ja[768],jb[768]; size_t na=0,nb=0;
+ fractal_render_manifest conventional,transitional_renderer,cdc,ouro;
+ fractal_mandelbrot_parameters mandelbrot={2.0};
+ fractal_formula_parameters parameters={FRACTAL_FORMULA_MANDELBROT_V1_ID,
+  &mandelbrot,sizeof(mandelbrot)};
+ uint64_t parameter_identity=0;
+ char ja[1536],jb[1536]; size_t na=0,nb=0;
  CHECK(fractal_renderer_create(FRACTAL_RENDERER_BACKEND_LEGACY_CPP,&legacy)==FRACTAL_OK);
  CHECK(legacy.backend_kind==FRACTAL_RENDERER_BACKEND_LEGACY_CPP);
  CHECK(fractal_renderer_create(FRACTAL_RENDERER_BACKEND_CDC_EXPERIMENTAL,&cdc_renderer)==FRACTAL_OK);
@@ -305,11 +311,25 @@ static void test_renderer_backends_and_manifest(void) {
  CHECK(fractal_render_manifest_set_numeric(&conventional,FRACTAL_NUMERIC_BINARY64_V1_ID,
   1,FRACTAL_NUMERIC_ABI_VERSION,"compatible",
   fractal_numeric_execution_identity_v1(&fractal_numeric_binary64_v1))==FRACTAL_OK);
+ CHECK(fractal_formula_parameter_identity_v1(&fractal_formula_mandelbrot_v1,
+  &fractal_numeric_binary64_v1,&parameters,&parameter_identity)==FRACTAL_OK);
+ CHECK(fractal_render_manifest_set_formula(&conventional,
+  FRACTAL_FORMULA_MANDELBROT_V1_ID,1,FRACTAL_FORMULA_INTERFACE_VERSION,
+  FRACTAL_FORMULA_CONTRACT_VERSION,"compatible",
+  fractal_formula_execution_identity_v1(&fractal_formula_mandelbrot_v1),
+  parameter_identity)==FRACTAL_OK);
  CHECK(fractal_render_manifest_serialize_identity_json(&conventional,ja,sizeof(ja),&na)==FRACTAL_OK&&
   strstr(ja,"\"computation_module\":\"fractal.compute.scalar.v1\"")!=NULL&&
   strstr(ja,"\"computation_assignment_count\":1")!=NULL&&
   strstr(ja,"\"numeric_module\":\"fractal.numeric.binary64.v1\"")!=NULL&&
-  strstr(ja,"\"numeric_compatibility_status\":\"compatible\"")!=NULL);
+  strstr(ja,"\"numeric_compatibility_status\":\"compatible\"")!=NULL&&
+  strstr(ja,"\"formula_module\":\"fractal.formula.mandelbrot.v1\"")!=NULL&&
+  strstr(ja,"\"formula_module_version\":1")!=NULL&&
+  strstr(ja,"\"formula_interface_version\":1")!=NULL&&
+  strstr(ja,"\"formula_contract_version\":1")!=NULL&&
+  strstr(ja,"\"formula_compatibility_status\":\"compatible\"")!=NULL&&
+  strstr(ja,"\"formula_execution_identity\":\"82001a07c687c7b1\"")!=NULL&&
+  strstr(ja,"\"formula_parameter_identity\":\"bd014f20cbe74288\"")!=NULL);
  CHECK(conventional.cdc_reference_sha256[0]=='\0');
  CHECK(fractal_render_manifest_init(&transitional_renderer,&spec,FRACTAL_COMPUTATION_BACKEND_CONVENTIONAL_C,FRACTAL_RENDERER_BACKEND_CDC_EXPERIMENTAL,FRACTAL_MEMORY_BACKEND_SYSTEM)==FRACTAL_OK);
  CHECK(transitional_renderer.cdc_reference_sha256[0]=='\0');
