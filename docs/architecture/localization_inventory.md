@@ -42,6 +42,7 @@
 | `docs/architecture/deterministic_thread_pool_scheduler.md` | `TRANSLATE_NOW` | Детерминированный планировщик пула потоков. |
 | `docs/architecture/computation_socket.md` | `TRANSLATE_NOW` | Сокет скалярных вычислений. |
 | `docs/architecture/binary64_numeric_socket.md` | `TRANSLATE_NOW` | Числовой контракт Binary64. |
+| `docs/architecture/formula_socket.md` | `TRANSLATE_NOW` | Контракт формулы, состояние и идентичности. |
 | `docs/architecture/field_ownership.md` | `TRANSLATE_NOW` | Владение полями. |
 | `docs/architecture/module_compatibility.md` | `TRANSLATE_NOW` | Совместимость модулей. |
 | `docs/roadmap/next_attack_plan.md` | `TRANSLATE_NOW` | Текущий следующий этап. |

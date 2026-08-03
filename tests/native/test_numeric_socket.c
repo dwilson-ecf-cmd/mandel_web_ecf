@@ -81,7 +81,7 @@ static void binary64_contract(void){
 
 static fractal_runtime_selection runtime_selection(const char *numeric_id){
  fractal_runtime_selection selected={0};
- selected.formula="formula.mandelbrot.quadratic";
+ selected.formula=FRACTAL_FORMULA_MANDELBROT_V1_ID;
  selected.numeric=numeric_id;
  selected.compute=FRACTAL_COMPUTATION_SCALAR_V1_ID;
  selected.refinement="refinement.none";
@@ -108,7 +108,7 @@ static void registry_and_compatibility(void){
  fractal_runtime_selection selected=runtime_selection(FRACTAL_NUMERIC_BINARY64_V1_ID);
  size_t i;
  CHECK(fractal_installed_modules_registry(&installed)==FRACTAL_OK);
- CHECK(installed.identity==UINT64_C(0xd73d9e545afa7735)&&installed.count==22);
+ CHECK(installed.identity==UINT64_C(0x616b9a3b92e787e5)&&installed.count==22);
  CHECK(fractal_module_registry_count(&installed,FRACTAL_MODULE_NUMERIC)==1);
  CHECK(fractal_module_registry_find(&installed,FRACTAL_MODULE_NUMERIC,
   FRACTAL_NUMERIC_BINARY64_V1_ID)==fractal_numeric_binary64_v1.descriptor);
@@ -153,9 +153,9 @@ static void registry_and_compatibility(void){
 
 static void work_unit_numeric_seal(void){
  fractal_mandelbrot_parameters mandelbrot={2.0};
- fractal_formula_parameters parameters={"formula.mandelbrot.quadratic",&mandelbrot,
+ fractal_formula_parameters parameters={FRACTAL_FORMULA_MANDELBROT_V1_ID,&mandelbrot,
   sizeof(mandelbrot)};
- fractal_job_spec job={{"formula.mandelbrot.quadratic",parameters,64},
+ fractal_job_spec job={{FRACTAL_FORMULA_MANDELBROT_V1_ID,parameters,64},
   {-0.5,0.0,3.0,4,4},{"palette.socket-v1",FRACTAL_PIXEL_BGR8},
   {"encoder.bmp.v3","numeric-socket.bmp"}};
  fractal_runtime_modules runtime={0};
@@ -173,10 +173,10 @@ static void work_unit_numeric_seal(void){
  CHECK(fractal_scheduler_decompose_computation_v1(runtime.compute,&problem,2,
   FRACTAL_COMPUTATION_CANCEL_POINT_ITERATION,repeat,2,&repeat_count)==FRACTAL_OK&&
   count==repeat_count&&!memcmp(first,repeat,sizeof(first)));
- CHECK(problem.identity==UINT64_C(0x78c49f1d7a64168f));
- CHECK(first[0].identity==UINT64_C(0xc5383a8c1f9c3629)&&
-  first[1].identity==UINT64_C(0x4541a2b20bee7441)&&
-  fractal_scheduler_work_unit_set_identity_v1(first,count)==UINT64_C(0x16b934b9611d7134));
+ CHECK(problem.identity==UINT64_C(0xf56016b2b40fda1a));
+ CHECK(first[0].identity==UINT64_C(0x0be251ff71555e6f)&&
+  first[1].identity==UINT64_C(0x37b5e8b924fd930f)&&
+  fractal_scheduler_work_unit_set_identity_v1(first,count)==UINT64_C(0xd02f6f67a4dd7f05));
  CHECK(first[0].numeric_identity==fractal_module_identity_v1(runtime.numeric->descriptor)&&
   first[0].numeric_abi_version==FRACTAL_NUMERIC_ABI_VERSION&&
   first[0].numeric_capability_flags==FRACTAL_NUMERIC_SCALAR_V1_REQUIRED_CAPABILITIES);
@@ -199,9 +199,9 @@ static void work_unit_numeric_seal(void){
 
 static void frozen_module_identities(void){
  CHECK(fractal_module_identity_v1(fractal_formula_mandelbrot.descriptor)==
-  UINT64_C(0x25134ac865c30775));
+  UINT64_C(0x86d0d6293d4696cd));
  CHECK(fractal_module_identity_v1(fractal_formula_julia.descriptor)==
-  UINT64_C(0x8d975e1d77a80d4a));
+  UINT64_C(0x9b51aed5f291fcd6));
  CHECK(fractal_module_identity_v1(fractal_compute_scalar_v1.descriptor)==
   UINT64_C(0x0f4e80b9ea57acc9));
  CHECK(fractal_module_identity_v1(fractal_scheduler_serial_v1.descriptor)==

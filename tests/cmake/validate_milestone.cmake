@@ -29,7 +29,10 @@ list(APPEND required
  "docs/research/cdc_refinement_contract_decision.md")
 list(APPEND required
  "shared/include/fractal/numeric.h" "runtime/src/numeric_binary64.c"
- "runtime/src/scalar_computation.c" "tests/native/test_numeric_socket.c"
+ "shared/include/fractal/formula.h" "shared/src/formula.c"
+ "runtime/src/formula_quadratic.c" "runtime/src/formula_mandelbrot.c"
+ "runtime/src/formula_julia.c" "runtime/src/scalar_computation.c"
+ "tests/native/test_numeric_socket.c"
  "docs/architecture/binary64_numeric_socket.md")
 foreach(path IN LISTS required)
  if(NOT EXISTS "${SOURCE_DIR}/${path}")
@@ -53,8 +56,20 @@ if(scalar_computation MATCHES "#include[ \t]*<math.h>|isfinite[ \t]*\\(|\\(doubl
  message(FATAL_ERROR "scalar computation contains direct floating-point arithmetic helpers")
 endif()
 foreach(operation IN ITEMS real_add real_subtract real_multiply real_divide
- complex_construct complex_add complex_square squared_magnitude bailout_exceeded)
+ complex_construct)
  if(NOT scalar_computation MATCHES "numeric->${operation}\\(")
-  message(FATAL_ERROR "scalar computation does not route ${operation} through numeric ABI")
+  message(FATAL_ERROR "Скалярное вычисление не направляет ${operation} через числовой ABI")
+ endif()
+endforeach()
+foreach(forbidden IN ITEMS Mandelbrot Julia formula_mandelbrot formula_julia
+ complex_square squared_magnitude bailout_exceeded)
+ if(scalar_computation MATCHES "${forbidden}")
+  message(FATAL_ERROR "Скалярное вычисление содержит знание формулы: ${forbidden}")
+ endif()
+endforeach()
+file(READ "${SOURCE_DIR}/runtime/src/formula_quadratic.c" quadratic_formula)
+foreach(operation IN ITEMS complex_add complex_square squared_magnitude bailout_exceeded)
+ if(NOT quadratic_formula MATCHES "numeric->${operation}\\(")
+  message(FATAL_ERROR "Квадратичная формула не направляет ${operation} через числовой ABI")
  endif()
 endforeach()

@@ -12,16 +12,12 @@
 #include "fractal/module_registry.h"
 #include "fractal/analysis.h"
 #include "fractal/numeric.h"
+#include "fractal/formula.h"
 #include "fractal/scheduler.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef enum fractal_point_class { FRACTAL_CLASS_ESCAPED=0,FRACTAL_CLASS_BOUNDED,FRACTAL_CLASS_UNRESOLVED,FRACTAL_CLASS_CANCELLED,FRACTAL_CLASS_FAILED } fractal_point_class;
 typedef enum fractal_pixel_format { FRACTAL_PIXEL_BGR8=0 } fractal_pixel_format;
-typedef struct fractal_complex_state { fractal_numeric_complex z,c; fractal_scalar radius_squared; } fractal_complex_state;
-typedef struct fractal_formula_parameters { const char *type_id; const void *data; size_t size; } fractal_formula_parameters;
-typedef struct fractal_mandelbrot_parameters { double escape_radius; } fractal_mandelbrot_parameters;
-typedef struct fractal_julia_parameters { double constant_real,constant_imaginary,escape_radius; } fractal_julia_parameters;
 typedef struct fractal_point_result_compact { uint32_t steps; uint8_t classification; uint8_t reserved[3]; } fractal_point_result_compact;
 typedef struct fractal_field { uint32_t width,height; size_t stride; fractal_point_result_compact *samples; uint32_t completed_rows; bool complete; } fractal_field;
 typedef struct fractal_pixel_buffer { uint32_t width,height; size_t stride; fractal_pixel_format format; unsigned char *pixels; } fractal_pixel_buffer;
@@ -35,12 +31,6 @@ bool fractal_cancellation_is_requested(const fractal_cancellation*);
 void fractal_cancellation_request(fractal_cancellation*);
 void fractal_cancellation_reset(fractal_cancellation*);
 struct fractal_runtime_modules;
-
-typedef struct fractal_formula_vtable { const fractal_module_descriptor *descriptor; uint64_t required_numeric_capabilities;
- fractal_result (*validate_parameters)(const fractal_numeric_vtable*,const fractal_formula_parameters*); size_t (*state_size)(void); size_t (*state_alignment)(void);
- fractal_result (*initialize_state)(const fractal_numeric_vtable*,const fractal_formula_parameters*,const fractal_numeric_complex*,void*);
- fractal_result (*step)(const fractal_numeric_vtable*,void*); fractal_result (*classify)(const fractal_numeric_vtable*,const void*,fractal_point_class*);
- fractal_result (*serialize_parameters)(const fractal_numeric_vtable*,const fractal_formula_parameters*,char*,size_t,size_t*); } fractal_formula_vtable;
 
 #define FRACTAL_COMPUTATION_SCALAR_V1_ID "fractal.compute.scalar.v1"
 #define FRACTAL_COMPUTE_CONVENTIONAL_COMPATIBILITY_ID "compute.conventional.scalar-c"
@@ -63,7 +53,7 @@ typedef struct fractal_computation_problem_v1 {
  uint32_t maximum_steps;
  double center_real,center_imaginary,scale;
  fractal_field_descriptor field;
- uint64_t identity;
+ uint64_t formula_parameter_identity,formula_execution_identity,identity;
 } fractal_computation_problem_v1;
 
 typedef struct fractal_computation_request_v1 {
@@ -112,7 +102,6 @@ typedef struct fractal_runtime_modules { const fractal_formula_vtable *formula; 
  const fractal_memory_vtable *memory_module; fractal_memory_backend *memory; const fractal_telemetry_vtable *telemetry; void *telemetry_state; const fractal_platform_vtable *platform; fractal_analysis_pipeline analysis; } fractal_runtime_modules;
 typedef struct fractal_runtime_output { uint64_t work_unit_identity; uint32_t scheduler_status; fractal_field field; fractal_pixel_buffer pixels; uint64_t field_checksum,source_field_checksum,analyzed_field_checksum,pixel_checksum,artifact_checksum; size_t artifact_bytes; fractal_analysis_result analysis_result; uint64_t analysis_pipeline_identity; size_t analyzer_count; } fractal_runtime_output;
 
-extern const fractal_formula_vtable fractal_formula_mandelbrot,fractal_formula_julia;
 extern const fractal_compute_vtable fractal_compute_scalar_v1,fractal_compute_conventional;
 extern const fractal_refinement_vtable fractal_refinement_none,fractal_refinement_cdc_unavailable;
 extern const fractal_scheduler_vtable fractal_scheduler_serial,fractal_scheduler_serial_v1,fractal_scheduler_thread_pool_v1;

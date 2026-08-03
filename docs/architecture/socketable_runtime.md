@@ -1,12 +1,12 @@
 # Подключаемая нативная среда выполнения v1
 
 Последовательная эталонная сборка состоит из
-`formula.mandelbrot.quadratic`, `fractal.numeric.binary64.v1`,
+`fractal.formula.mandelbrot.v1`, `fractal.numeric.binary64.v1`,
 `fractal.compute.scalar.v1`, `refinement.none`,
 `scheduler.serial.row-major`, `raster.native.iteration-bgr8`,
 `encoder.bmp.v3`, `memory.system.scoped`, `telemetry.noop` и
 `platform.host.c11`. Для Julia заменяется только формула на
-`formula.julia.quadratic`.
+`fractal.formula.julia.v1`.
 
 Фикстуры 32 × 24 с бюджетом 64 используют центр (-0.5, 0), вертикальный масштаб
 3, отображение по центрам пикселей, положительное мнимое направление вверх,
@@ -26,4 +26,6 @@
 остаётся неразрешённым и никогда не объявляет ограниченность доказанной. Загрузка
 модулей статическая. CDC и Ouro неактивны. Владение числовыми операциями и
 идентичность повторного воспроизведения определены в
-`binary64_numeric_socket.md`. Сокет формулы ещё не выделен.
+`binary64_numeric_socket.md`. Версионированный сокет формулы, состояние,
+идентичности параметров и границы совместимости определены в
+`formula_socket.md`.

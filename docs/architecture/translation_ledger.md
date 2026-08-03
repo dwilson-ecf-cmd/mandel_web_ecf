@@ -32,6 +32,7 @@
 | `docs/architecture/deterministic_thread_pool_scheduler.md` | English | Russian | `COMPLETED` | да | да | нет | да |
 | `docs/architecture/computation_socket.md` | English | Russian | `COMPLETED` | да | да | нет | да |
 | `docs/architecture/binary64_numeric_socket.md` | English | Russian | `COMPLETED` | да | да; все таблицы и идентичности сохранены | нет | да |
+| `docs/architecture/formula_socket.md` | N/A | Russian | `COMPLETED` | да | новый авторитетный контракт формулы | нет | да |
 | `docs/architecture/field_ownership.md` | English | Russian | `COMPLETED` | да | да | нет | да |
 | `docs/architecture/module_compatibility.md` | English | Russian | `COMPLETED` | да | да | нет | да |
 | `docs/renderer_evaluation.md` | English | Russian | `COMPLETED` | да | да | нет | да |
@@ -70,6 +71,7 @@
 | `server/renderer/cdc/src/fractal_cdc_trace.c` | English | Russian comments | `COMPLETED` | да | да | нет | да |
 | `server/renderer/include/fractal_cpp_adapter.h` | English | Russian comments | `COMPLETED` | да | да | нет | да |
 | `shared/include/fractal/analysis.h` | English | Russian comments | `COMPLETED` | да | да; формулы интервалов неизменны | нет | да |
+| `shared/include/fractal/formula.h` | N/A | Russian comments | `COMPLETED` | да | новое состояние и границы совместимости | нет | да |
 | `shared/include/fractal/scheduler.h` | English | Russian comments | `COMPLETED` | да | да | нет | да |
 | `shared/include/fractal/socketable_runtime.h` | English | Russian comments | `COMPLETED` | да | да | нет | да |
 | `shared/src/analysis.c` | English | Russian comments | `COMPLETED` | да | да; арифметическое утверждение неизменно | нет | да |

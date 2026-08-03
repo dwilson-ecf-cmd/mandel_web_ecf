@@ -121,7 +121,7 @@ static void decomposition_contract(void){
 
 static fractal_runtime_selection selection(const char *scheduler,uint32_t workers){
  fractal_runtime_selection selected={0};
- selected.formula="formula.mandelbrot.quadratic";
+ selected.formula=FRACTAL_FORMULA_MANDELBROT_V1_ID;
  selected.numeric=FRACTAL_NUMERIC_BINARY64_V1_ID;
  selected.compute=FRACTAL_COMPUTATION_SCALAR_V1_ID;
  selected.refinement="refinement.none";
@@ -190,8 +190,8 @@ static void compare_capture(const capture *serial,const capture *parallel){
 static void cross_scheduler_equivalence(void){
  fractal_mandelbrot_parameters mandelbrot={2.0};
  fractal_julia_parameters julia={-0.8,0.156,2.0};
- fractal_formula_parameters mp={"formula.mandelbrot.quadratic",&mandelbrot,sizeof(mandelbrot)};
- fractal_formula_parameters jp={"formula.julia.quadratic",&julia,sizeof(julia)};
+ fractal_formula_parameters mp={FRACTAL_FORMULA_MANDELBROT_V1_ID,&mandelbrot,sizeof(mandelbrot)};
+ fractal_formula_parameters jp={FRACTAL_FORMULA_JULIA_V1_ID,&julia,sizeof(julia)};
  capture serial,one,many,julia_serial,julia_many,small_serial,small_many,repeat;
  unsigned i;
  CHECK(render_capture(&fractal_formula_mandelbrot,&mp,&fractal_scheduler_serial_v1,1,32,24,true,&serial)==FRACTAL_OK);
@@ -203,9 +203,9 @@ static void cross_scheduler_equivalence(void){
  CHECK(serial.output.pixel_checksum==UINT64_C(0x4866aacc38290b5f));
  CHECK(serial.output.artifact_checksum==UINT64_C(0xfb1a83bd5ca28e5f));
  CHECK(serial.artifact.byte_count==2358);
- CHECK(serial.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0x620256268dda7e56));
- CHECK(many.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0x2a0f4cd0c8e2c7ad));
- CHECK(many.output.scheduler_execution.computation_identity==UINT64_C(0x94f552e7f207b40c));
+ CHECK(serial.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0x96a863c0d998c6ec));
+ CHECK(many.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0xd3fb04dd47115b77));
+ CHECK(many.output.scheduler_execution.computation_identity==UINT64_C(0x22473db48a22836f));
  printf("SCHEDULER mandelbrot serial=%016llx thread-pool=%016llx computation=%016llx\n",
   (unsigned long long)serial.output.scheduler_execution.sealed_work_unit_identity,
   (unsigned long long)many.output.scheduler_execution.sealed_work_unit_identity,
@@ -242,9 +242,9 @@ static void cross_scheduler_equivalence(void){
  CHECK(julia_serial.output.field_checksum==UINT64_C(0x0fb4458e08bad6e1));
  CHECK(julia_serial.output.pixel_checksum==UINT64_C(0xb272f08b0bbdca2b));
  CHECK(julia_serial.output.artifact_checksum==UINT64_C(0x4d4aa95bd137ec87));
- CHECK(julia_serial.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0xbf0e5edc2606d17c));
- CHECK(julia_many.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0x58eb7ae4f27c9fa4));
- CHECK(julia_many.output.scheduler_execution.computation_identity==UINT64_C(0x41759bab6ee892b3));
+ CHECK(julia_serial.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0x21097345e25c6813));
+ CHECK(julia_many.output.scheduler_execution.sealed_work_unit_identity==UINT64_C(0xde0db50a4d358e75));
+ CHECK(julia_many.output.scheduler_execution.computation_identity==UINT64_C(0xca95490ab8d9c6d3));
  printf("SCHEDULER julia serial=%016llx thread-pool=%016llx computation=%016llx\n",
   (unsigned long long)julia_serial.output.scheduler_execution.sealed_work_unit_identity,
   (unsigned long long)julia_many.output.scheduler_execution.sealed_work_unit_identity,
@@ -358,8 +358,8 @@ static const fractal_artifact_sink_vtable observing_sink={
 
 static void cancellation_failure_and_publication(void){
  fractal_mandelbrot_parameters mandelbrot={2.0};
- fractal_formula_parameters parameters={"formula.mandelbrot.quadratic",&mandelbrot,sizeof(mandelbrot)};
- fractal_job_spec job={{"formula.mandelbrot.quadratic",parameters,64},
+ fractal_formula_parameters parameters={FRACTAL_FORMULA_MANDELBROT_V1_ID,&mandelbrot,sizeof(mandelbrot)};
+ fractal_job_spec job={{FRACTAL_FORMULA_MANDELBROT_V1_ID,parameters,64},
   {0.0,0.0,2.0,4,4},{"palette.socket-v1",FRACTAL_PIXEL_BGR8},
   {"encoder.bmp.v3","failure.bmp"}};
  fractal_point_result_compact samples[16];
@@ -413,8 +413,8 @@ static void cancellation_failure_and_publication(void){
 
 static void memory_file_parity(void){
  fractal_mandelbrot_parameters mandelbrot={2.0};
- fractal_formula_parameters parameters={"formula.mandelbrot.quadratic",&mandelbrot,sizeof(mandelbrot)};
- fractal_job_spec job={{"formula.mandelbrot.quadratic",parameters,64},
+ fractal_formula_parameters parameters={FRACTAL_FORMULA_MANDELBROT_V1_ID,&mandelbrot,sizeof(mandelbrot)};
+ fractal_job_spec job={{FRACTAL_FORMULA_MANDELBROT_V1_ID,parameters,64},
   {-0.5,0.0,3.0,32,24},{"palette.socket-v1",FRACTAL_PIXEL_BGR8},
   {"encoder.bmp.v3","thread_pool_file_fixture.bmp"}};
  fractal_memory_backend memory;

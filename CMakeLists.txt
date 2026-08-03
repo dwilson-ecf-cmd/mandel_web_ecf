@@ -13,7 +13,9 @@ add_library(fractal_core STATIC
  shared/src/result.c shared/src/render_spec.c shared/src/render_manifest.c shared/src/render_progress.c
  shared/src/render_job.c shared/src/worker_status.c shared/src/render_artifact.c
  shared/src/render_failure.c runtime/src/memory_backend.c
- shared/src/module.c shared/src/module_registry.c shared/src/analysis.c runtime/src/numeric_binary64.c
+ shared/src/module.c shared/src/module_registry.c shared/src/analysis.c shared/src/formula.c
+ runtime/src/numeric_binary64.c runtime/src/formula_quadratic.c
+ runtime/src/formula_mandelbrot.c runtime/src/formula_julia.c
  runtime/src/scalar_computation.c runtime/src/socketable_runtime.c runtime/src/thread_pool_scheduler.c
  runtime/src/installed_modules.c runtime/src/artifact_sink.c
  server/computation/src/fractal_computation.c server/computation/cdc/src/fractal_cdc_computation.c
@@ -56,6 +58,10 @@ if(BUILD_TESTING)
  target_link_libraries(numeric_socket_tests PRIVATE fractal_core)
  target_compile_options(numeric_socket_tests PRIVATE ${FRACTAL_WARNINGS})
  add_test(NAME numeric_socket_tests COMMAND numeric_socket_tests)
+ add_executable(formula_socket_tests tests/native/test_formula_socket.c)
+ target_link_libraries(formula_socket_tests PRIVATE fractal_core)
+ target_compile_options(formula_socket_tests PRIVATE ${FRACTAL_WARNINGS})
+ add_test(NAME formula_socket_tests COMMAND formula_socket_tests)
  add_test(NAME milestone_boundaries COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/tests/cmake/validate_milestone.cmake)
  add_test(NAME localization_baseline COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/tests/cmake/validate_localization.cmake)
  set_tests_properties(fractal_core_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})

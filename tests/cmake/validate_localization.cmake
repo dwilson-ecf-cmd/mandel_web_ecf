@@ -108,6 +108,7 @@ set(authoritative_documents
  "docs/architecture/deterministic_thread_pool_scheduler.md"
  "docs/architecture/computation_socket.md"
  "docs/architecture/binary64_numeric_socket.md"
+ "docs/architecture/formula_socket.md"
  "docs/architecture/field_ownership.md"
  "docs/architecture/module_compatibility.md"
  "docs/architecture/language_policy.md"
@@ -137,9 +138,11 @@ set(translated_comment_files
  "server/renderer/cdc/src/fractal_cdc_trace.c"
  "server/renderer/include/fractal_cpp_adapter.h"
  "shared/include/fractal/analysis.h"
+ "shared/include/fractal/formula.h"
  "shared/include/fractal/scheduler.h"
  "shared/include/fractal/socketable_runtime.h"
  "shared/src/analysis.c"
+ "runtime/src/formula_quadratic.c"
  "shared/src/render_spec.c"
  "tests/native/test_core.c")
 foreach(path IN LISTS translated_comment_files)
@@ -157,6 +160,8 @@ foreach(path IN LISTS machine_sources)
 endforeach()
 
 set(required_machine_ids
+ "fractal.formula.mandelbrot.v1"
+ "fractal.formula.julia.v1"
  "formula.mandelbrot.quadratic"
  "formula.julia.quadratic"
  "fractal.numeric.binary64.v1"
@@ -189,7 +194,7 @@ foreach(module_id IN LISTS required_machine_ids)
  endif()
 endforeach()
 
-require_text("tests/native/test_numeric_socket.c" "d73d9e545afa7735")
+require_text("tests/native/test_numeric_socket.c" "616b9a3b92e787e5")
 require_text("tests/native/test_numeric_socket.c" "2f300bf0f7ea5244")
 require_text("tests/native/test_socketable_runtime.c" "0116ac94c4b64d99")
 foreach(identity IN ITEMS
