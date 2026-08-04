@@ -116,7 +116,16 @@ set(authoritative_documents
  "docs/architecture/localization_inventory.md"
  "docs/architecture/translation_ledger.md"
  "docs/maintainer_guide.en.md"
- "docs/architecture/localization_summary.en.md")
+ "docs/architecture/localization_summary.en.md"
+ "docs/architecture/legacy_isolation_plan.md"
+ "docs/architecture/legacy_path_map.md"
+ "docs/architecture/directory_ownership.md"
+ "docs/architecture/retired_python_server.md"
+ "docs/architecture/retired_native_http_server.md"
+ "docs/architecture/retired_foreign_executable_bundle.md"
+ "docs/architecture/retired_standalone_renderers.md"
+ "docs/architecture/standalone_renderer_knowledge_audit.md"
+ "legacy/README.md")
 
 foreach(path IN LISTS authoritative_documents)
  require_file("${path}")
@@ -209,8 +218,7 @@ if(NOT cdc_sha256 STREQUAL "5e838e88022696fbc99deec0b67be122f9cc74770153b710d766
 endif()
 
 execute_process(
- COMMAND git diff --quiet HEAD -- CDC.pdf app_server render render_engine
-  render.bmp render_hd.bmp render.mp4 frames
+ COMMAND git diff --quiet HEAD -- CDC.pdf render.bmp render_hd.bmp render.mp4 frames
  WORKING_DIRECTORY "${SOURCE_DIR}"
  RESULT_VARIABLE generated_diff)
 if(NOT generated_diff EQUAL 0)
