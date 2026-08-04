@@ -5,7 +5,7 @@ Python path involved:
 
 | Path | Origin/classification | Disposition |
 | --- | --- | --- |
-| `server.py` | Collaborator-original HTTP launcher | Preserved byte-for-byte as legacy/reference functionality. |
+| `server.py` | Collaborator-original HTTP launcher | Исторический вывод: позднее изолирован и снят с эксплуатации; см. `architecture/retired_python_server.md`. |
 | `shared/__init__.py` | Campaign 1 production package | Removed; native public headers are authoritative. |
 | `shared/render_spec/__init__.py` | Campaign 1 production package | Removed. |
 | `shared/render_spec/model.py` | Campaign 1 production model | Replaced by `shared/include/fractal/render_spec.h` and `shared/src/render_spec.c`. |

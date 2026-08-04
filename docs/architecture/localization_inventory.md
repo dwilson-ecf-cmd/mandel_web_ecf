@@ -67,7 +67,9 @@
 | `server/renderer/**/*.c`, `server/renderer/**/*.h`, `server/renderer/**/*.cpp` | `MACHINE_FACING_NO_TRANSLATION` | Активные границы и переходные комментарии переводятся, код и идентификаторы сохраняются. |
 | `tests/native/*.c` | `MACHINE_FACING_NO_TRANSLATION` | Фикстуры, строки и проверки сохраняются; поясняющие комментарии переводятся. |
 | `tests/cmake/*.cmake`, `CMakeLists.txt` | `MACHINE_FACING_NO_TRANSLATION` | Сборка и диагностические токены сохраняются; добавляется автономная проверка локализации. |
-| `render.cpp`, `render_engine.cpp`, `server.cpp`, `server.py`, `index.html`, `style.css` | `PRESERVE_ORIGINAL` | Исходный русский текст участника проекта и унаследованная реализация сохраняются. |
+| `index.html`, `style.css` | `PRESERVE_ORIGINAL` | Исходный русский интерфейс участника проекта сохраняется как `PRESERVED_REFERENCE`. |
+| `render.cpp`, `render_engine.cpp` | `RETIRED` | Сняты после аудита знаний; исходный текст доступен через Git. |
+| `server.py` → `legacy/servers/server.py` | `RETIRED` | Файл снят с эксплуатации по разрешению владельца; перевод не выполнялся, история сохранена в Git. |
 
 Пользовательские диагностические строки в активном C/C++ коде проверены. Они
 являются именами модулей, сериализованными статусами, тестовыми диагностическими
@@ -96,7 +98,7 @@
 | Путь или шаблон | Статус | Обоснование |
 |---|---|---|
 | `CDC.pdf` | `RESEARCH_REFERENCE` | Авторитетная исследовательская ссылка; SHA-256 фиксирован. |
-| `app_server`, `render`, `render_engine` | `GENERATED_DO_NOT_EDIT` | Проверенные как данные AArch64 Android/Termux ELF-файлы; не запускаются. |
+| `server.cpp`, `app_server`, `render`, `render_engine` | `RETIRED` | Сняты по разрешению владельца; исходный текст и байты доступны через Git, суммы записаны авторитетно. |
 | `frames/frame_[0-9][0-9][0-9][0-9].bmp` | `GENERATED_DO_NOT_EDIT` | 750 исторических сгенерированных кадров. |
 | `render.bmp`, `render_hd.bmp`, `render.mp4` | `GENERATED_DO_NOT_EDIT` | Исторические продукты визуализации участника проекта. |
 | `.gitignore` | `MACHINE_FACING_NO_TRANSLATION` | Узкие шаблоны политики артефактов. |

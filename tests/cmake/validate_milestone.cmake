@@ -1,6 +1,8 @@
 set(required
- "CDC.pdf" "server.py" "server.cpp" "render.cpp" "render_engine.cpp" "index.html"
- "app_server" "render" "render_engine" "frames/frame_0000.bmp" "render.mp4"
+ "CDC.pdf" "docs/architecture/retired_standalone_renderers.md"
+ "docs/architecture/standalone_renderer_knowledge_audit.md" "index.html" "frames/frame_0000.bmp" "render.mp4"
+ "docs/architecture/retired_native_http_server.md"
+ "docs/architecture/retired_foreign_executable_bundle.md"
  "docs/cdc_reference_index.md" "docs/cdc_glossary.md"
  "docs/cdc_interpretation_ledger.md" "docs/cdc_experiment_0.md"
  "docs/computation_substrate_inspection.md" "docs/computation_architecture.md")

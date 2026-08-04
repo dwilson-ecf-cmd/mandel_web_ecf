@@ -75,17 +75,14 @@ Android/Termux файлы.
 ## Происхождение Mandelbrot Studio
 
 Репозиторий сохраняет приложение Mandelbrot Studio участника проекта:
-`render.cpp`, `render_engine.cpp`, `server.cpp`, отдельный сервер
-`server.py`, русскоязычный браузерный интерфейс `index.html` и `style.css`,
-собранные файлы `app_server`, `render` и `render_engine`, изображения, 750
+снятые с эксплуатации автономные рендереры, описанные в `docs/architecture/retired_standalone_renderers.md`, и снятые с эксплуатации Python- и C++-серверы, описанные в `docs/architecture/retired_python_server.md` и `docs/architecture/retired_native_http_server.md`, русскоязычный браузерный интерфейс `index.html` и `style.css`, снятый комплект иностранных программ, описанный в `docs/architecture/retired_foreign_executable_bundle.md`, изображения, 750
 кадров и видео. Исходный русский текст и исторические артефакты не переводятся
 и не удаляются.
 
 Сохранённые исполняемые файлы — 64-битные little-endian AArch64 Android/Termux
 ELF, а не программы Windows или Linux x86-64. При сборке и тестах их нельзя
 запускать. Воспроизводимого рецепта их исходной сборки в репозитории нет.
-`server.py` остаётся унаследованным средством запуска и не входит в нативную
-производственную основу. Корневые BMP, `render.mp4` и `frames/` являются
+`legacy/servers/server.py` снят с эксплуатации; его история и контрольная сумма сохранены в Git и в `docs/architecture/retired_python_server.md`. Корневые BMP, `render.mp4` и `frames/` являются
 историческим сгенерированным выводом участника проекта; новые продукты должны
 размещаться в `runtime/artifacts/` или во внешнем хранилище.
 
