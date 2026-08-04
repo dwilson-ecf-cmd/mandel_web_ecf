@@ -1,0 +1,7 @@
+# Возможности Workspace
+
+Продуктовый словарь версии 1 включает `workspace.read`, `workspace.edit`, `workspace.control.acquire`, `render.configure`, `render.start`, `render.cancel`, `preview.read`, `analysis.read`, `artifact.create`, `artifact.read`, `participant.observe`. Локальная администрация может добавлять `participant.approve`, `participant.revoke`, `gateway.enable`, `gateway.disable`, `worker.configure`, `quota.configure`, `audit.read`, `service.stop`. Роли `OWNER`, `OPERATOR`, `EDITOR`, `OBSERVER` задают исходные наборы; мобильный участник по умолчанию не получает администрацию.
+
+Участник — логическое действующее лицо со статусом connected, disconnected или revoked, а не соединение. В v1 действует одна активная аренда редактора: владелец, эпоха, ревизия получения, детерминированный срок и состояние active, released, revoked или expired. Передача добровольна, отзыв административен; другая сторона наблюдает снимки, но её команды управления отклоняются. Эпоха и последовательность защищают семантику от устаревших команд; CRDT и слияние исключены.
+
+Ни одно намерение не может запросить `shell.execute`, `process.launch`, `filesystem.arbitrary-read`, `filesystem.arbitrary-write`, `module.upload`, `native-code.execute`, `host.configure`, `credential.read`, `repository.read`, `repository.write` или `network.proxy`. Служба даёт возможности продукта, а не управление машиной. Токены и криптография находятся вне этапа.

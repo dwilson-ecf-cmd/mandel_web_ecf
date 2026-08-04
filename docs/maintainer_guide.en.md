@@ -132,3 +132,17 @@ unique-knowledge audit found no unresolved responsibility; see
 remain preserved references, while `server/renderer/` remains an intentional
 compatibility dependency. Retired execution paths are not prototypes or
 compatibility requirements for future service architecture.
+# Workspace and dual-client milestone
+
+The authoritative product layer is now a bounded, platform-neutral C11
+Workspace contract. Desktop and Mobile share typed `ClientIntent` semantics and
+self-contained snapshots; the reducer deterministically enforces revisions,
+render generations, participant capabilities, command sequences, and the
+single-controller lease. No GUI, networking, authentication, cryptography, or
+deployment provider was selected. The authoritative design documents are the
+new Russian files under `docs/architecture/`, beginning with
+`fractal_studio_overview.md`.
+
+## Secure pairing contract baseline
+
+The secure pairing milestone adds a platform-neutral protocol contract and deterministic reducer for turning an unknown client installation into a recognized Workspace participant. It deliberately does not add sockets, TLS, AES, certificates, Android APIs, QR rendering, GUI code, cloud SDKs, or bearer tokens. Pairing is modeled as typed transcript-bound messages, explicit local approval, proof-of-possession hooks, bounded credentials, capability ceilings, and revocation epochs.

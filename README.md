@@ -18,6 +18,13 @@ identities, and guidance for reviewing Russian documentation.
 
 ## Что реализовано
 
+Авторитетная продуктовая модель теперь определяет постоянную Workspace, общие
+типизированные намерения Desktop/Mobile и самодостаточные снимки службы. Малый
+ограниченный редуктор C11 служит оракулом принятия, ревизий, поколений, ролей и
+единственной аренды управления; транспорт, GUI и проверка подлинности намеренно
+не выбраны. Обзор находится в
+`docs/architecture/fractal_studio_overview.md`.
+
 Авторитетный статический реестр собирает завершённую исполняемую цепочку:
 
 ```text
@@ -102,3 +109,7 @@ ELF, а не программы Windows или Linux x86-64. При сборке
 `docs/architecture/formula_socket.md`. Текущее состояние дальнейшего плана
 зафиксировано в `docs/roadmap/next_attack_plan.md` без объявления новых
 поддерживаемых возможностей.
+
+## Secure pairing contract
+
+Fractal Studio now defines a security-contract layer for pairing unknown clients into recognized Workspace participants. The contract separates discovery, identity proof, human approval, capability assignment, credential lifecycle, and revocation without adding sockets, cryptographic libraries, Android APIs, GUI code, cloud SDKs, or host-machine control. Russian source documentation is in `docs/security/`.
