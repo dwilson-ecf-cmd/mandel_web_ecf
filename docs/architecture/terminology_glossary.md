@@ -95,3 +95,9 @@
 | service certificate rotation | Смена certificate/key version с overlapping trust window без silent service identity replacement. |
 | Android Keystore | Платформенное хранилище неэкспортируемых device signing keys; StrongBox preferred, TEE acceptable fallback. |
 | OpenSSL 3.5 LTS | Выбранная backend TLS/crypto линия; patch updates не меняют protocol identity. |
+
+## Transport validation glossary additions
+
+- `semantic drift` — любое различие в authoritative semantic output между двумя transport runs одного scenario.
+- `normalized semantic result` — transport-independent record final Workspace revision, generation, snapshot identity, accepted/rejected intent identities, replay identities, capability decisions, lease, preview, analysis, artifacts, restart epoch и reacquisition result.
+- `fault layer` — место injection отказа: semantic-message, frame, transport lifecycle, service lifecycle или security/session.

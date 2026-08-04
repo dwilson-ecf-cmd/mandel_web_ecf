@@ -142,3 +142,11 @@
 | cleartext opt-out | запрет cleartext | Android/remote policy requirement. |
 | key rotation | ротация ключа | Отличается от silent identity replacement. |
 | vulnerability response | реагирование на уязвимости | Patch cadence and emergency procedure. |
+
+## Transport parity validation ledger
+
+- Transport semantic parity validation — валидация транспортной семантической паритетности.
+- Semantic drift — semantic drift; в русских документах допускается термин с английским machine-facing написанием.
+- Normalized semantic result — normalized semantic result.
+- Fault driver — fault driver.
+- Local reference service — local reference service.
