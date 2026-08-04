@@ -121,3 +121,7 @@ English summary: Fractal Studio now has v1 contract boundaries for shared Worksp
 ## Secure transport and serialization selection
 
 English summary: the implementation profile selects OpenSSL 3.5 LTS for backend TLS/crypto, Android platform TLS and Android Keystore for mobile trust, ECDSA P-256 with SHA-256 for service/device proof, deterministic CBOR plus bounded frames for the wire profile, Unix-domain sockets and named pipes for local loopback, and TLS 1.3 framed streams for remote transport. These selections remain behind platform seams and do not add public listeners, production keys, Android/JNI/Gradle, OpenSSL objects in shared headers, HTTP/WebSocket/gRPC/QUIC, compression, GUI code, cloud SDKs, or databases.
+
+## Transport semantic parity validation
+
+English summary: Fractal Studio now has a bounded validation campaign for the invariant that transport must never change Workspace meaning. The campaign defines shared versioned scenarios, a normalized semantic-result model, deterministic fake-transport parity, Linux local Unix-socket parity with a process-boundary proof, compile-only Windows named-pipe contract status, and secure transport parity checks that keep TLS metadata out of semantic comparison. Russian repository-facing documents live in `docs/validation/` and `docs/architecture/local_reference_service.md`. Android and Windows execution rows remain deferred until implementations are available.

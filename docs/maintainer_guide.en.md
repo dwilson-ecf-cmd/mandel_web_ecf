@@ -154,3 +154,7 @@ English summary: the repository now defines contract-only platform service group
 ## Secure implementation stack campaign
 
 English summary: the Russian security and protocol documents now select OpenSSL 3.5 LTS, Android platform TLS, Android Keystore, ECDSA P-256 with SHA-256, deterministic CBOR, bounded framing, Unix-domain sockets, named pipes, and TLS 1.3 framed streams while retaining existing Workspace, pairing, replay, reacquisition, runtime, and artifact identities. The executable evidence is a bounded codec/framing/security-policy harness plus fake TLS tests; production network listeners and keys remain absent.
+
+## Transport parity validation
+
+Run `transport_semantic_parity_tests`, `transport_local_parity_tests`, and `transport_secure_parity_tests` independently after the standard CTest pass. These tests compare normalized semantic results only; OS handles, socket paths, TLS bytes, timing, process IDs, and thread IDs are intentionally excluded. Windows named-pipe execution and Android TLS parity must not be reported as passed from a Linux-only run.
