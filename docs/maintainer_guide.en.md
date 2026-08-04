@@ -132,3 +132,13 @@ unique-knowledge audit found no unresolved responsibility; see
 remain preserved references, while `server/renderer/` remains an intentional
 compatibility dependency. Retired execution paths are not prototypes or
 compatibility requirements for future service architecture.
+# Workspace and dual-client milestone
+
+The authoritative product layer is now a bounded, platform-neutral C11
+Workspace contract. Desktop and Mobile share typed `ClientIntent` semantics and
+self-contained snapshots; the reducer deterministically enforces revisions,
+render generations, participant capabilities, command sequences, and the
+single-controller lease. No GUI, networking, authentication, cryptography, or
+deployment provider was selected. The authoritative design documents are the
+new Russian files under `docs/architecture/`, beginning with
+`fractal_studio_overview.md`.

@@ -103,3 +103,12 @@
 ## Снятие автономных рендереров
 
 Добавлены русские `standalone_renderer_knowledge_audit.md` и `retired_standalone_renderers.md`. Удалённые исходники не переводились; знания классифицированы, суммы и восстановление сохранены. Статусы репозитория теперь различают `AUTHORITATIVE`, `COMPATIBILITY`, `PRESERVED_REFERENCE` и `RETIRED`.
+# Дополнение: авторитетная Workspace и два клиента
+
+Новые документы `workspace_authority.md`, `workspace_state_model.md`,
+`client_intent_contract.md`, `dual_client_architecture.md`,
+`backend_service_architecture.md`, `workspace_capabilities.md`,
+`deployment_profiles.md` и `fractal_studio_overview.md` созданы сразу на
+русском языке. Английские машинные имена `Workspace`, `ClientIntent`,
+`IN_PROCESS`, `LOCAL_LOOPBACK`, `REMOTE_SECURE` и строки возможностей сохранены
+по политике идентификаторов; утверждённые русские термины добавлены в глоссарий.

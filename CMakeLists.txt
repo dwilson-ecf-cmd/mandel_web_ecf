@@ -14,6 +14,7 @@ add_library(fractal_core STATIC
  shared/src/render_job.c shared/src/worker_status.c shared/src/render_artifact.c
  shared/src/render_failure.c runtime/src/memory_backend.c
  shared/src/module.c shared/src/module_registry.c shared/src/analysis.c shared/src/formula.c
+ shared/src/workspace.c
  runtime/src/numeric_binary64.c runtime/src/formula_quadratic.c
  runtime/src/formula_mandelbrot.c runtime/src/formula_julia.c
  runtime/src/scalar_computation.c runtime/src/socketable_runtime.c runtime/src/thread_pool_scheduler.c
@@ -66,6 +67,10 @@ if(BUILD_TESTING)
  target_link_libraries(header_contract_tests PRIVATE fractal_core)
  target_compile_options(header_contract_tests PRIVATE ${FRACTAL_WARNINGS})
  add_test(NAME header_contract_tests COMMAND header_contract_tests)
+ add_executable(workspace_contract_tests tests/native/test_workspace.c)
+ target_link_libraries(workspace_contract_tests PRIVATE fractal_core)
+ target_compile_options(workspace_contract_tests PRIVATE ${FRACTAL_WARNINGS})
+ add_test(NAME workspace_contract_tests COMMAND workspace_contract_tests)
  add_test(NAME milestone_boundaries COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/tests/cmake/validate_milestone.cmake)
  add_test(NAME legacy_isolation COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/tests/cmake/validate_legacy_isolation.cmake)
  add_test(NAME localization_baseline COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/tests/cmake/validate_localization.cmake)
