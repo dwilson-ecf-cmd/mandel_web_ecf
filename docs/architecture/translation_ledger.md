@@ -48,6 +48,7 @@
 | `docs/architecture/translation_ledger.md` | N/A | Russian | `COMPLETED` | да | новый журнал | нет | да |
 | `docs/maintainer_guide.en.md` | N/A | English | `PRESERVED` | да | намеренный английский документ | нет | да |
 | `docs/architecture/localization_summary.en.md` | N/A | English | `PRESERVED` | да | намеренное английское резюме | нет | да |
+| `docs/architecture/linux_contract_parity.md` | N/A | Russian | `COMPLETED` | да | новый архитектурный отчёт | нет | да |
 
 ## Комментарии исходного кода
 
