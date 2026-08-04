@@ -1,0 +1,30 @@
+#ifndef FRACTAL_PROTOCOL_SECURITY_H
+#define FRACTAL_PROTOCOL_SECURITY_H
+#include <stdbool.h>
+#include <stdint.h>
+#include "fractal/result.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+#define FRACTAL_PROTOCOL_FRAME_MAGIC UINT32_C(0x46534631)
+#define FRACTAL_PROTOCOL_FRAME_VERSION 1u
+#define FRACTAL_PROTOCOL_MAX_PAYLOAD 1024u
+#define FRACTAL_PROTOCOL_MAX_FIELDS 16u
+typedef enum fractal_tls_version_policy{FRACTAL_TLS_VERSION_TLS13=13}fractal_tls_version_policy;
+typedef enum fractal_cipher_policy{FRACTAL_CIPHER_TLS_AES_256_GCM_SHA384=1,FRACTAL_CIPHER_TLS13_POLICY_AEAD_FALLBACK=2}fractal_cipher_policy;
+typedef enum fractal_transport_security_rejection{FRACTAL_SECURITY_ACCEPTED=0,FRACTAL_SECURITY_REJECT_CLEARTEXT,FRACTAL_SECURITY_REJECT_TLS_VERSION,FRACTAL_SECURITY_REJECT_ZERO_RTT_MUTATION,FRACTAL_SECURITY_REJECT_CIPHER,FRACTAL_SECURITY_REJECT_MISSING_SERVICE_IDENTITY,FRACTAL_SECURITY_REJECT_SERVICE_KEY_REPLACEMENT,FRACTAL_SECURITY_REJECT_UNPROVED_CREDENTIAL}fractal_transport_security_rejection;
+typedef struct fractal_security_policy{bool remote;bool cleartext;uint32_t tls_version;fractal_cipher_policy cipher;bool zero_rtt;bool mutating_intent;bool service_identity_present;bool service_key_replaced_without_rotation;bool credential_proof_present;}fractal_security_policy;
+fractal_transport_security_rejection fractal_security_policy_validate(fractal_security_policy policy);
+typedef enum fractal_frame_message_class{FRACTAL_FRAME_COMPATIBILITY=1,FRACTAL_FRAME_PAIRING=2,FRACTAL_FRAME_WORKSPACE=3,FRACTAL_FRAME_REACQUIRE=4,FRACTAL_FRAME_REPLAY=5}fractal_frame_message_class;
+typedef struct fractal_protocol_frame_header{uint32_t magic;uint16_t version;uint16_t message_class;uint16_t flags;uint32_t payload_length;uint64_t session_sequence;}fractal_protocol_frame_header;
+fractal_result fractal_frame_encode(fractal_protocol_frame_header header,const uint8_t*payload,uint8_t*out,uint32_t out_capacity,uint32_t*written);
+fractal_result fractal_frame_decode(const uint8_t*bytes,uint32_t length,fractal_protocol_frame_header*header,const uint8_t**payload);
+typedef struct fractal_cbor_pair{uint32_t key;uint64_t value;}fractal_cbor_pair;
+typedef struct fractal_cbor_map{fractal_cbor_pair fields[FRACTAL_PROTOCOL_MAX_FIELDS];uint32_t count;}fractal_cbor_map;
+fractal_result fractal_cbor_encode_uint_map(const fractal_cbor_map*map,uint8_t*out,uint32_t out_capacity,uint32_t*written);
+fractal_result fractal_cbor_decode_uint_map(const uint8_t*bytes,uint32_t length,fractal_cbor_map*map,bool reject_unknown_required);
+uint64_t fractal_protocol_semantic_identity(const fractal_cbor_map*map);
+#ifdef __cplusplus
+}
+#endif
+#endif

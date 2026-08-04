@@ -75,3 +75,23 @@
 - **Приглашение сопряжения** — одноразовый ограниченный объект, который начинает обмен, но не выдаёт полномочий.
 - **Транскрипт рукопожатия** — детерминированная цепочка сообщений, к которой привязаны доказательства владения ключами.
 - **Полномочие участника** — запись авторизации, привязанная к устройству и участнику без переносимого bearer-secret.
+
+## Термины платформенного восстановления
+
+| Термин | Утвержденное значение |
+|---|---|
+| platform seam | Ограниченный интерфейс между переносимым контрактом и реализацией ОС. |
+| reacquire | Повторное приобретение авторитетного состояния Workspace у сервиса после разрыва или перезапуска. |
+| replay-result cache | Ограниченный кэш результата intent по participant ID, command sequence и intent identity. |
+| service_restart_epoch | Монотонная эпоха перезапуска сервиса, не равная смене service identity. |
+| offline read-only mode | Режим просмотра кэша без controller lease и без предположения о принятии команд. |
+
+## Термины безопасного стека
+
+| Термин | Утвержденное значение |
+|---|---|
+| deterministic CBOR profile | Ограниченный профиль RFC 8949 с definite lengths, sorted integer labels, shortest integers и fail-closed decoding. |
+| bounded frame | Транспортно-нейтральная оболочка с magic, version, class, flags, payload length, session sequence и одним CBOR payload. |
+| service certificate rotation | Смена certificate/key version с overlapping trust window без silent service identity replacement. |
+| Android Keystore | Платформенное хранилище неэкспортируемых device signing keys; StrongBox preferred, TEE acceptable fallback. |
+| OpenSSL 3.5 LTS | Выбранная backend TLS/crypto линия; patch updates не меняют protocol identity. |

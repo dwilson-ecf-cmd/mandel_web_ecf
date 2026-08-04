@@ -1,0 +1,11 @@
+#ifndef FRACTAL_FAKE_TLS_H
+#define FRACTAL_FAKE_TLS_H
+#include <stdbool.h>
+#include <stdint.h>
+#include "fractal/protocol_security.h"
+typedef enum fractal_fake_tls_state{FRACTAL_FAKE_TLS_NEW=0,FRACTAL_FAKE_TLS_HANDSHAKING,FRACTAL_FAKE_TLS_AUTHENTICATED,FRACTAL_FAKE_TLS_CLOSED,FRACTAL_FAKE_TLS_REJECTED}fractal_fake_tls_state;
+typedef struct fractal_fake_tls{fractal_fake_tls_state state;uint64_t channel_binding;fractal_transport_security_rejection rejection;}fractal_fake_tls;
+void fractal_fake_tls_init(fractal_fake_tls*tls);
+fractal_transport_security_rejection fractal_fake_tls_handshake(fractal_fake_tls*tls,fractal_security_policy policy);
+bool fractal_fake_tls_can_write_application_data(const fractal_fake_tls*tls);
+#endif
