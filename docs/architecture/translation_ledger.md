@@ -112,3 +112,13 @@
 русском языке. Английские машинные имена `Workspace`, `ClientIntent`,
 `IN_PROCESS`, `LOCAL_LOOPBACK`, `REMOTE_SECURE` и строки возможностей сохранены
 по политике идентификаторов; утверждённые русские термины добавлены в глоссарий.
+
+## Сопряжение и доверие
+
+- Pairing handshake — рукопожатие сопряжения.
+- Proof of possession — доказательство владения ключом.
+- Service identity — идентичность сервиса.
+- Device identity — идентичность устройства.
+- Pairing invitation — приглашение сопряжения.
+- Credential lifecycle — жизненный цикл полномочия.
+- Revocation epoch — эпоха отзыва.

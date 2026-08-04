@@ -142,3 +142,7 @@ single-controller lease. No GUI, networking, authentication, cryptography, or
 deployment provider was selected. The authoritative design documents are the
 new Russian files under `docs/architecture/`, beginning with
 `fractal_studio_overview.md`.
+
+## Secure pairing contract baseline
+
+The secure pairing milestone adds a platform-neutral protocol contract and deterministic reducer for turning an unknown client installation into a recognized Workspace participant. It deliberately does not add sockets, TLS, AES, certificates, Android APIs, QR rendering, GUI code, cloud SDKs, or bearer tokens. Pairing is modeled as typed transcript-bound messages, explicit local approval, proof-of-possession hooks, bounded credentials, capability ceilings, and revocation epochs.
