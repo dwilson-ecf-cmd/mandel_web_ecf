@@ -1,0 +1,19 @@
+#ifndef FRACTAL_INTENT_REPLAY_H
+#define FRACTAL_INTENT_REPLAY_H
+#include <stdbool.h>
+#include <stdint.h>
+#include "fractal/workspace.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+#define FRACTAL_REPLAY_CACHE_CAPACITY 8u
+typedef enum fractal_replay_result_kind{FRACTAL_REPLAY_NEW_ACCEPTED=0,FRACTAL_REPLAY_IDENTICAL_RESULT,FRACTAL_COMMAND_SEQUENCE_CONFLICT,FRACTAL_REPLAY_HISTORY_EXPIRED,FRACTAL_REPLAY_CAPACITY_EXHAUSTED}fractal_replay_result_kind;
+typedef struct fractal_replay_record{fractal_participant_id participant_id;uint64_t command_sequence;fractal_intent_id intent_identity;uint64_t payload_identity;fractal_workspace_transition transition;bool occupied;}fractal_replay_record;
+typedef struct fractal_replay_cache{fractal_replay_record records[FRACTAL_REPLAY_CACHE_CAPACITY];uint32_t count;uint64_t first_retained_sequence;}fractal_replay_cache;
+typedef struct fractal_replay_result{fractal_replay_result_kind kind;fractal_workspace_transition transition;}fractal_replay_result;
+void fractal_replay_cache_init(fractal_replay_cache*cache,uint64_t first_retained_sequence);
+fractal_replay_result fractal_replay_cache_apply(fractal_replay_cache*cache,const fractal_client_intent*intent,uint64_t payload_identity,fractal_workspace_transition transition);
+#ifdef __cplusplus
+}
+#endif
+#endif

@@ -122,3 +122,23 @@
 - Pairing invitation — приглашение сопряжения.
 - Credential lifecycle — жизненный цикл полномочия.
 - Revocation epoch — эпоха отзыва.
+
+## Кампания платформенных швов
+
+| English | Русский вариант | Примечание |
+|---|---|---|
+| platform seam | платформенный шов | Граница ОС-реализации и переносимого контракта. |
+| reacquisition | повторное приобретение | Восстановление авторитета Workspace у сервиса. |
+| replay cache | кэш повторения | Хранит семантический результат intent. |
+| lost acknowledgment | потерянное подтверждение | Доставка intent была неопределенной для клиента. |
+| service identity rotation | смена service identity | Не тождественна перезапуску сервиса. |
+
+## Кампания безопасного стека
+
+| English | Русский вариант | Примечание |
+|---|---|---|
+| deterministic CBOR profile | детерминированный профиль CBOR | Wire authority, не semantic identity. |
+| bounded framed byte stream | ограниченный framed byte stream | Transport-neutral payload carrier. |
+| cleartext opt-out | запрет cleartext | Android/remote policy requirement. |
+| key rotation | ротация ключа | Отличается от silent identity replacement. |
+| vulnerability response | реагирование на уязвимости | Patch cadence and emergency procedure. |

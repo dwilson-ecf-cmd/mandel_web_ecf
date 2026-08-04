@@ -113,3 +113,11 @@ ELF, а не программы Windows или Linux x86-64. При сборке
 ## Secure pairing contract
 
 Fractal Studio now defines a security-contract layer for pairing unknown clients into recognized Workspace participants. The contract separates discovery, identity proof, human approval, capability assignment, credential lifecycle, and revocation without adding sockets, cryptographic libraries, Android APIs, GUI code, cloud SDKs, or host-machine control. Russian source documentation is in `docs/security/`.
+
+## Platform seams and reacquisition
+
+English summary: Fractal Studio now has v1 contract boundaries for shared Workspace/pairing compatibility, platform service groups, deterministic reconnect/reacquire state reducers, bounded retry behavior, and idempotent intent replay. The detailed repository-facing architecture text is in Russian under `docs/architecture/`, with `docs/architecture/reconnection_overview.md` as the concise collaborator overview. No Android, JNI, socket, TLS, crypto, GUI, cloud, or production secure-storage implementation is introduced by this milestone.
+
+## Secure transport and serialization selection
+
+English summary: the implementation profile selects OpenSSL 3.5 LTS for backend TLS/crypto, Android platform TLS and Android Keystore for mobile trust, ECDSA P-256 with SHA-256 for service/device proof, deterministic CBOR plus bounded frames for the wire profile, Unix-domain sockets and named pipes for local loopback, and TLS 1.3 framed streams for remote transport. These selections remain behind platform seams and do not add public listeners, production keys, Android/JNI/Gradle, OpenSSL objects in shared headers, HTTP/WebSocket/gRPC/QUIC, compression, GUI code, cloud SDKs, or databases.

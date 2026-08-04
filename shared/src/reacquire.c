@@ -1,0 +1,4 @@
+#include "fractal/reacquire.h"
+fractal_reacquire_transition fractal_reacquire_reduce(fractal_reacquire_state state,const fractal_reacquire_response*r){fractal_reacquire_transition t={false,state,FRACTAL_REACQUIRE_REPAIRING_REQUIRED};if(!r)return t;t.response_kind=r->kind;if(state==FRACTAL_REACQUIRE_IDLE){t.accepted=true;t.state=FRACTAL_REACQUIRE_REQUESTED;return t;}if(state==FRACTAL_REACQUIRE_REQUESTED&&(r->kind==FRACTAL_REACQUIRE_FULL_SNAPSHOT||r->kind==FRACTAL_REACQUIRE_BOUNDED_DELTA||r->kind==FRACTAL_REACQUIRE_ALREADY_SYNCHRONIZED)){t.accepted=true;t.state=FRACTAL_REACQUIRE_SYNCHRONIZED;return t;}t.accepted=true;t.state=FRACTAL_REACQUIRE_BLOCKED;return t;}
+bool fractal_preview_cache_valid(uint64_t g,uint64_t id,uint64_t sum,const fractal_reacquire_response*r){return r&&g==r->current_generation&&id==r->preview_identity&&sum==r->preview_checksum;}
+bool fractal_artifact_cache_valid(uint64_t id,uint64_t sum,uint64_t aid,uint64_t asum){return id==aid&&sum==asum;}

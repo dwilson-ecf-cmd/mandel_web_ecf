@@ -9,6 +9,21 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(FRACTAL_WARNINGS -Wall -Wextra -Wpedantic -Werror)
 find_package(Threads REQUIRED)
+add_library(fractal_shared_contracts STATIC
+ shared/src/result.c shared/src/workspace.c shared/src/render_spec.c shared/src/compatibility.c shared/src/connection.c shared/src/retry_policy.c shared/src/reacquire.c shared/src/intent_replay.c shared/src/protocol_security.c)
+target_include_directories(fractal_shared_contracts PUBLIC shared/include)
+target_compile_options(fractal_shared_contracts PRIVATE ${FRACTAL_WARNINGS})
+add_library(fractal_android_client_contracts INTERFACE)
+target_link_libraries(fractal_android_client_contracts INTERFACE fractal_shared_contracts)
+add_library(fractal_desktop_client_core INTERFACE)
+target_link_libraries(fractal_desktop_client_core INTERFACE fractal_shared_contracts)
+add_library(fractal_backend_core INTERFACE)
+target_link_libraries(fractal_backend_core INTERFACE fractal_shared_contracts)
+add_library(fractal_platform_test STATIC platform/test/fake_transport.c platform/test/fake_tls.c)
+target_include_directories(fractal_platform_test PUBLIC platform/test)
+target_link_libraries(fractal_platform_test PUBLIC fractal_shared_contracts)
+target_compile_options(fractal_platform_test PRIVATE ${FRACTAL_WARNINGS})
+
 add_library(fractal_core STATIC
  shared/src/result.c shared/src/render_spec.c shared/src/render_manifest.c shared/src/render_progress.c
  shared/src/render_job.c shared/src/worker_status.c shared/src/render_artifact.c
@@ -29,7 +44,7 @@ add_library(fractal_core STATIC
  server/renderer/cdc/src/fractal_cdc_renderer.c server/renderer/cdc/src/fractal_cdc_model.c
  server/renderer/cdc/src/fractal_cdc_metrics.c server/renderer/cdc/src/fractal_cdc_trace.c)
 target_include_directories(fractal_core PUBLIC shared/include runtime/include server/computation/include server/computation/cdc/include server/renderer/include server/renderer/cdc/include)
-target_link_libraries(fractal_core PUBLIC Threads::Threads)
+target_link_libraries(fractal_core PUBLIC Threads::Threads fractal_shared_contracts)
 target_compile_options(fractal_core PRIVATE ${FRACTAL_WARNINGS})
 
 add_library(fractal_renderer_adapter STATIC server/renderer/src/fractal_cpp_adapter.cpp)
@@ -75,6 +90,14 @@ if(BUILD_TESTING)
  target_link_libraries(pairing_contract_tests PRIVATE fractal_core)
  target_compile_options(pairing_contract_tests PRIVATE ${FRACTAL_WARNINGS})
  add_test(NAME pairing_contract_tests COMMAND pairing_contract_tests)
+ add_executable(platform_contract_tests tests/native/test_platform_contracts.c)
+ target_link_libraries(platform_contract_tests PRIVATE fractal_shared_contracts fractal_platform_test fractal_backend_core fractal_android_client_contracts fractal_desktop_client_core)
+ target_compile_options(platform_contract_tests PRIVATE ${FRACTAL_WARNINGS})
+ add_test(NAME platform_contract_tests COMMAND platform_contract_tests)
+ add_executable(security_stack_tests tests/native/test_security_stack.c)
+ target_link_libraries(security_stack_tests PRIVATE fractal_shared_contracts fractal_platform_test fractal_backend_core fractal_android_client_contracts)
+ target_compile_options(security_stack_tests PRIVATE ${FRACTAL_WARNINGS})
+ add_test(NAME security_stack_tests COMMAND security_stack_tests)
  add_test(NAME milestone_boundaries COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/tests/cmake/validate_milestone.cmake)
  add_test(NAME legacy_isolation COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/tests/cmake/validate_legacy_isolation.cmake)
  add_test(NAME localization_baseline COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/tests/cmake/validate_localization.cmake)

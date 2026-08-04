@@ -146,3 +146,11 @@ new Russian files under `docs/architecture/`, beginning with
 ## Secure pairing contract baseline
 
 The secure pairing milestone adds a platform-neutral protocol contract and deterministic reducer for turning an unknown client installation into a recognized Workspace participant. It deliberately does not add sockets, TLS, AES, certificates, Android APIs, QR rendering, GUI code, cloud SDKs, or bearer tokens. Pairing is modeled as typed transcript-bound messages, explicit local approval, proof-of-possession hooks, bounded credentials, capability ceilings, and revocation epochs.
+
+## Platform seams and deterministic reacquisition campaign
+
+English summary: the repository now defines contract-only platform service groups, compatibility negotiation, deterministic connection/reacquisition reducers, bounded retry rules, replay-cache idempotence, and fake transport tests. The Russian architecture documents under `docs/architecture/*reacquisition*`, `*compatibility*`, `*lifecycle*`, `*seams*`, and `reconnection_overview.md` are the repository-facing source of truth for this campaign.
+
+## Secure implementation stack campaign
+
+English summary: the Russian security and protocol documents now select OpenSSL 3.5 LTS, Android platform TLS, Android Keystore, ECDSA P-256 with SHA-256, deterministic CBOR, bounded framing, Unix-domain sockets, named pipes, and TLS 1.3 framed streams while retaining existing Workspace, pairing, replay, reacquisition, runtime, and artifact identities. The executable evidence is a bounded codec/framing/security-policy harness plus fake TLS tests; production network listeners and keys remain absent.
