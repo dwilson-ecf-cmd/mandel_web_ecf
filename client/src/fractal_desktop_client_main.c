@@ -1,0 +1,5 @@
+#include "fractal/workspace_controller.h"
+#include <stdio.h>
+#include <string.h>
+static fractal_analysis_policy policy_from_arg(int argc,char**argv){if(argc>1&&strcmp(argv[1],"off")==0)return FRACTAL_ANALYSIS_OFF;if(argc>1&&strcmp(argv[1],"deferred")==0)return FRACTAL_ANALYSIS_DEFERRED;return FRACTAL_ANALYSIS_CHECKPOINT;}
+int main(int argc,char**argv){fractal_controller_summary s;if(fractal_workspace_controller_run_reference(policy_from_arg(argc,argv),&s)!=0)return 1;printf("{\"controller\":\"%s\",\"revision\":%llu,\"generation\":%llu,\"runtime\":\"%s\",\"completed\":%llu,\"total\":%llu,\"preview\":%llu,\"analysis\":\"%s\",\"analysis_identity\":%llu,\"artifact\":%llu,\"semantic_drift\":%u}\n",fractal_controller_state_name(s.controller_state),(unsigned long long)s.workspace_revision,(unsigned long long)s.generation,fractal_runtime_stage_name(s.runtime_stage),(unsigned long long)s.completed_work_units,(unsigned long long)s.total_work_units,(unsigned long long)s.preview_identity,fractal_analysis_state_name(s.analysis_state),(unsigned long long)s.analysis_identity,(unsigned long long)s.artifact_identity,s.semantic_drift);return 0;}

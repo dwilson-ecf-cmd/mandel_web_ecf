@@ -158,3 +158,13 @@ English summary: the Russian security and protocol documents now select OpenSSL 
 ## Transport parity validation
 
 Run `transport_semantic_parity_tests`, `transport_local_parity_tests`, and `transport_secure_parity_tests` independently after the standard CTest pass. These tests compare normalized semantic results only; OS handles, socket paths, TLS bytes, timing, process IDs, and thread IDs are intentionally excluded. Windows named-pipe execution and Android TLS parity must not be reported as passed from a Linux-only run.
+
+
+## Local Workspace service maintainer note
+
+This milestone adds `fractal_workspace_service_core`, `fractal_workspace_service`, `fractal_desktop_client_core`, `fractal_desktop_client`, POSIX local transport, COMPILE_ONLY Win32 transport, and local service/checkpoint/process tests. New repository-facing architecture documents are in Russian with English summaries.
+
+
+## Desktop controller workflow maintainer note
+
+This milestone adds the platform-neutral controller contract in `client/include/fractal/workspace_controller.h`, a bounded controller workflow runner, deterministic local render configuration storage, runtime progress/publication state, generation-bound analysis scheduling, and native tests for configuration round-trip, progress non-mutation, and deferred analysis supersession. Repository-facing architecture documents remain Russian with English summaries.

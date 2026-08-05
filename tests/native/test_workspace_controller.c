@@ -1,0 +1,4 @@
+#include "fractal/workspace_controller.h"
+#include <assert.h>
+#include <string.h>
+int main(void){fractal_workspace_controller c;fractal_controller_summary s;uint64_t rev,gen;assert(fractal_workspace_controller_init(&c,FRACTAL_ANALYSIS_DEFERRED)==0);assert(fractal_workspace_controller_apply_configuration(&c,&c.configuration)==0);assert(fractal_workspace_controller_start(&c)==0);rev=c.service.workspace.revision;gen=c.service.workspace.generation.number;assert(fractal_workspace_controller_wait(&c,1)==0);assert(c.service.workspace.revision==rev);assert(c.service.workspace.generation.number==gen);assert(fractal_workspace_controller_wait(&c,7)==0);assert(c.analysis.state==FRACTAL_ANALYSIS_COMPLETED);assert(c.analysis.generation==c.service.workspace.generation.number);s=fractal_workspace_controller_summary(&c);assert(s.semantic_drift==0);return 0;}
