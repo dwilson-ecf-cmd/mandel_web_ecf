@@ -7,3 +7,13 @@
 ## Следующий milestone
 
 Implement the bounded local Workspace reference service and non-visual desktop client core as independently executable processes, using the validated local transport path while keeping remote access disabled.
+
+
+## Next milestone
+
+Build the first non-visual desktop Workspace controller workflow over the validated local service, including saved local configurations and live runtime progress, before selecting the graphical toolkit.
+
+
+## Next milestone
+
+Select and implement the first graphical Desktop shell over the proven Workspace controller, without moving service, runtime, analysis, or persistence logic into the GUI.

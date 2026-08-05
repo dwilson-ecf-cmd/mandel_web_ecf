@@ -150,3 +150,13 @@
 - Normalized semantic result — normalized semantic result.
 - Fault driver — fault driver.
 - Local reference service — local reference service.
+
+
+## Локальный сервис Workspace
+
+Термины Workspace, service, desktop client, intent, snapshot, replay, reacquire, lease и checkpoint сохраняют машинные идентификаторы на английском языке; русские пояснения используют утверждённые формы из glossary.
+
+
+## Controller workflow и checkpoint analysis
+
+Идентификаторы Desktop controller, RenderConfiguration, runtime control, progress snapshot, preview, generation publication, analysis scheduling и LOCAL_RENDER_CONFIGURATION_V1 сохраняются в машинной форме; русские документы поясняют их без перевода стабильных API tokens.

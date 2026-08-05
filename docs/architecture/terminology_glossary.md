@@ -101,3 +101,25 @@
 - `semantic drift` — любое различие в authoritative semantic output между двумя transport runs одного scenario.
 - `normalized semantic result` — transport-independent record final Workspace revision, generation, snapshot identity, accepted/rejected intent identities, replay identities, capability decisions, lease, preview, analysis, artifacts, restart epoch и reacquisition result.
 - `fault layer` — место injection отказа: semantic-message, frame, transport lifecycle, service lifecycle или security/session.
+
+
+## Локальный Workspace service
+
+- Workspace lifetime — жизненный цикл Workspace.
+- service lifetime — жизненный цикл сервиса.
+- local operator — локальный оператор.
+- controller lease — lease контроллера.
+- replay-result cache — кэш результатов replay.
+- REFERENCE_CHECKPOINT_V1 — справочный checkpoint версии 1.
+
+
+## Controller and analysis scheduling
+
+- Desktop controller — не-визуальный контроллер Desktop client.
+- RenderConfiguration — сохранённая конфигурация render, reusable preset.
+- runtime control — управление execution lifecycle runtime.
+- progress snapshot — наблюдательный снимок progress.
+- preview snapshot — временный снимок preview.
+- generation publication — publication immutable generation.
+- analysis scheduling — планирование analysis по checkpoint policy.
+- analysis checkpoint record — запись состояния analysis для generation.

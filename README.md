@@ -125,3 +125,13 @@ English summary: the implementation profile selects OpenSSL 3.5 LTS for backend 
 ## Transport semantic parity validation
 
 English summary: Fractal Studio now has a bounded validation campaign for the invariant that transport must never change Workspace meaning. The campaign defines shared versioned scenarios, a normalized semantic-result model, deterministic fake-transport parity, Linux local Unix-socket parity with a process-boundary proof, compile-only Windows named-pipe contract status, and secure transport parity checks that keep TLS metadata out of semantic comparison. Russian repository-facing documents live in `docs/validation/` and `docs/architecture/local_reference_service.md`. Android and Windows execution rows remain deferred until implementations are available.
+
+
+## Local Workspace service milestone
+
+The repository now includes a local-only `fractal_workspace_service` and non-visual `fractal_desktop_client` core. The authoritative service owns Workspace mutation, replay, reacquisition, reference checkpointing, and local operator admission; no TCP, GUI, Android, or production TLS path is introduced. English summaries for the Russian architecture documents are embedded in each new document.
+
+
+## Desktop controller and checkpoint analysis milestone
+
+The repository now includes a non-visual Desktop Workspace controller workflow with reusable `RenderConfiguration`, local save/load support, managed runtime progress snapshots, generation publication, and OFF/CHECKPOINT/DEFERRED analysis scheduling. Progress and previews are observational, analysis/artifact results are generation-bound, and no GUI, Android, remote listener, production TLS, database, or analyzer rewrite is introduced.
