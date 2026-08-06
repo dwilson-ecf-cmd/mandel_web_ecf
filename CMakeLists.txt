@@ -37,6 +37,11 @@ target_link_libraries(fractal_renderer_adapter PUBLIC fractal_core)
 target_compile_options(fractal_renderer_adapter PRIVATE ${FRACTAL_WARNINGS})
 
 include(CTest)
+option(MANDEL_ENABLE_QT_SMOKE "Build the Qt 6 toolchain validation application" OFF)
+if(MANDEL_ENABLE_QT_SMOKE)
+ add_subdirectory(tests/qt)
+endif()
+
 if(BUILD_TESTING)
  add_executable(fractal_core_tests tests/native/test_core.c)
  target_link_libraries(fractal_core_tests PRIVATE fractal_core fractal_renderer_adapter)

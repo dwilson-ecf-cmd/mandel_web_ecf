@@ -12,3 +12,7 @@ __pycache__/
 
 # Native out-of-source build trees.
 /build/
+
+# Per-workstation CMake and Qt Creator state.
+/CMakeUserPresets.json
+/CMakeLists.txt.user*

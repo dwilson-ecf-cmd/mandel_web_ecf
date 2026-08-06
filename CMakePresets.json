@@ -1,0 +1,203 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 22,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "qt-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "$env{MANDEL_BUILD_ROOT}/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+        "CMAKE_MAKE_PROGRAM": {
+          "type": "FILEPATH",
+          "value": "$env{MANDEL_QT_TOOLS}/Ninja/ninja.exe"
+        },
+        "MANDEL_ENABLE_QT_SMOKE": true
+      }
+    },
+    {
+      "name": "qt-desktop-base",
+      "hidden": true,
+      "inherits": "qt-base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": {
+          "type": "FILEPATH",
+          "value": "$env{MANDEL_QT_TOOLS}/mingw1310_64/bin/gcc.exe"
+        },
+        "CMAKE_CXX_COMPILER": {
+          "type": "FILEPATH",
+          "value": "$env{MANDEL_QT_TOOLS}/mingw1310_64/bin/g++.exe"
+        },
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "$env{MANDEL_QT_ROOT}/mingw_64/lib/cmake/Qt6/qt.toolchain.cmake"
+        },
+        "BUILD_TESTING": true
+      }
+    },
+    {
+      "name": "qt-desktop-debug",
+      "displayName": "Qt 6.11.1 Desktop Debug",
+      "inherits": "qt-desktop-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "qt-desktop-release",
+      "displayName": "Qt 6.11.1 Desktop Release",
+      "inherits": "qt-desktop-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "qt-android-base",
+      "hidden": true,
+      "inherits": "qt-base",
+      "cacheVariables": {
+        "ANDROID_NDK_ROOT": {
+          "type": "PATH",
+          "value": "$env{ANDROID_NDK_ROOT}"
+        },
+        "ANDROID_SDK_ROOT": {
+          "type": "PATH",
+          "value": "$env{ANDROID_SDK_ROOT}"
+        },
+        "BUILD_TESTING": false,
+        "QT_HOST_PATH": {
+          "type": "PATH",
+          "value": "$env{MANDEL_QT_ROOT}/mingw_64"
+        }
+      }
+    },
+    {
+      "name": "qt-android-arm64-debug",
+      "displayName": "Qt 6.11.1 Android arm64-v8a Debug",
+      "inherits": "qt-android-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "$env{MANDEL_QT_ROOT}/android_arm64_v8a/lib/cmake/Qt6/qt.toolchain.cmake"
+        }
+      }
+    },
+    {
+      "name": "qt-android-armv7-debug",
+      "displayName": "Qt 6.11.1 Android armeabi-v7a Debug",
+      "inherits": "qt-android-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "$env{MANDEL_QT_ROOT}/android_armv7/lib/cmake/Qt6/qt.toolchain.cmake"
+        }
+      }
+    },
+    {
+      "name": "qt-android-x86-debug",
+      "displayName": "Qt 6.11.1 Android x86 Debug",
+      "inherits": "qt-android-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "$env{MANDEL_QT_ROOT}/android_x86/lib/cmake/Qt6/qt.toolchain.cmake"
+        }
+      }
+    },
+    {
+      "name": "qt-android-x86_64-debug",
+      "displayName": "Qt 6.11.1 Android x86_64 Debug",
+      "inherits": "qt-android-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "$env{MANDEL_QT_ROOT}/android_x86_64/lib/cmake/Qt6/qt.toolchain.cmake"
+        }
+      }
+    },
+    {
+      "name": "qt-android-multiabi-release",
+      "displayName": "Qt 6.11.1 Android Four-ABI Release",
+      "inherits": "qt-android-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "$env{MANDEL_QT_ROOT}/android_arm64_v8a/lib/cmake/Qt6/qt.toolchain.cmake"
+        },
+        "QT_ANDROID_BUILD_ALL_ABIS": true,
+        "QT_ANDROID_MULTI_ABI_FORWARD_VARS": "MANDEL_ENABLE_QT_SMOKE"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "qt-desktop-debug",
+      "configurePreset": "qt-desktop-debug"
+    },
+    {
+      "name": "qt-desktop-release",
+      "configurePreset": "qt-desktop-release"
+    },
+    {
+      "name": "qt-android-arm64-debug",
+      "configurePreset": "qt-android-arm64-debug"
+    },
+    {
+      "name": "qt-android-arm64-apk",
+      "configurePreset": "qt-android-arm64-debug",
+      "targets": ["apk"]
+    },
+    {
+      "name": "qt-android-armv7-debug",
+      "configurePreset": "qt-android-armv7-debug"
+    },
+    {
+      "name": "qt-android-x86-debug",
+      "configurePreset": "qt-android-x86-debug"
+    },
+    {
+      "name": "qt-android-x86_64-debug",
+      "configurePreset": "qt-android-x86_64-debug"
+    },
+    {
+      "name": "qt-android-x86_64-apk",
+      "configurePreset": "qt-android-x86_64-debug",
+      "targets": ["apk"]
+    },
+    {
+      "name": "qt-android-multiabi-release",
+      "configurePreset": "qt-android-multiabi-release"
+    },
+    {
+      "name": "qt-android-multiabi-aab",
+      "configurePreset": "qt-android-multiabi-release",
+      "targets": ["aab"]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "qt-desktop-debug",
+      "configurePreset": "qt-desktop-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "qt-desktop-release",
+      "configurePreset": "qt-desktop-release",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

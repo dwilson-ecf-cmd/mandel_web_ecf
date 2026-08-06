@@ -30,8 +30,8 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-The expected CTest inventory at this milestone contains seven targets after the
-localization check is added. To run the focused native executables directly:
+The expected CTest inventory at this milestone contains eight native and
+repository-boundary targets. To run the focused native executables directly:
 
 ```sh
 ./build/fractal_core_tests.exe
@@ -40,6 +40,51 @@ localization check is added. To run the focused native executables directly:
 ./build/computation_socket_tests.exe
 ./build/numeric_socket_tests.exe
 ```
+
+## Qt 6.11.1 workstation and Android SDK
+
+The validated Windows workstation uses the installed Qt 6.11.1 MinGW package
+and keeps the portable native build independent from Qt. The optional
+`mandel_qt_smoke` target proves Qt Core, GUI, QML/Quick, Android packaging, and
+linkage to the frozen portable registry without defining the production UI.
+
+The pinned paths are:
+
+- Qt host: `C:\Qt\6.11.1\mingw_64`;
+- Qt Android ABIs: `C:\Qt\6.11.1\android_*`;
+- Qt tools: `C:\Qt\Tools`;
+- JDK 21: `D:\Dev\Java\jdk-21`;
+- Android SDK: `D:\Android\Sdk`;
+- Android NDK: `D:\Android\Sdk\ndk\27.2.12479018`;
+- AVD and Gradle data: `D:\Android\Avd` and `D:\Android\Gradle`;
+- Qt build trees: `D:\Build\mandel_web_ecf`.
+
+In PowerShell, load the deterministic environment and validate it with:
+
+```powershell
+. .\scripts\qt-env.ps1
+.\scripts\validate-qt6.ps1
+```
+
+The current-user PowerShell execution policy is `RemoteSigned`, which permits
+these local scripts while retaining the downloaded-script signature check.
+`qt-env.ps1` deliberately puts Qt's MinGW runtime first for the current process.
+Run the portable MSYS2 build in a fresh shell, or restore its runtime first with
+`$env:PATH = "C:\msys64\mingw64\bin;C:\msys64\usr\bin;$env:PATH"`; never mix
+objects or runtime DLLs from the two MinGW distributions.
+
+Desktop and Android builds use `CMakePresets.json`. Useful presets include
+`qt-desktop-debug`, `qt-desktop-release`, each single Android ABI debug preset,
+and `qt-android-multiabi-release`. The corresponding `apk` and `aab` build
+presets create installable packages. Qt Creator contains one desktop kit and
+four Android kits using API 36, Build Tools 36.0.0, JDK 21, and NDK r27c.
+
+The API 36 x86_64 AVD is named `mandel_api36_x86_64`. It requires AMD SVM in
+firmware and Windows Hypervisor Platform before accelerated execution. Enable
+SVM in UEFI/BIOS, enable **Windows Hypervisor Platform** in **Turn Windows
+features on or off**, reboot, and verify with `emulator -accel-check`. A physical
+arm64 device with USB debugging is a valid alternative. Production keystores
+and signing secrets must never be committed.
 
 Then run `git diff --check`, `git status --short --branch`, and
 `sha256sum CDC.pdf`. The checked-in AArch64 binaries must not be executed on the
