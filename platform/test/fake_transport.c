@@ -1,0 +1,5 @@
+#include "fake_transport.h"
+#include <string.h>
+void fractal_fake_transport_init(fractal_fake_transport*t){if(t){memset(t,0,sizeof(*t));t->status=FRACTAL_TRANSPORT_CLOSED;}}
+int fractal_fake_transport_push(fractal_fake_transport*t,fractal_fake_transport_event e){if(!t||t->count>=FRACTAL_FAKE_TRANSPORT_EVENT_CAPACITY)return -1;t->events[t->count++]=e;return 0;}
+int fractal_fake_transport_step(fractal_fake_transport*t,fractal_fake_transport_event*out){fractal_fake_transport_event e;if(!t||t->cursor>=t->count)return 0;e=t->events[t->cursor++];if(out)*out=e;switch(e){case FRACTAL_FAKE_CONNECTION_ESTABLISHED:t->status=FRACTAL_TRANSPORT_READY;break;case FRACTAL_FAKE_CONNECTION_DROPPED:t->status=FRACTAL_TRANSPORT_CLOSED;break;case FRACTAL_FAKE_SERVICE_RESTART:t->service_restart_epoch++;t->status=FRACTAL_TRANSPORT_CLOSED;break;case FRACTAL_FAKE_COMPATIBILITY_MISMATCH:t->compatibility_mismatch=true;break;case FRACTAL_FAKE_REVOCATION:t->revoked=true;break;case FRACTAL_FAKE_ACK_LOST:t->ack_lost=true;break;default:break;}return 1;}

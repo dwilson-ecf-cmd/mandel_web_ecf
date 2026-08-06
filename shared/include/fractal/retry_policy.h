@@ -1,0 +1,16 @@
+#ifndef FRACTAL_RETRY_POLICY_H
+#define FRACTAL_RETRY_POLICY_H
+#include <stdbool.h>
+#include <stdint.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+typedef enum fractal_retry_failure_class{FRACTAL_RETRY_IMMEDIATE=0,FRACTAL_RETRY_BACKOFF,FRACTAL_RETRY_AFTER_NETWORK_CHANGE,FRACTAL_REQUIRE_USER_ACTION,FRACTAL_REQUIRE_REPAIRING,FRACTAL_PERMANENT_INCOMPATIBILITY,FRACTAL_PERMANENT_REVOCATION}fractal_retry_failure_class;
+typedef enum fractal_backoff_class{FRACTAL_BACKOFF_FIXED=0,FRACTAL_BACKOFF_EXPONENTIAL}fractal_backoff_class;
+typedef struct fractal_retry_policy{uint32_t attempt_number;uint64_t base_delay_ticks;uint64_t maximum_delay_ticks;fractal_backoff_class backoff_class;uint64_t jitter_bound_ticks;uint64_t total_retry_budget_ticks;bool foreground_allowed;bool background_allowed;bool user_forced_retry;}fractal_retry_policy;
+typedef struct fractal_retry_decision{bool retry;uint64_t delay_ticks;fractal_retry_failure_class failure_class;}fractal_retry_decision;
+fractal_retry_decision fractal_retry_evaluate(fractal_retry_policy policy,fractal_retry_failure_class failure,uint64_t spent_ticks,bool foreground);
+#ifdef __cplusplus
+}
+#endif
+#endif

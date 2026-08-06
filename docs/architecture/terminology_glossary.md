@@ -59,3 +59,67 @@
 | lifecycle | жизненный цикл | Упорядоченная последовательность допустимых состояний. |
 | canonical serialization | каноническая сериализация | Стабильный порядок и представление значений. |
 | provenance | происхождение | История и авторский контекст сохранённого материала. |
+| Workspace | Workspace (рабочее пространство) | Машинное и продуктовое имя сохраняется; это авторитетная вычислительная лаборатория. |
+| client intent | намерение клиента | Ограниченная типизированная команда, а не сетевой RPC. |
+| service snapshot | снимок службы | Самодостаточная авторитетная проекция Workspace для клиента. |
+| generation | поколение | Неизменяемая вычислительная ревизия принятой конфигурации. |
+| participant | участник | Устойчивое логическое действующее лицо, не транспортное соединение. |
+| controller lease | аренда управления | Единоличное ограниченное право изменять и запускать рендер. |
+| capability | продуктовая возможность | Разрешённое действие над продуктом, не машиной. |
+| reducer | редуктор | Детерминированное преобразование состояния и намерения в переход. |
+
+## Термины сопряжения
+
+- **Идентичность сервиса** — стабильная запись развёртывания Fractal Studio с отпечатком открытого ключа и версией ключа.
+- **Идентичность устройства** — стабильная запись установки клиента, привязанная к участнику только после одобрения.
+- **Приглашение сопряжения** — одноразовый ограниченный объект, который начинает обмен, но не выдаёт полномочий.
+- **Транскрипт рукопожатия** — детерминированная цепочка сообщений, к которой привязаны доказательства владения ключами.
+- **Полномочие участника** — запись авторизации, привязанная к устройству и участнику без переносимого bearer-secret.
+
+## Термины платформенного восстановления
+
+| Термин | Утвержденное значение |
+|---|---|
+| platform seam | Ограниченный интерфейс между переносимым контрактом и реализацией ОС. |
+| reacquire | Повторное приобретение авторитетного состояния Workspace у сервиса после разрыва или перезапуска. |
+| replay-result cache | Ограниченный кэш результата intent по participant ID, command sequence и intent identity. |
+| service_restart_epoch | Монотонная эпоха перезапуска сервиса, не равная смене service identity. |
+| offline read-only mode | Режим просмотра кэша без controller lease и без предположения о принятии команд. |
+
+## Термины безопасного стека
+
+| Термин | Утвержденное значение |
+|---|---|
+| deterministic CBOR profile | Ограниченный профиль RFC 8949 с definite lengths, sorted integer labels, shortest integers и fail-closed decoding. |
+| bounded frame | Транспортно-нейтральная оболочка с magic, version, class, flags, payload length, session sequence и одним CBOR payload. |
+| service certificate rotation | Смена certificate/key version с overlapping trust window без silent service identity replacement. |
+| Android Keystore | Платформенное хранилище неэкспортируемых device signing keys; StrongBox preferred, TEE acceptable fallback. |
+| OpenSSL 3.5 LTS | Выбранная backend TLS/crypto линия; patch updates не меняют protocol identity. |
+
+## Transport validation glossary additions
+
+- `semantic drift` — любое различие в authoritative semantic output между двумя transport runs одного scenario.
+- `normalized semantic result` — transport-independent record final Workspace revision, generation, snapshot identity, accepted/rejected intent identities, replay identities, capability decisions, lease, preview, analysis, artifacts, restart epoch и reacquisition result.
+- `fault layer` — место injection отказа: semantic-message, frame, transport lifecycle, service lifecycle или security/session.
+
+
+## Локальный Workspace service
+
+- Workspace lifetime — жизненный цикл Workspace.
+- service lifetime — жизненный цикл сервиса.
+- local operator — локальный оператор.
+- controller lease — lease контроллера.
+- replay-result cache — кэш результатов replay.
+- REFERENCE_CHECKPOINT_V1 — справочный checkpoint версии 1.
+
+
+## Controller and analysis scheduling
+
+- Desktop controller — не-визуальный контроллер Desktop client.
+- RenderConfiguration — сохранённая конфигурация render, reusable preset.
+- runtime control — управление execution lifecycle runtime.
+- progress snapshot — наблюдательный снимок progress.
+- preview snapshot — временный снимок preview.
+- generation publication — publication immutable generation.
+- analysis scheduling — планирование analysis по checkpoint policy.
+- analysis checkpoint record — запись состояния analysis для generation.

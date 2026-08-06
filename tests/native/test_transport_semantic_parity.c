@@ -1,0 +1,4 @@
+#include "fractal/validation/transport_validation.h"
+#include <stdio.h>
+#define CHECK(x) do{if(!(x)){printf("fail %s:%d: %s\n",__FILE__,__LINE__,#x);return 1;}}while(0)
+int main(void){uint32_t i;uint32_t drift=0;for(i=0;i<fractal_validation_scenario_count();i++){const fractal_validation_scenario*s=fractal_validation_scenario_at(i);fractal_validation_semantic_result fake,again;fractal_validation_drift_report r;CHECK(fractal_validation_run_scenario(s,FRACTAL_VALIDATION_TRANSPORT_FAKE,&fake)==0);CHECK(fractal_validation_run_scenario(s,FRACTAL_VALIDATION_TRANSPORT_FAKE,&again)==0);r=fractal_validation_compare(&fake,FRACTAL_VALIDATION_TRANSPORT_FAKE,&again,FRACTAL_VALIDATION_TRANSPORT_FAKE);drift+=r.semantic_drift_count;}printf("semantic parity: scenarios=%u semantic drift = %u\n",fractal_validation_scenario_count(),drift);CHECK(drift==0);return 0;}

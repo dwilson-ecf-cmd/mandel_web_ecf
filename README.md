@@ -18,6 +18,13 @@ identities, and guidance for reviewing Russian documentation.
 
 ## Что реализовано
 
+Авторитетная продуктовая модель теперь определяет постоянную Workspace, общие
+типизированные намерения Desktop/Mobile и самодостаточные снимки службы. Малый
+ограниченный редуктор C11 служит оракулом принятия, ревизий, поколений, ролей и
+единственной аренды управления; транспорт, GUI и проверка подлинности намеренно
+не выбраны. Обзор находится в
+`docs/architecture/fractal_studio_overview.md`.
+
 Авторитетный статический реестр собирает завершённую исполняемую цепочку:
 
 ```text
@@ -75,17 +82,14 @@ Android/Termux файлы.
 ## Происхождение Mandelbrot Studio
 
 Репозиторий сохраняет приложение Mandelbrot Studio участника проекта:
-`render.cpp`, `render_engine.cpp`, `server.cpp`, отдельный сервер
-`server.py`, русскоязычный браузерный интерфейс `index.html` и `style.css`,
-собранные файлы `app_server`, `render` и `render_engine`, изображения, 750
+снятые с эксплуатации автономные рендереры, описанные в `docs/architecture/retired_standalone_renderers.md`, и снятые с эксплуатации Python- и C++-серверы, описанные в `docs/architecture/retired_python_server.md` и `docs/architecture/retired_native_http_server.md`, русскоязычный браузерный интерфейс `index.html` и `style.css`, снятый комплект иностранных программ, описанный в `docs/architecture/retired_foreign_executable_bundle.md`, изображения, 750
 кадров и видео. Исходный русский текст и исторические артефакты не переводятся
 и не удаляются.
 
 Сохранённые исполняемые файлы — 64-битные little-endian AArch64 Android/Termux
 ELF, а не программы Windows или Linux x86-64. При сборке и тестах их нельзя
 запускать. Воспроизводимого рецепта их исходной сборки в репозитории нет.
-`server.py` остаётся унаследованным средством запуска и не входит в нативную
-производственную основу. Корневые BMP, `render.mp4` и `frames/` являются
+`legacy/servers/server.py` снят с эксплуатации; его история и контрольная сумма сохранены в Git и в `docs/architecture/retired_python_server.md`. Корневые BMP, `render.mp4` и `frames/` являются
 историческим сгенерированным выводом участника проекта; новые продукты должны
 размещаться в `runtime/artifacts/` или во внешнем хранилище.
 
@@ -105,3 +109,29 @@ ELF, а не программы Windows или Linux x86-64. При сборке
 `docs/architecture/formula_socket.md`. Текущее состояние дальнейшего плана
 зафиксировано в `docs/roadmap/next_attack_plan.md` без объявления новых
 поддерживаемых возможностей.
+
+## Secure pairing contract
+
+Fractal Studio now defines a security-contract layer for pairing unknown clients into recognized Workspace participants. The contract separates discovery, identity proof, human approval, capability assignment, credential lifecycle, and revocation without adding sockets, cryptographic libraries, Android APIs, GUI code, cloud SDKs, or host-machine control. Russian source documentation is in `docs/security/`.
+
+## Platform seams and reacquisition
+
+English summary: Fractal Studio now has v1 contract boundaries for shared Workspace/pairing compatibility, platform service groups, deterministic reconnect/reacquire state reducers, bounded retry behavior, and idempotent intent replay. The detailed repository-facing architecture text is in Russian under `docs/architecture/`, with `docs/architecture/reconnection_overview.md` as the concise collaborator overview. No Android, JNI, socket, TLS, crypto, GUI, cloud, or production secure-storage implementation is introduced by this milestone.
+
+## Secure transport and serialization selection
+
+English summary: the implementation profile selects OpenSSL 3.5 LTS for backend TLS/crypto, Android platform TLS and Android Keystore for mobile trust, ECDSA P-256 with SHA-256 for service/device proof, deterministic CBOR plus bounded frames for the wire profile, Unix-domain sockets and named pipes for local loopback, and TLS 1.3 framed streams for remote transport. These selections remain behind platform seams and do not add public listeners, production keys, Android/JNI/Gradle, OpenSSL objects in shared headers, HTTP/WebSocket/gRPC/QUIC, compression, GUI code, cloud SDKs, or databases.
+
+## Transport semantic parity validation
+
+English summary: Fractal Studio now has a bounded validation campaign for the invariant that transport must never change Workspace meaning. The campaign defines shared versioned scenarios, a normalized semantic-result model, deterministic fake-transport parity, Linux local Unix-socket parity with a process-boundary proof, compile-only Windows named-pipe contract status, and secure transport parity checks that keep TLS metadata out of semantic comparison. Russian repository-facing documents live in `docs/validation/` and `docs/architecture/local_reference_service.md`. Android and Windows execution rows remain deferred until implementations are available.
+
+
+## Local Workspace service milestone
+
+The repository now includes a local-only `fractal_workspace_service` and non-visual `fractal_desktop_client` core. The authoritative service owns Workspace mutation, replay, reacquisition, reference checkpointing, and local operator admission; no TCP, GUI, Android, or production TLS path is introduced. English summaries for the Russian architecture documents are embedded in each new document.
+
+
+## Desktop controller and checkpoint analysis milestone
+
+The repository now includes a non-visual Desktop Workspace controller workflow with reusable `RenderConfiguration`, local save/load support, managed runtime progress snapshots, generation publication, and OFF/CHECKPOINT/DEFERRED analysis scheduling. Progress and previews are observational, analysis/artifact results are generation-bound, and no GUI, Android, remote listener, production TLS, database, or analyzer rewrite is introduced.

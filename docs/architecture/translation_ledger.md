@@ -48,6 +48,7 @@
 | `docs/architecture/translation_ledger.md` | N/A | Russian | `COMPLETED` | да | новый журнал | нет | да |
 | `docs/maintainer_guide.en.md` | N/A | English | `PRESERVED` | да | намеренный английский документ | нет | да |
 | `docs/architecture/localization_summary.en.md` | N/A | English | `PRESERVED` | да | намеренное английское резюме | нет | да |
+| `docs/architecture/linux_contract_parity.md` | N/A | Russian | `COMPLETED` | да | новый архитектурный отчёт | нет | да |
 
 ## Комментарии исходного кода
 
@@ -86,3 +87,76 @@
 переводились. Их точная классификация находится в
 `docs/architecture/localization_inventory.md`. Неразрешённой терминологии на
 этом этапе нет; лингвистическая проверка носителем языка не заявляется.
+
+## Изоляция унаследованных поверхностей
+
+Добавлены русские `legacy/README.md`, `legacy_isolation_plan.md`, `legacy_path_map.md` и `directory_ownership.md`, а также русские сообщения детерминированной проверки. Исходное содержимое перемещённых файлов участника проекта не переводилось и не изменялось. Английские машинные пути, статусы и SHA-256 сохранены намеренно.
+
+## Снятие Python-сервера
+
+Добавлена русская авторитетная запись `retired_python_server.md`; действующие документы различают `ISOLATED`, `RETIRED`, `PRESERVED` и `COMPATIBILITY`. Исходный текст удалённого файла не переводился и остаётся восстановимым через Git.
+
+## Снятие нативного сервера и иностранных программ
+
+Добавлены русские записи `retired_native_http_server.md` и `retired_foreign_executable_bundle.md`. Удалённые исходный файл и двоичные данные не переводились и сохраняются в Git. Действующие документы отличают `RETIRED` от `PRESERVED`, `ISOLATED`, `COMPATIBILITY` и `AUTHORITATIVE`.
+
+## Снятие автономных рендереров
+
+Добавлены русские `standalone_renderer_knowledge_audit.md` и `retired_standalone_renderers.md`. Удалённые исходники не переводились; знания классифицированы, суммы и восстановление сохранены. Статусы репозитория теперь различают `AUTHORITATIVE`, `COMPATIBILITY`, `PRESERVED_REFERENCE` и `RETIRED`.
+# Дополнение: авторитетная Workspace и два клиента
+
+Новые документы `workspace_authority.md`, `workspace_state_model.md`,
+`client_intent_contract.md`, `dual_client_architecture.md`,
+`backend_service_architecture.md`, `workspace_capabilities.md`,
+`deployment_profiles.md` и `fractal_studio_overview.md` созданы сразу на
+русском языке. Английские машинные имена `Workspace`, `ClientIntent`,
+`IN_PROCESS`, `LOCAL_LOOPBACK`, `REMOTE_SECURE` и строки возможностей сохранены
+по политике идентификаторов; утверждённые русские термины добавлены в глоссарий.
+
+## Сопряжение и доверие
+
+- Pairing handshake — рукопожатие сопряжения.
+- Proof of possession — доказательство владения ключом.
+- Service identity — идентичность сервиса.
+- Device identity — идентичность устройства.
+- Pairing invitation — приглашение сопряжения.
+- Credential lifecycle — жизненный цикл полномочия.
+- Revocation epoch — эпоха отзыва.
+
+## Кампания платформенных швов
+
+| English | Русский вариант | Примечание |
+|---|---|---|
+| platform seam | платформенный шов | Граница ОС-реализации и переносимого контракта. |
+| reacquisition | повторное приобретение | Восстановление авторитета Workspace у сервиса. |
+| replay cache | кэш повторения | Хранит семантический результат intent. |
+| lost acknowledgment | потерянное подтверждение | Доставка intent была неопределенной для клиента. |
+| service identity rotation | смена service identity | Не тождественна перезапуску сервиса. |
+
+## Кампания безопасного стека
+
+| English | Русский вариант | Примечание |
+|---|---|---|
+| deterministic CBOR profile | детерминированный профиль CBOR | Wire authority, не semantic identity. |
+| bounded framed byte stream | ограниченный framed byte stream | Transport-neutral payload carrier. |
+| cleartext opt-out | запрет cleartext | Android/remote policy requirement. |
+| key rotation | ротация ключа | Отличается от silent identity replacement. |
+| vulnerability response | реагирование на уязвимости | Patch cadence and emergency procedure. |
+
+## Transport parity validation ledger
+
+- Transport semantic parity validation — валидация транспортной семантической паритетности.
+- Semantic drift — semantic drift; в русских документах допускается термин с английским machine-facing написанием.
+- Normalized semantic result — normalized semantic result.
+- Fault driver — fault driver.
+- Local reference service — local reference service.
+
+
+## Локальный сервис Workspace
+
+Термины Workspace, service, desktop client, intent, snapshot, replay, reacquire, lease и checkpoint сохраняют машинные идентификаторы на английском языке; русские пояснения используют утверждённые формы из glossary.
+
+
+## Controller workflow и checkpoint analysis
+
+Идентификаторы Desktop controller, RenderConfiguration, runtime control, progress snapshot, preview, generation publication, analysis scheduling и LOCAL_RENDER_CONFIGURATION_V1 сохраняются в машинной форме; русские документы поясняют их без перевода стабильных API tokens.

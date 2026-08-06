@@ -348,22 +348,16 @@ static void test_renderer_backends_and_manifest(void) {
 }
 
 static void test_milestone_files_preserved(void) {
- const char *paths[]={"CDC.pdf","server.py","server.cpp","render.cpp","render_engine.cpp","index.html",
-  "app_server","render","render_engine","frames/frame_0000.bmp","render.mp4",
+ const char *paths[]={"CDC.pdf","docs/architecture/retired_standalone_renderers.md",
+  "docs/architecture/standalone_renderer_knowledge_audit.md","index.html",
+  "frames/frame_0000.bmp","render.mp4","docs/architecture/retired_native_http_server.md",
+  "docs/architecture/retired_foreign_executable_bundle.md",
   "docs/cdc_reference_index.md","docs/cdc_interpretation_ledger.md"}; size_t i;
  for(i=0;i<sizeof(paths)/sizeof(paths[0]);++i) { FILE *f=fopen(paths[i],"rb"); long size=-1; CHECK(f!=NULL); if(f){ CHECK(fseek(f,0,SEEK_END)==0); size=ftell(f); fclose(f); CHECK(size>0); } }
 }
 
-static void test_foreign_binaries_are_data_only(void) {
- const char *names[]={"app_server","render","render_engine"}; size_t i;
- for(i=0;i<sizeof(names)/sizeof(names[0]);++i) {
-  unsigned char magic[4]={0}; FILE *file=fopen(names[i],"rb");
-  CHECK(file!=NULL); if(file) { CHECK(fread(magic,1,sizeof(magic),file)==sizeof(magic)); fclose(file); }
-  CHECK(memcmp(magic,"\177ELF",4)==0);
- }
-}
 int main(void) {
- test_spec(); test_memory(); test_adapter(); test_computation_backends(); test_experiment_0_certificate(); test_region_study(); test_two_child_study(); test_depth_two_study(); test_refinement_contracts(); test_renderer_backends_and_manifest(); test_milestone_files_preserved(); test_foreign_binaries_are_data_only();
+ test_spec(); test_memory(); test_adapter(); test_computation_backends(); test_experiment_0_certificate(); test_region_study(); test_two_child_study(); test_depth_two_study(); test_refinement_contracts(); test_renderer_backends_and_manifest(); test_milestone_files_preserved();
  if(failures) fprintf(stderr,"%d native checks failed\n",failures);
  return failures ? EXIT_FAILURE : EXIT_SUCCESS;
 }

@@ -11,7 +11,7 @@ void fractal_cancellation_reset(fractal_cancellation*c){if(c)atomic_store(&c->re
 #define DESC(name,id,title,kind,caps) static const fractal_module_descriptor name={1u,1u,id,title,kind,caps,true}
 DESC(d_none,"refinement.none","No refinement",FRACTAL_MODULE_REFINEMENT,0);
 static const fractal_module_descriptor d_cdc={1u,1u,"refinement.cdc.unavailable","CDC refinement (unavailable)",FRACTAL_MODULE_REFINEMENT,0,false};
-DESC(d_sched,"scheduler.serial.row-major","Serial row-major",FRACTAL_MODULE_SCHEDULER,FRACTAL_CAP_SERIAL_FIELD|FRACTAL_CAP_ITERATION_FIELD);
+DESC(d_sched,FRACTAL_SCHEDULER_SERIAL_COMPATIBILITY_ID,"Serial row-major",FRACTAL_MODULE_SCHEDULER,FRACTAL_CAP_SERIAL_FIELD|FRACTAL_CAP_ITERATION_FIELD);
 DESC(d_raster,"raster.native.iteration-bgr8","Native iteration rasterizer",FRACTAL_MODULE_RASTER,FRACTAL_CAP_ITERATION_FIELD|FRACTAL_CAP_BGR8);
 DESC(d_bmp,"encoder.bmp.v3","BMP v3 encoder",FRACTAL_MODULE_ENCODER,FRACTAL_CAP_BGR8|FRACTAL_CAP_ENCODER_STREAM_OUTPUT);
 DESC(d_mem,"memory.system.scoped","System scoped memory",FRACTAL_MODULE_MEMORY,FRACTAL_CAP_MEMORY_SCOPES);
